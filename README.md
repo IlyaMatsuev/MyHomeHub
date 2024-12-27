@@ -4,9 +4,9 @@ Badges.
 
 Project description and idea.
 
--   ✅ Advantage
--   ✅ Another advantage
--   ❌ Disadvantage
+- ✅ Advantage
+- ✅ Another advantage
+- ❌ Disadvantage
 
 ## 🔍 Overview
 

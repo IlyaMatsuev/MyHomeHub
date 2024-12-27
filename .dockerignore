@@ -37,6 +37,8 @@
 **/.gitignore
 
 # Other
+docs/
+devices/
 **/Procfile
 **/LICENSE
 **/README.md

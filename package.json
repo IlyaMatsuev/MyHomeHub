@@ -1,32 +1,42 @@
 {
-    "name": "project-name",
-    "private": true,
-    "version": "1.0.0",
-    "description": "Project description",
-    "scripts": {
-        "prettier": "prettier --write",
-        "prettier:verify": "prettier --list-different",
-        "docs:types:refresh": "npm run docs:types:clean && npm run docs:types:generate && npm run prettier ./docs/types",
-        "docs:types:clean": "shx rm -r ./docs/types",
-        "docs:types:generate": "apexdocs-generate -s ./src/main -t ./docs/types --documentationRootDir '/types' -p global -g docsify --defaultGroupName Classes --title 'Type Definitions'"
-    },
-    "devDependencies": {
-        "@cparra/apexdocs": "^2.17.0",
-        "@ilyamatsuev/prettier-plugin-apex": "^3.0.0",
-        "@prettier/plugin-xml": "^3.2.0",
-        "husky": "^4.2.1",
-        "lint-staged": "^10.0.7",
-        "prettier": "^3.0.3",
-        "shx": "^0.3.4"
-    },
-    "husky": {
-        "hooks": {
-            "pre-commit": "lint-staged"
-        }
-    },
-    "lint-staged": {
-        "**/*.{cls,html,js,css,json,md,trigger,xml,yaml,yml}": [
-            "npm run prettier"
-        ]
-    }
+  "name": "my-smart-home",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Contains scripts and logic for microcontrollers used for my Smart Home setup",
+  "scripts": {
+    "prepare": "husky",
+    "lint-staged": "lint-staged",
+    "prettier": "prettier --write",
+    "prettier:verify": "prettier --list-different",
+    "eslint": "eslint --fix",
+    "eslint:verify": "eslint --quiet"
+  },
+  "author": {
+    "name": "Ilya Matsuev",
+    "email": "ilya.matsuev.personal@gmail.com",
+    "url": "https://github.com/IlyaMatsuev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IlyaMatsuev"
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.25.8",
+    "@prettier/plugin-xml": "^3.4.1",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-promise": "^7.1.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3"
+  },
+  "lint-staged": {
+    "**/*.{html,js,css,xml,yaml,yml,json,md}": [
+      "npm run prettier"
+    ],
+    "**/*.{js}": [
+      "npm run eslint"
+    ]
+  }
 }

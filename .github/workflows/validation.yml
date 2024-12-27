@@ -1,0 +1,49 @@
+name: Validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - "src/**"
+      - "scripts/**"
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - "src/**"
+      - "scripts/**"
+
+# Required secrets:
+# 1.
+
+jobs:
+  linting:
+    name: "Verify source code linting"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout source code"
+        uses: actions/checkout@v3
+
+      - name: "Restore node_modules cache"
+        id: cache-npm
+        uses: actions/cache@v1
+        with:
+          path: node_modules
+          key: npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-${{ env.cache-name }}-
+            npm-
+
+      - name: "Install npm dependencies"
+        if: steps.cache-npm.outputs.cache-hit != 'true'
+        run: npm i
+
+      - name: "Verify formatting"
+        run: npm run prettier:verify ./
+
+      - name: "Verify linting"
+        run: npm run eslint:verify
