@@ -1,23 +1,27 @@
 {
   "root": true,
-  "parser": "@babel/eslint-parser",
+  "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "requireConfigFile": false,
-    "babelOptions": {
-      "parserOpts": {
-        "plugins": [
-          "classProperties",
-          ["decorators", { "decoratorsBeforeExport": false }]
-        ]
-      }
-    }
+    "project": "tsconfig.json",
+    "tsconfigRootDir": "src/hub/",
+    "sourceType": "module"
   },
   "env": {
-    "browser": true
+    "node": true,
+    "jest": true
   },
-  "plugins": ["promise"],
-  "extends": ["eslint:recommended", "plugin:import/recommended", "prettier"],
+  "plugins": ["promise", "@typescript-eslint/eslint-plugin"],
+  "extends": [
+    "plugin:@typescript-eslint/recommended",
+    "plugin:prettier/recommended",
+    "plugin:import/recommended",
+    "prettier"
+  ],
   "rules": {
+    "@typescript-eslint/interface-name-prefix": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-explicit-any": "off",
     "no-return-assign": "off",
     "consistent-return": "warn",
     "no-await-in-loop": "warn",

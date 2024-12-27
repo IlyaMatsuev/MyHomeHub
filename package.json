@@ -9,7 +9,11 @@
     "prettier": "prettier --write",
     "prettier:verify": "prettier --list-different",
     "eslint": "eslint --fix",
-    "eslint:verify": "eslint --quiet"
+    "eslint:verify": "eslint --quiet",
+    "hub:start": "cd ./src/hub && npm run start",
+    "hub:start:dev": "cd ./src/hub && npm run start:dev",
+    "hub:start:debug": "cd ./src/hub && npm run start:debug",
+    "hub:start:prod": "cd ./src/hub && npm run start:prod"
   },
   "author": {
     "name": "Ilya Matsuev",
@@ -22,10 +26,13 @@
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.25.8",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
     "@prettier/plugin-xml": "^3.4.1",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-promise": "^7.1.0",
     "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
