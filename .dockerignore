@@ -1,0 +1,42 @@
+# IDE
+**/.idea/
+**/.vscode/
+
+# SFDX
+**/.sfdx/
+**/.sf/
+**/sfdx-config/
+**/.forceignore
+**/sfdx-project.json
+
+# Dependencies
+**/node_modules/
+**/package-lock.json
+
+# Build
+**/build/
+**/dist/
+
+# System Files
+.DS_Store
+*.db
+*.ini
+
+# Logs
+*.log
+
+# Prettier & ESLint
+**/.eslintignore
+**/.eslintrc.json
+**/.prettierignore
+**/.prettierrc.json
+
+# Git
+**/.git/
+**/.github/
+**/.gitignore
+
+# Other
+**/Procfile
+**/LICENSE
+**/README.md

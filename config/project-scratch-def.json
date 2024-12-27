@@ -1,0 +1,11 @@
+{
+    "orgName": "Template Scratch",
+    "edition": "Developer",
+    "hasSampleData": true,
+    "features": [],
+    "settings": {
+        "lightningExperienceSettings": {
+            "enableS1DesktopEnabled": true
+        }
+    }
+}
