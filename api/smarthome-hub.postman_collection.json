@@ -21,6 +21,28 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Add Device",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"light bulb1\",\n    \"room\": \"living-room\",\n    \"updateInterval\": 2000,\n    \"controls\": {\n        \"on\": true,\n        \"fanSpeedLevel\": 1\n    },\n    \"measurements\": {\n        \"temperature\": 88.4\n    }\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/devices",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices"]
+            }
+          },
+          "response": []
         }
       ]
     }

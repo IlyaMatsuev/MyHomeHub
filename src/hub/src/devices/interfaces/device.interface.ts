@@ -1,6 +1,4 @@
-export enum Room {
-    LivingRoom = 'living-room'
-}
+import { Room } from './common';
 
 export interface Device {
     id: string;

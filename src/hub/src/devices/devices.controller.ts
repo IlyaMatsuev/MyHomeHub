@@ -1,13 +1,19 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { DeviceService } from 'devices/device.service';
-import { DeviceDto } from 'devices/dto/create-device.dto';
+import { Device } from 'devices/interfaces';
+import { CreateDeviceDto } from 'devices/dto';
 
 @Controller('devices')
 export class DevicesController {
     constructor(private readonly deviceService: DeviceService) {}
 
     @Get()
-    getDevices(): Array<DeviceDto> {
+    getDevices(): Array<Device> {
         return this.deviceService.getDevices();
+    }
+
+    @Post()
+    addDevice(@Body() createDeviceDto: CreateDeviceDto): Device {
+        return this.deviceService.addDevice(createDeviceDto);
     }
 }
