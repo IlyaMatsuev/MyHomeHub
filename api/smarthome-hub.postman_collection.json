@@ -1,0 +1,28 @@
+{
+  "info": {
+    "_postman_id": "3a8b9396-b82c-4edc-8c67-8a77b03aaec9",
+    "name": "smarthome-hub",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "10132345"
+  },
+  "item": [
+    {
+      "name": "Devices",
+      "item": [
+        {
+          "name": "Get All Devices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/devices",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    "paths": {
+      "devices/*": ["src/devices/*"]
+    },
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
