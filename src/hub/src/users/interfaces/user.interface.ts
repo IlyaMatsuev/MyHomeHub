@@ -3,3 +3,5 @@ export interface User {
     email: string;
     password: string;
 }
+
+export type NewUser = Omit<User, 'password'>;

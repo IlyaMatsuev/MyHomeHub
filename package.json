@@ -47,6 +47,7 @@
     ]
   },
   "dependencies": {
-    "@nestjs/config": "^3.3.0"
+    "@nestjs/config": "^3.3.0",
+    "argon2": "^0.41.1"
   }
 }
