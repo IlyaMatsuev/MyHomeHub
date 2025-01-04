@@ -1,11 +1,11 @@
 import { Controller, Body, Param, Get, Delete, Post, Put } from '@nestjs/common';
-import { DeviceService } from 'devices/device.service';
+import { DevicesService } from 'devices/devices.service';
 import { Device } from 'devices/interfaces';
 import { CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
 
 @Controller('devices')
 export class DevicesController {
-    constructor(private readonly deviceService: DeviceService) {}
+    constructor(private readonly deviceService: DevicesService) {}
 
     @Get()
     getDevices(): Array<Device> {
@@ -29,6 +29,6 @@ export class DevicesController {
 
     @Delete('/:id')
     removeDevice(@Param('id') id: string): Device {
-        return this.deviceService.removeDevice(id)
+        return this.deviceService.removeDevice(id);
     }
 }

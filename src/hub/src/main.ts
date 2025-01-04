@@ -5,7 +5,6 @@ import { AppModule } from './app.module';
 
 const DEFAULT_PORT = 3000;
 
-
 bootstrap();
 
 async function bootstrap() {
@@ -22,10 +21,9 @@ function setupSwagger(app: INestApplication) {
         .setVersion('1.0')
         .build();
 
-    const options: SwaggerDocumentOptions =  {
+    const options: SwaggerDocumentOptions = {
         operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
     };
 
     SwaggerModule.setup('api', app, () => SwaggerModule.createDocument(app, config, options));
 }
-

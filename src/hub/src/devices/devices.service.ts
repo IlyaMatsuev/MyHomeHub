@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { Device, Room } from './interfaces';
 import { CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
 import { v4 as uuid } from 'uuid';
@@ -20,7 +20,7 @@ let mockDevices: Array<Device> = [
 ];
 
 @Injectable()
-export class DeviceService {
+export class DevicesService {
     getDevices(): Array<Device> {
         return mockDevices;
     }
@@ -28,14 +28,14 @@ export class DeviceService {
     getDevice(id: string): Device {
         const device = mockDevices.find(d => d.id === id);
         if (!device) {
-            throw new HttpException({ error: `There is no device with the provided id '${id}'` }, HttpStatus.NOT_FOUND);
+            throw new NotFoundException(`There is no device with the provided id '${id}'`);
         }
         return device;
     }
 
     addDevice(deviceDto: CreateDeviceDto): Device {
         if (mockDevices.some(d => d.name === deviceDto.name)) {
-            throw new HttpException({ error: `Device with the same name ('${deviceDto.name}') already exists` }, HttpStatus.BAD_REQUEST);
+            throw new BadRequestException(`Device with the same name ('${deviceDto.name}') already exists`);
         }
 
         const newDevice: Device = {

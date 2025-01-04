@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "paths": {
-      "devices/*": ["src/devices/*"]
+      "devices/*": ["src/devices/*"],
+      "users/*": ["src/users/*"],
+      "auth/*": ["src/auth/*"]
     },
     "module": "commonjs",
     "declaration": true,
