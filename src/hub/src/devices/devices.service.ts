@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Device, Room } from './interfaces';
 import { CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
 import { v4 as uuid } from 'uuid';

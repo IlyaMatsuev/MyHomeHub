@@ -18,3 +18,8 @@ export class UpdateDeviceDto {
     @ApiProperty()
     measurements?: Record<string, object>;
 }
+
+export class UpdateDeviceStateDto {
+    controls: Record<string, object>;
+    measurements: Record<string, object>;
+}

@@ -1,15 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { INestApplication } from '@nestjs/common';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { SwaggerModule, DocumentBuilder, SwaggerDocumentOptions } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from 'common/http-exception.filter';
 
 const DEFAULT_PORT = 3000;
 
 bootstrap();
 
 async function bootstrap() {
-    // TODO: Consider using fastify
     const app = await NestFactory.create(AppModule);
+    app.enableCors();
+    app.useWebSocketAdapter(new WsAdapter(app));
+    app.useGlobalFilters(new HttpExceptionFilter());
+
     setupSwagger(app);
     await app.listen(process.env.PORT ?? DEFAULT_PORT);
 }

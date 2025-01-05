@@ -269,6 +269,13 @@
                 "type": "text/javascript",
                 "packages": {}
               }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [],
+                "type": "text/javascript"
+              }
             }
           ],
           "request": {
