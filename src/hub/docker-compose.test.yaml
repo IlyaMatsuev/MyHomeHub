@@ -1,0 +1,28 @@
+version: "3.8"
+services:
+  mongodb:
+    image: mongo:7.0.16-jammy
+    container_name: mongodb-test
+    env_file: .env.test
+    ports:
+      - "27017:27017"
+    volumes:
+      - dbdata6:/data/db
+    networks:
+      - smarthome-network
+
+  smarthome-hub-server:
+    image: smarthome-hub-server
+    container_name: smarthome-hub-server-test
+    env_file: .env.test
+    ports:
+      - "3000:3000"
+    networks:
+      - smarthome-network
+
+volumes:
+  dbdata6:
+
+networks:
+  smarthome-network:
+    driver: bridge
