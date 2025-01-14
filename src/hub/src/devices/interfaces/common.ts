@@ -4,3 +4,9 @@ export enum Room {
     Kitchen = 'kitchen',
     LivingRoom = 'living-room',
 }
+
+export enum DeviceType {
+    ESP32 = 'esp32',
+    Socket = 'socket',
+    Switch = 'switch',
+}

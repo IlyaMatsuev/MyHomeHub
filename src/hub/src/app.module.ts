@@ -11,7 +11,7 @@ import { DevicesModule } from 'devices/devices.module';
         AuthModule,
         UsersModule,
         DevicesModule,
-        ConfigModule.forRoot({ isGlobal: true, envFilePath: `.env.${process.env.NODE_ENV}` })
+        ConfigModule.forRoot({ isGlobal: true, envFilePath: `.env.${process.env.NODE_ENV}` }),
     ],
     controllers: [],
     providers: [],

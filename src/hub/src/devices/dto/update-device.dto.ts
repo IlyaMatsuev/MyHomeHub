@@ -1,10 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Room } from 'devices/interfaces/common';
+import { DeviceType, Room } from 'devices/interfaces/common';
 
 // TODO: Add Swagger descriptions and other params for each property
 export class UpdateDeviceDto {
     @ApiProperty()
     name?: string;
+
+    @ApiProperty()
+    type?: DeviceType;
 
     @ApiProperty()
     room?: Room;
@@ -21,5 +24,5 @@ export class UpdateDeviceDto {
 
 export class UpdateDeviceStateDto {
     controls: Record<string, object>;
-    measurements: Record<string, object>;
+    measurements?: Record<string, object>;
 }

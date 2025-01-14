@@ -16,7 +16,7 @@ import { AuthGuard } from 'auth/auth.guard';
                 secret: configService.get<string>('JWT_SECRET'),
                 signOptions: { expiresIn: `${configService.get<string>('JWT_EXPIRATION_TIMEOUT')}s` },
             }),
-            inject: [ConfigService]
+            inject: [ConfigService],
         }),
     ],
     controllers: [AuthController],
@@ -25,7 +25,7 @@ import { AuthGuard } from 'auth/auth.guard';
         {
             provide: APP_GUARD,
             useClass: AuthGuard,
-        }
+        },
     ],
 })
 export class AuthModule {}

@@ -5,24 +5,28 @@ import {
     OnGatewayDisconnect,
     SubscribeMessage,
     WebSocketGateway,
-    WebSocketServer, WsException,
+    WebSocketServer,
+    WsException,
 } from '@nestjs/websockets';
 import { WebSocketServer as WSServer, WebSocket } from 'ws';
 import { v4 as uuid } from 'uuid';
 import { DevicesService } from 'devices/devices.service';
 import { Device, DeviceGatewayEvent, DeviceGatewayResponse } from 'devices/interfaces';
 import { UpdateDeviceStateDto } from 'devices/dto';
-import { UseFilters } from '@nestjs/common';
-import { WsExceptionFilter } from 'common/ws-exception.filter';
+import { UseFilters, UseInterceptors } from '@nestjs/common';
+import { WsExceptionFilter } from 'common/filters/ws-exception.filter';
+import { MongoErrorInterceptor } from 'common/interceptors';
 import { ConfigService } from '@nestjs/config';
 
-@UseFilters(new WsExceptionFilter())
-@WebSocketGateway({
-    cors: { origin: '*' },
-    transports: ['websocket'],
-})
+interface WebSocketClient extends WebSocket {
+    id: string;
+}
+
+@UseFilters(WsExceptionFilter)
+@UseInterceptors(MongoErrorInterceptor)
+@WebSocketGateway({ cors: { origin: '*' }, transports: ['websocket'] })
 export class DevicesGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    clients: Map<string, WebSocket> = new Map();
+    clients: Map<string, WebSocketClient> = new Map();
     pairedDevices: Map<string, Device> = new Map();
 
     @WebSocketServer()
@@ -30,35 +34,39 @@ export class DevicesGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
     constructor(
         private readonly configService: ConfigService,
-        private readonly devicesService: DevicesService
+        private readonly devicesService: DevicesService,
     ) {}
 
-    handleConnection(@ConnectedSocket() client: WebSocket) {
+    handleConnection(@ConnectedSocket() client: WebSocketClient) {
         const clientId = uuid();
-        client['id'] = clientId;
+        client.id = clientId;
         this.clients.set(clientId, client);
     }
 
-    handleDisconnect(@ConnectedSocket() client: WebSocket) {
-        this.clients.delete(client['id']);
+    handleDisconnect(@ConnectedSocket() client: WebSocketClient) {
+        this.clients.delete(client.id);
     }
 
     @SubscribeMessage('pair')
-    onDevicePairing(@ConnectedSocket() client: WebSocket, @MessageBody('id') id: string, @MessageBody('key') key: string): DeviceGatewayResponse {
-        if (!this.clients.has(client['id'])) {
+    async onDevicePairing(
+        @ConnectedSocket() client: WebSocketClient,
+        @MessageBody('id') externalId: string,
+        @MessageBody('key') key: string,
+    ): Promise<DeviceGatewayResponse> {
+        if (!this.clients.has(client.id)) {
             throw new WsException('WebSocket client was not recognized');
         }
-        if (this.pairedDevices.has(client['id'])) {
+        if (this.pairedDevices.has(client.id)) {
             throw new WsException('The device has already been paired');
         }
         if (!this.deviceAccessKeyValid(key)) {
             throw new WsException('Device access key is not valid');
         }
-        const device = this.devicesService.getDevice(id);
+        const device = await this.devicesService.getDevice({ externalId }, { strict: false });
         if (!device) {
-            throw new WsException(`There is no device with the provided id: ${id}`);
+            throw new WsException(`There is no device with the provided external id: ${externalId}`);
         }
-        this.pairedDevices.set(client['id'], device);
+        this.pairedDevices.set(client.id, device);
         return {
             event: DeviceGatewayEvent.Pair,
             data: {
@@ -69,13 +77,16 @@ export class DevicesGateway implements OnGatewayConnection, OnGatewayDisconnect 
     }
 
     @SubscribeMessage('state')
-    onDeviceStateUpdate(@ConnectedSocket() client: WebSocket, @MessageBody() stateDto: UpdateDeviceStateDto): DeviceGatewayResponse  {
-        if (!this.clients.has(client['id']) || !this.pairedDevices.has(client['id'])) {
+    async onDeviceStateUpdate(
+        @ConnectedSocket() client: WebSocketClient,
+        @MessageBody() stateDto: UpdateDeviceStateDto,
+    ): Promise<DeviceGatewayResponse> {
+        if (!this.clients.has(client.id) || !this.pairedDevices.has(client.id)) {
             throw new WsException('WebSocket client was not recognized');
         }
 
-        const device = this.pairedDevices.get(client['id']);
-        this.devicesService.updateDevice(device.id, stateDto);
+        const device = this.pairedDevices.get(client.id);
+        await this.devicesService.updateDevice(device.id, stateDto);
         return {
             event: DeviceGatewayEvent.State,
             data: {

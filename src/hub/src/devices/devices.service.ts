@@ -1,64 +1,49 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Device, Room } from './interfaces';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Model } from 'mongoose';
+import { Device, DeviceFilter, GetDeviceOptions } from 'devices/interfaces';
 import { CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
-import { v4 as uuid } from 'uuid';
-
-let mockDevices: Array<Device> = [
-    {
-        id: 'f1256ed1-7116-4fbe-981b-b81578fce899',
-        name: 'PS Fans',
-        room: Room.LivingRoom,
-        updateInterval: 10000,
-        controls: {
-            on: true,
-            fanSpeedLevel: 1,
-        },
-        measurements: {
-            temperature: 44.2,
-        },
-    },
-];
+import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
 
 @Injectable()
 export class DevicesService {
-    getDevices(): Array<Device> {
-        return mockDevices;
+    constructor(
+        @Inject(DEVICE_MODEL_PROVIDER_NAME)
+        private readonly deviceModel: Model<Device>,
+    ) {}
+
+    getDevices(): Promise<Array<Device>> {
+        return this.deviceModel.find().exec();
     }
 
-    getDevice(id: string): Device {
-        const device = mockDevices.find(d => d.id === id);
-        if (!device) {
-            throw new NotFoundException(`There is no device with the provided id '${id}'`);
+    getDeviceById(id: string, options: GetDeviceOptions = { strict: true }): Promise<Device> {
+        return this.getDevice({ _id: id }, options);
+    }
+
+    async getDevice(filter: DeviceFilter, options: GetDeviceOptions = { strict: true }): Promise<Device> {
+        const device = await this.deviceModel.findOne(filter).exec();
+        if (!device && options.strict) {
+            throw new NotFoundException('There is no device matching these criteria');
         }
         return device;
     }
 
-    addDevice(deviceDto: CreateDeviceDto): Device {
-        if (mockDevices.some(d => d.name === deviceDto.name)) {
+    async addDevice(deviceDto: CreateDeviceDto): Promise<Device> {
+        const existingDevice = await this.getDevice({ name: deviceDto.name }, { strict: true });
+        if (existingDevice) {
             throw new BadRequestException(`Device with the same name ('${deviceDto.name}') already exists`);
         }
-
-        const newDevice: Device = {
-            id: uuid(),
-            ...deviceDto,
-        };
-        mockDevices.push(newDevice);
-        return newDevice;
+        return new this.deviceModel(deviceDto).save();
     }
 
-    removeDevice(id: string): Device {
-        const device = this.getDevice(id);
-        mockDevices = mockDevices.filter(d => d.id !== id);
+    async removeDevice(id: string): Promise<Device> {
+        const device = await this.getDeviceById(id);
+        await this.deviceModel.deleteOne({ _id: device._id }).exec();
         return device;
     }
 
-    updateDevice(id: string, updateDeviceInfoDto: UpdateDeviceDto): Device {
-        const device = this.getDevice(id);
-        device.name = updateDeviceInfoDto.name ?? device.name;
-        device.room = updateDeviceInfoDto.room ?? device.room;
-        device.updateInterval = updateDeviceInfoDto.updateInterval ?? device.updateInterval;
-        device.controls = updateDeviceInfoDto.controls ?? device.controls;
-        device.measurements = updateDeviceInfoDto.measurements ?? device.measurements;
+    async updateDevice(id: string, updateDeviceInfoDto: UpdateDeviceDto): Promise<Device> {
+        const device = await this.getDeviceById(id);
+        await this.deviceModel.updateOne({ _id: device._id, ...updateDeviceInfoDto }).exec();
         return device;
     }
 }

@@ -8,27 +8,27 @@ export class DevicesController {
     constructor(private readonly deviceService: DevicesService) {}
 
     @Get()
-    getDevices(): Array<Device> {
+    async getDevices(): Promise<Array<Device>> {
         return this.deviceService.getDevices();
     }
 
     @Get(':id')
-    getDevice(@Param('id') id: string): Device {
-        return this.deviceService.getDevice(id);
+    async getDevice(@Param('id') id: string): Promise<Device> {
+        return this.deviceService.getDeviceById(id);
     }
 
     @Post()
-    addDevice(@Body() createDeviceDto: CreateDeviceDto): Device {
+    async addDevice(@Body() createDeviceDto: CreateDeviceDto): Promise<Device> {
         return this.deviceService.addDevice(createDeviceDto);
     }
 
     @Put('/:id')
-    updateDevice(@Param('id') id: string, @Body() updateDeviceDto: UpdateDeviceDto): Device {
+    async updateDevice(@Param('id') id: string, @Body() updateDeviceDto: UpdateDeviceDto): Promise<Device> {
         return this.deviceService.updateDevice(id, updateDeviceDto);
     }
 
     @Delete('/:id')
-    removeDevice(@Param('id') id: string): Device {
+    async removeDevice(@Param('id') id: string): Promise<Device> {
         return this.deviceService.removeDevice(id);
     }
 }

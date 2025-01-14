@@ -3,9 +3,8 @@ import { INestApplication } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { SwaggerModule, DocumentBuilder, SwaggerDocumentOptions } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from 'common/http-exception.filter';
-
-const DEFAULT_PORT = 3000;
+import { HttpExceptionFilter } from 'common/filters/http-exception.filter';
+import { MongoErrorInterceptor } from 'common/interceptors';
 
 bootstrap();
 
@@ -14,9 +13,10 @@ async function bootstrap() {
     app.enableCors();
     app.useWebSocketAdapter(new WsAdapter(app));
     app.useGlobalFilters(new HttpExceptionFilter());
+    app.useGlobalInterceptors(new MongoErrorInterceptor());
 
     setupSwagger(app);
-    await app.listen(process.env.PORT ?? DEFAULT_PORT);
+    await app.listen(process.env.PORT ?? 3000);
 }
 
 function setupSwagger(app: INestApplication) {
