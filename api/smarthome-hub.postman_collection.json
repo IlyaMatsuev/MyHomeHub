@@ -20,7 +20,7 @@
                   "    const allDevices = pm.response.json();",
                   "    if (allDevices.length) {",
                   "        const lastQueriedDevice = allDevices.pop();",
-                  "        pm.environment.set('lastQueriedDeviceId', lastQueriedDevice.id);",
+                  "        pm.environment.set('lastQueriedDeviceId', lastQueriedDevice._id);",
                   "    }",
                   "}"
                 ],
@@ -67,7 +67,7 @@
                 "exec": [
                   "if (pm.response.code === 201) {",
                   "    const lastAddedDevice = pm.response.json();",
-                  "    pm.environment.set('lastAddedDeviceId', lastAddedDevice.id);",
+                  "    pm.environment.set('lastAddedDeviceId', lastAddedDevice._id);",
                   "}"
                 ],
                 "type": "text/javascript",
@@ -98,7 +98,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"light bulb 2\",\n    \"room\": \"living-room\",\n    \"updateInterval\": 2000,\n    \"controls\": {\n        \"on\": true,\n        \"fanSpeedLevel\": 1\n    },\n    \"measurements\": {\n        \"temperature\": 88.4\n    }\n}\n",
+              "raw": "{\n    \"name\": \"light bulb\",\n    \"type\": \"switch\",\n    \"room\": \"living-room\",\n    \"updateInterval\": 2000,\n    \"controls\": {\n        \"on\": true,\n        \"fanSpeedLevel\": 1\n    },\n    \"measurements\": {\n        \"temperature\": 88.4\n    }\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -122,7 +122,7 @@
                 "exec": [
                   "if (pm.response.code === 200) {",
                   "    const lastUpdatedDevice = pm.response.json();",
-                  "    pm.environment.set('lastUpdatedDeviceId', lastUpdatedDevice.id);",
+                  "    pm.environment.set('lastUpdatedDeviceId', lastUpdatedDevice._id);",
                   "}"
                 ],
                 "type": "text/javascript",
@@ -304,11 +304,7 @@
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    pm.environment.set('accessToken', pm.response.json().accessToken);",
-                  "}"
-                ],
+                "exec": [""],
                 "type": "text/javascript",
                 "packages": {}
               }
@@ -327,7 +323,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"ilya@test.com\",\n    \"password\": \"guess\",\n    \"accessKey\": \"1234567890\"\n}\n",
+              "raw": "{\n    \"email\": \"ilya@test.com\",\n    \"password\": \"guess\",\n    \"accessKey\": \"{{registrationAccessKey}}\"\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
