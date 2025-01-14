@@ -6,11 +6,7 @@
     "tsconfigRootDir": "src/hub/",
     "sourceType": "module"
   },
-  "env": {
-    "node": true,
-    "jest": true
-  },
-  "plugins": ["promise", "@typescript-eslint/eslint-plugin"],
+  "plugins": ["@typescript-eslint/eslint-plugin", "promise"],
   "extends": [
     "plugin:@typescript-eslint/recommended",
     "plugin:prettier/recommended",
@@ -19,48 +15,23 @@
   ],
   "rules": {
     "@typescript-eslint/interface-name-prefix": "off",
-    "@typescript-eslint/explicit-function-return-type": "off",
-    "@typescript-eslint/explicit-module-boundary-types": "off",
-    "@typescript-eslint/no-explicit-any": "off",
-    "no-return-assign": "off",
     "consistent-return": "warn",
+    "camelcase": "error",
+    "curly": "error",
+    "max-depth": ["error", 5],
+    "max-params": ["error", 3],
+    "no-return-assign": "off",
     "no-await-in-loop": "warn",
     "no-prototype-builtins": "warn",
-    "import/no-duplicates": "error",
     "no-console": ["error", { "allow": ["warn", "error"] }],
     "no-self-compare": "error",
     "no-template-curly-in-string": "error",
     "no-unreachable-loop": "error",
-    "camelcase": [
-      "warn",
-      { "ignoreImports": true, "allow": ["[A-Z]{2,3}_[a-zA-Z]*"] }
-    ],
-    "curly": "error",
-    "max-depth": ["error", 5],
-    "max-params": ["error", 5],
     "no-inline-comments": "warn",
     "no-lonely-if": "error",
     "no-nested-ternary": "warn",
-    "no-useless-return": "error"
-  },
-  "globals": {
-    "$": true,
-    "$A": true,
-    "AuraContext": true,
-    "AuraSerializationService": true,
-    "AuraExpressionService": true,
-    "AuraEventService": true,
-    "AuraLocalizationService": true,
-    "AuraStorageService": true,
-    "AuraStyleService": true,
-    "MetricsService": true,
-    "AuraDevToolService": true,
-    "Component": true,
-    "FORCE": true,
-    "moment": true,
-    "exports": true,
-    "iScroll": true,
-    "unescape": true,
-    "Promise": true
+    "no-useless-return": "error",
+    "import/no-duplicates": "error",
+    "import/no-unresolved": "off"
   }
 }

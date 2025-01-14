@@ -7,8 +7,8 @@ export interface Device extends Document<string> {
     type: DeviceType;
     room: Room;
     updateInterval: number;
-    controls: Record<string, any>;
-    measurements: Record<string, any>;
+    controls: Record<string, unknown>;
+    measurements: Record<string, unknown>;
 }
 
 export type DeviceFilter = Partial<Omit<Device, keyof Document> & { _id: string }>;
