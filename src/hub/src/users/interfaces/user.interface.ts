@@ -1,7 +1,11 @@
-export interface User {
-    id: number;
+import { Document, ObjectId } from 'mongoose';
+
+export interface User extends Document<string> {
     email: string;
     password: string;
 }
 
-export type NewUser = Omit<User, 'password'>;
+export interface NewUser {
+    id: string;
+    email: string;
+}

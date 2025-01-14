@@ -6,8 +6,6 @@ services:
     env_file: .env.prod
     ports:
       - "27017:27017"
-    volumes:
-      - dbdata6:/data/db
     networks:
       - smarthome-network
 
@@ -19,9 +17,6 @@ services:
       - "3000:3000"
     networks:
       - smarthome-network
-
-volumes:
-  dbdata6:
 
 networks:
   smarthome-network:

@@ -6,8 +6,6 @@ services:
     env_file: .env.local
     ports:
       - "27017:27017"
-    volumes:
-      - dbdata6:/data/db
     networks:
       - smarthome-network
 
@@ -18,13 +16,8 @@ services:
     env_file: .env.local
     ports:
       - "3000:3000"
-    volumes:
-      - .:/src
     networks:
       - smarthome-network
-
-volumes:
-  dbdata6:
 
 networks:
   smarthome-network:

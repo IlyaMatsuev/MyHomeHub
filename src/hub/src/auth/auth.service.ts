@@ -30,7 +30,7 @@ export class AuthService {
             throw new UnauthorizedException();
         }
         const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password));
-        return { id: newUser.id, email: newUser.email };
+        return { id: newUser._id, email: newUser.email };
     }
 
     verifyAccessKeyHash(accessKey: string): boolean {
