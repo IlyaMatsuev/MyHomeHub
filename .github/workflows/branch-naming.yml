@@ -8,7 +8,7 @@ on:
 
 jobs:
   validate-branch-name:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: "Validate Branch Name"
         uses: deepakputhraya/action-branch-name@master

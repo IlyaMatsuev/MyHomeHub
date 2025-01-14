@@ -8,14 +8,12 @@ on:
       - dev
     paths:
       - "src/**"
-      - "scripts/**"
   pull_request:
     branches:
       - main
       - dev
     paths:
       - "src/**"
-      - "scripts/**"
 
 # Required secrets:
 # 1.
@@ -23,14 +21,14 @@ on:
 jobs:
   linting:
     name: "Verify source code linting"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: "Checkout source code"
         uses: actions/checkout@v3
 
       - name: "Restore node_modules cache"
         id: cache-npm
-        uses: actions/cache@v1
+        uses: actions/cache@v4
         with:
           path: node_modules
           key: npm-${{ hashFiles('**/package-lock.json') }}
@@ -46,4 +44,4 @@ jobs:
         run: npm run prettier:verify ./
 
       - name: "Verify linting"
-        run: npm run eslint:verify
+        run: npm run eslint:verify ./
