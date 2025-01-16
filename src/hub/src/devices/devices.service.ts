@@ -4,6 +4,7 @@ import { Device, DeviceFilter, GetDeviceOptions } from 'devices/interfaces';
 import { CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
 
+// TODO: Use external ids instead
 @Injectable()
 export class DevicesService {
     constructor(

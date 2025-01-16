@@ -45,5 +45,8 @@
     "**/*.{js,ts}": [
       "npm run eslint"
     ]
+  },
+  "dependencies": {
+    "swagger-themes": "^1.4.3"
   }
 }

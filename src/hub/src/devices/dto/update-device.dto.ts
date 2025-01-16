@@ -1,24 +1,52 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { DeviceType, Room } from 'devices/interfaces/common';
 
-// TODO: Add Swagger descriptions and other params for each property
+@ApiSchema({
+    name: 'UpdateDeviceRequest',
+    description: 'DTO used to update an existing device information, controls state or measurements',
+})
 export class UpdateDeviceDto {
-    @ApiProperty()
+    @ApiProperty({
+        required: false,
+        description: 'The new name the device',
+        minLength: 3,
+        maxLength: 20,
+    })
     name?: string;
 
-    @ApiProperty()
+    @ApiProperty({
+        required: false,
+        description: 'The new type for the device',
+        enum: DeviceType,
+    })
     type?: DeviceType;
 
-    @ApiProperty()
+    @ApiProperty({
+        required: false,
+        description: 'The new room for the device',
+        enum: Room,
+    })
     room?: Room;
 
-    @ApiProperty()
+    @ApiProperty({
+        required: false,
+        description: 'The new update time interval for the device (ms)',
+        minimum: 0,
+    })
     updateInterval?: number;
 
-    @ApiProperty()
+    @ApiProperty({
+        required: false,
+        description: 'Updated set of controls for the device',
+        default: {},
+    })
     controls?: Record<string, object>;
 
-    @ApiProperty()
+    @ApiProperty({
+        required: false,
+        description: 'Updated set of measurements for the device',
+        default: {},
+    })
     measurements?: Record<string, object>;
 }
 
