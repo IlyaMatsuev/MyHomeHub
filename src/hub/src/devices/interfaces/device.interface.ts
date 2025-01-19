@@ -1,6 +1,7 @@
 import { Document } from 'mongoose';
 import { DeviceType, Room } from './common';
 
+// TODO: Make sure Document fields are not exposed in API (_id and __v)
 export interface Device extends Document<string> {
     externalId: string;
     name: string;

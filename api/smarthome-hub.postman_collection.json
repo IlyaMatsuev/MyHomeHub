@@ -20,7 +20,7 @@
                   "    const allDevices = pm.response.json();",
                   "    if (allDevices.length) {",
                   "        const lastQueriedDevice = allDevices.pop();",
-                  "        pm.environment.set('lastQueriedDeviceId', lastQueriedDevice._id);",
+                  "        pm.environment.set('lastQueriedDeviceId', lastQueriedDevice.externalId);",
                   "    }",
                   "}"
                 ],
@@ -67,7 +67,7 @@
                 "exec": [
                   "if (pm.response.code === 201) {",
                   "    const lastAddedDevice = pm.response.json();",
-                  "    pm.environment.set('lastAddedDeviceId', lastAddedDevice._id);",
+                  "    pm.environment.set('lastAddedDeviceId', lastAddedDevice.externalId);",
                   "}"
                 ],
                 "type": "text/javascript",
@@ -98,7 +98,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"light bulb\",\n    \"type\": \"switch\",\n    \"room\": \"living-room\",\n    \"updateInterval\": 2000,\n    \"controls\": {\n        \"on\": true,\n        \"fanSpeedLevel\": 1\n    },\n    \"measurements\": {\n        \"temperature\": 88.4\n    }\n}\n",
+              "raw": "{\n    \"name\": \"test1\",\n    \"type\": \"switch\",\n    \"room\": \"living-room\",\n    \"updateInterval\": 2000,\n    \"controls\": {\n        \"on\": true,\n        \"fanSpeedLevel\": 1\n    },\n    \"measurements\": {\n        \"temperature\": 88.4\n    }\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -122,7 +122,7 @@
                 "exec": [
                   "if (pm.response.code === 200) {",
                   "    const lastUpdatedDevice = pm.response.json();",
-                  "    pm.environment.set('lastUpdatedDeviceId', lastUpdatedDevice._id);",
+                  "    pm.environment.set('lastUpdatedDeviceId', lastUpdatedDevice.externalId);",
                   "}"
                 ],
                 "type": "text/javascript",
@@ -153,7 +153,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"light bulb77\"\n}\n",
+              "raw": "{\n    \"name\": \"test1\",\n    \"updateInterval\": 20000\n}\n",
               "options": {
                 "raw": {
                   "language": "json"

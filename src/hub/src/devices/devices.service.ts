@@ -4,7 +4,6 @@ import { Device, DeviceFilter, GetDeviceOptions } from 'devices/interfaces';
 import { CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
 
-// TODO: Use external ids instead
 @Injectable()
 export class DevicesService {
     constructor(
@@ -16,8 +15,8 @@ export class DevicesService {
         return this.deviceModel.find().exec();
     }
 
-    getDeviceById(id: string, options: GetDeviceOptions = { strict: true }): Promise<Device> {
-        return this.getDevice({ _id: id }, options);
+    getDeviceByExternalId(externalId: string, options: GetDeviceOptions = { strict: true }): Promise<Device> {
+        return this.getDevice({ externalId }, options);
     }
 
     async getDevice(filter: DeviceFilter, options: GetDeviceOptions = { strict: true }): Promise<Device> {
@@ -29,22 +28,21 @@ export class DevicesService {
     }
 
     async addDevice(deviceDto: CreateDeviceDto): Promise<Device> {
-        const existingDevice = await this.getDevice({ name: deviceDto.name }, { strict: true });
+        const existingDevice = await this.getDevice({ name: deviceDto.name }, { strict: false });
         if (existingDevice) {
             throw new BadRequestException(`Device with the same name ('${deviceDto.name}') already exists`);
         }
         return new this.deviceModel(deviceDto).save();
     }
 
-    async removeDevice(id: string): Promise<Device> {
-        const device = await this.getDeviceById(id);
+    async removeDevice(externalId: string): Promise<Device> {
+        const device = await this.getDeviceByExternalId(externalId);
         await this.deviceModel.deleteOne({ _id: device._id }).exec();
         return device;
     }
 
-    async updateDevice(id: string, updateDeviceInfoDto: UpdateDeviceDto): Promise<Device> {
-        const device = await this.getDeviceById(id);
-        await this.deviceModel.updateOne({ _id: device._id, ...updateDeviceInfoDto }).exec();
-        return device;
+    async updateDevice(externalId: string, updateDeviceInfoDto: UpdateDeviceDto): Promise<Device> {
+        const device = await this.getDeviceByExternalId(externalId);
+        return this.deviceModel.findByIdAndUpdate(device._id, { ...updateDeviceInfoDto }, { new: true }).exec();
     }
 }

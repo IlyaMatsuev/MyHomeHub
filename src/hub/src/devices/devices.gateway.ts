@@ -62,7 +62,7 @@ export class DevicesGateway implements OnGatewayConnection, OnGatewayDisconnect 
         if (!this.deviceAccessKeyValid(key)) {
             throw new WsException('Device access key is not valid');
         }
-        const device = await this.devicesService.getDevice({ externalId }, { strict: false });
+        const device = await this.devicesService.getDeviceByExternalId(externalId, { strict: false });
         if (!device) {
             throw new WsException(`There is no device with the provided external id: ${externalId}`);
         }
@@ -86,7 +86,7 @@ export class DevicesGateway implements OnGatewayConnection, OnGatewayDisconnect 
         }
 
         const device = this.pairedDevices.get(client.id);
-        await this.devicesService.updateDevice(device.id, stateDto);
+        await this.devicesService.updateDevice(device.externalId, stateDto);
         return {
             event: DeviceGatewayEvent.State,
             data: {

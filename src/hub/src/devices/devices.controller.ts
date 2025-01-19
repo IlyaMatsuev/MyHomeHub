@@ -26,14 +26,14 @@ export class DevicesController {
         return this.deviceService.getDevices();
     }
 
-    @Get('/:id')
-    @ApiParam({ name: 'id', description: 'External ID of the device to find', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
+    @Get('/:externalId')
+    @ApiParam({ name: 'externalId', description: 'External ID of the device to find', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Get a specific device by the provided external ID' })
     @ApiOkResponse()
     @ApiNotFoundResponse()
     @ApiUnauthorizedResponse()
-    async getDevice(@Param('id') id: string): Promise<Device> {
-        return this.deviceService.getDeviceById(id);
+    async getDevice(@Param('externalId') externalId: string): Promise<Device> {
+        return this.deviceService.getDeviceByExternalId(externalId);
     }
 
     @Post()
@@ -45,25 +45,25 @@ export class DevicesController {
         return this.deviceService.addDevice(createDeviceDto);
     }
 
-    @Put('/:id')
-    @ApiParam({ name: 'id', description: 'External ID of the device to update', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
+    @Put('/:externalId')
+    @ApiParam({ name: 'externalId', description: 'External ID of the device to update', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Update an existing device by the provided external ID' })
     @ApiOkResponse()
     @ApiNotFoundResponse()
     @ApiBadRequestResponse()
     @ApiUnauthorizedResponse()
-    async updateDevice(@Param('id') id: string, @Body() updateDeviceDto: UpdateDeviceDto): Promise<Device> {
-        return this.deviceService.updateDevice(id, updateDeviceDto);
+    async updateDevice(@Param('externalId') externalId: string, @Body() updateDeviceDto: UpdateDeviceDto): Promise<Device> {
+        return this.deviceService.updateDevice(externalId, updateDeviceDto);
     }
 
-    @Delete('/:id')
-    @ApiParam({ name: 'id', description: 'External ID of the device to delete', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
+    @Delete('/:externalId')
+    @ApiParam({ name: 'externalId', description: 'External ID of the device to delete', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Delete an existing device by the provided external ID' })
     @ApiOkResponse()
     @ApiNotFoundResponse()
     @ApiBadRequestResponse()
     @ApiUnauthorizedResponse()
-    async removeDevice(@Param('id') id: string): Promise<Device> {
-        return this.deviceService.removeDevice(id);
+    async removeDevice(@Param('externalId') externalId: string): Promise<Device> {
+        return this.deviceService.removeDevice(externalId);
     }
 }
