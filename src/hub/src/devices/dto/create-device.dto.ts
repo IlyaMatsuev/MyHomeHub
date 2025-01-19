@@ -35,6 +35,12 @@ export class CreateDeviceDto {
     updateInterval: number;
 
     @ApiProperty({
+        required: false,
+        description: 'The IP address of the device',
+    })
+    deviceAddress?: string;
+
+    @ApiProperty({
         required: true,
         description: 'Set of controls available to set for the device. Can be different for each device',
         default: {},

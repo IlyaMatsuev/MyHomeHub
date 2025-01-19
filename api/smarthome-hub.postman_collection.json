@@ -98,7 +98,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"test1\",\n    \"type\": \"switch\",\n    \"room\": \"living-room\",\n    \"updateInterval\": 2000,\n    \"controls\": {\n        \"on\": true,\n        \"fanSpeedLevel\": 1\n    },\n    \"measurements\": {\n        \"temperature\": 88.4\n    }\n}\n",
+              "raw": "{\n    \"name\": \"test2\",\n    \"type\": \"switch\",\n    \"room\": \"living-room\",\n    \"updateInterval\": 2000,\n    \"deviceAddress\": \"http:://192.168.12.12\",\n    \"controls\": {\n        \"on\": true\n    },\n    \"measurements\": {\n    }\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -153,7 +153,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"test1\",\n    \"updateInterval\": 20000\n}\n",
+              "raw": "{\n    \"name\": \"christmas-tree-socket\",\n    \"updateInterval\": 0,\n    \"deviceAddress\": \"1111\",\n    \"controls\": {},\n    \"measurements\": {}\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -161,9 +161,9 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/devices/{{lastAddedDeviceId}}",
+              "raw": "{{baseUrl}}/devices/{{lastQueriedDeviceId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["devices", "{{lastAddedDeviceId}}"]
+              "path": ["devices", "{{lastQueriedDeviceId}}"]
             }
           },
           "response": []
@@ -202,9 +202,9 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/devices/{{lastAddedDeviceId}}",
+              "raw": "{{baseUrl}}/devices/{{lastQueriedDeviceId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["devices", "{{lastAddedDeviceId}}"]
+              "path": ["devices", "{{lastQueriedDeviceId}}"]
             }
           },
           "response": []

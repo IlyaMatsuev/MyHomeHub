@@ -16,7 +16,7 @@ export const DeviceSchema = new Schema({
         unique: true,
         trim: true,
         minLength: 3,
-        maxLength: 20,
+        maxLength: 40,
     },
     type: {
         type: String,
@@ -27,6 +27,11 @@ export const DeviceSchema = new Schema({
         type: String,
         required: false,
         enum: Object.values(Room) as Array<string>,
+    },
+    deviceAddress: {
+        type: String,
+        validate: [/^http(s)?:\/\/[A-Za-z\d.\/]+$/, 'Device address must be a valid URL'],
+        required: false,
     },
     updateInterval: {
         type: Number,

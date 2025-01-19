@@ -7,6 +7,7 @@ export interface Device extends Document<string> {
     name: string;
     type: DeviceType;
     room: Room;
+    deviceAddress: string;
     updateInterval: number;
     controls: Record<string, unknown>;
     measurements: Record<string, unknown>;

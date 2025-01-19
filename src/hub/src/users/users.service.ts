@@ -19,6 +19,6 @@ export class UsersService {
         if (user) {
             throw new BadRequestException('User with the provided email already exists');
         }
-        return new this.userModel({ email, password: passwordHash }).save();
+        return new this.userModel({ email, password: passwordHash }).save({ validateBeforeSave: true });
     }
 }

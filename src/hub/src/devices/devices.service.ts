@@ -32,17 +32,17 @@ export class DevicesService {
         if (existingDevice) {
             throw new BadRequestException(`Device with the same name ('${deviceDto.name}') already exists`);
         }
-        return new this.deviceModel(deviceDto).save();
+        return new this.deviceModel(deviceDto).save({ validateBeforeSave: true });
+    }
+
+    async updateDevice(externalId: string, updateDeviceInfoDto: UpdateDeviceDto): Promise<Device> {
+        const device = await this.getDeviceByExternalId(externalId);
+        return this.deviceModel.findByIdAndUpdate(device._id, { ...updateDeviceInfoDto }, { new: true, runValidators: true }).exec();
     }
 
     async removeDevice(externalId: string): Promise<Device> {
         const device = await this.getDeviceByExternalId(externalId);
         await this.deviceModel.deleteOne({ _id: device._id }).exec();
         return device;
-    }
-
-    async updateDevice(externalId: string, updateDeviceInfoDto: UpdateDeviceDto): Promise<Device> {
-        const device = await this.getDeviceByExternalId(externalId);
-        return this.deviceModel.findByIdAndUpdate(device._id, { ...updateDeviceInfoDto }, { new: true }).exec();
     }
 }
