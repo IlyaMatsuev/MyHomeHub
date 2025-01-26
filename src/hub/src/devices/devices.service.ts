@@ -35,6 +35,8 @@ export class DevicesService {
         return new this.deviceModel(deviceDto).save({ validateBeforeSave: true });
     }
 
+    // TODO: Emit event when device controls are updated
+    // Shelly plug docs: https://shelly-api-docs.shelly.cloud/gen2/Devices/Gen2/ShellyPlusPlugS/
     async updateDevice(externalId: string, updateDeviceInfoDto: UpdateDeviceDto): Promise<Device> {
         const device = await this.getDeviceByExternalId(externalId);
         return this.deviceModel.findByIdAndUpdate(device._id, { ...updateDeviceInfoDto }, { new: true, runValidators: true }).exec();

@@ -1,0 +1,13 @@
+watchers:
+  - name: smarthome-hub-server-watcher
+    type: docker
+    config:
+      image: ilyamatsuev/smarthome-hub-server:latest
+actions:
+  - name: restart-smarthome-hub-server
+    type: shell
+    config:
+      scriptFile: ./scripts/restart-hub.sh
+links:
+  - watcher: smarthome-hub-server-watcher
+    action: restart-smarthome-hub-server

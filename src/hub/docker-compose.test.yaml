@@ -10,7 +10,7 @@ services:
       - smarthome-network
 
   smarthome-hub-server:
-    image: smarthome-hub-server
+    image: ilyamatsuev/smarthome-hub-server
     container_name: smarthome-hub-server-test
     env_file: .env.test
     ports:
