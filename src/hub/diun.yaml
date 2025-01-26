@@ -1,8 +1,10 @@
+timezone: Europe/Amsterdam
 watchers:
   - name: smarthome-hub-server-watcher
     type: docker
     config:
       image: ilyamatsuev/smarthome-hub-server:latest
+      schedule: "0 * * * *"
 actions:
   - name: restart-smarthome-hub-server
     type: shell
