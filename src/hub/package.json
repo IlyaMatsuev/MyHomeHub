@@ -17,7 +17,7 @@
     "mongo:start": "docker compose -f docker-compose.yaml up mongodb",
     "mongo:start:test": "docker compose -f docker-compose.test.yaml up mongodb",
     "mongo:start:prod": "docker compose -f docker-compose.prod.yaml up mongodb",
-    "watcher:start": "duin apply && duin start watcher smarthome-hub-server-watcher",
+    "watcher:start": "docker compose -f docker-compose.prod.yaml up -d smarthome-hub-server-image-watcher",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
