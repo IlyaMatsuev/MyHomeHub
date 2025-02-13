@@ -27,7 +27,7 @@ services:
     container_name: smarthome-hub-server-image-watcher
     restart: always
     volumes:
-      - ./diun.yml:/app/diun.yml
+      - ./diun.yaml:/app/diun.yaml
       - ./scripts/restart-hub.sh:/app/restart-hub.sh
       - /var/run/docker.sock:/var/run/docker.sock
     command: start
