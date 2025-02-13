@@ -1,15 +1,15 @@
 timezone: Europe/Amsterdam
-watchers:
-  - name: smarthome-hub-server-watcher
-    type: docker
-    config:
-      image: ilyamatsuev/smarthome-hub-server:latest
-      schedule: "0 * * * *"
-actions:
-  - name: restart-smarthome-hub-server
-    type: shell
-    config:
-      scriptFile: ./scripts/restart-hub.sh
-links:
-  - watcher: smarthome-hub-server-watcher
-    action: restart-smarthome-hub-server
+
+watch:
+  workers: 10
+  schedule: "0 * * * *"
+  runOnStartup: true
+
+notif:
+  script:
+    cmd: "./restart-hub.sh"
+    dir: ./scripts
+
+providers:
+  file:
+    filename: ./diun-config.yaml
