@@ -23,18 +23,16 @@ services:
       - smarthome-network
 
   smarthome-hub-server-image-watcher:
-    image: crazymax/diun:latest
+    image: containrrr/watchtower:latest
     container_name: smarthome-hub-server-image-watcher
     restart: always
     volumes:
-      - ./diun.yaml:/diun.yaml
-      - ./diun-config.yaml:/diun-config.yaml
-      - ./scripts/restart-hub.sh:/scripts/restart-hub.sh
       - /var/run/docker.sock:/var/run/docker.sock
-    command: serve
     environment:
       - TZ=Europe/Amsterdam
-      - LOG_LEVEL=info
+      - WATCHTOWER_SCHEDULE="0 * * * *"
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_DISABLE_CONTAINERS="mongodb-prod,mongodb-test,mongodb"
 
 networks:
   smarthome-network:
