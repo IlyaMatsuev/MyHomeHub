@@ -30,9 +30,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - TZ=Europe/Amsterdam
-      - WATCHTOWER_SCHEDULE="0 * * * *"
+      - WATCHTOWER_SCHEDULE=0 0 * * * *
       - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_DISABLE_CONTAINERS="mongodb-prod,mongodb-test,mongodb"
+      - WATCHTOWER_DISABLE_CONTAINERS=mongodb-prod,mongodb-test,mongodb
 
 networks:
   smarthome-network:
