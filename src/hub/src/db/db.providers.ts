@@ -9,7 +9,9 @@ export const databaseProviders = [
             const username = configService.get<string>('MONGO_INITDB_ROOT_USERNAME');
             const password = configService.get<string>('MONGO_INITDB_ROOT_PASSWORD');
             const dbName = configService.get<string>('MONGO_INITDB_DATABASE');
-            const connectionUrl = `mongodb://${username}:${password}@127.0.0.1/${dbName}?authSource=admin`;
+            const dbDomain = configService.get<string>('MONGO_DOMAIN');
+            const dbPort = configService.get<string>('MONGO_PORT');
+            const connectionUrl = `mongodb://${username}:${password}@${dbDomain}/${dbName}:${dbPort}?authSource=admin`;
             return mongoose.connect(connectionUrl);
         },
         inject: [ConfigService],
