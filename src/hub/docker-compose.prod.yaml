@@ -1,22 +1,24 @@
 version: "3.8"
 services:
-  mongodb:
+  mongodb-prod:
     image: mongo:7.0.16-jammy
     container_name: mongodb-prod
     env_file: .env.prod
     restart: always
     ports:
-      - "27017:27017"
+      - "27019:27019"
     networks:
       - smarthome-network
 
-  smarthome-hub-server:
+  smarthome-hub-server-prod:
     image: ilyamatsuev/smarthome-hub-server
     container_name: smarthome-hub-server-prod
     env_file: .env.prod
     restart: always
     ports:
-      - "3000:3000"
+      - "3020:3020"
+    expose:
+      - "3020"
     networks:
       - smarthome-network
 
@@ -25,7 +27,7 @@ services:
     container_name: smarthome-hub-server-image-watcher
     restart: always
     volumes:
-      - ./diun.yml:/app/diun.yml
+      - ./diun.yaml:/app/diun.yaml
       - ./scripts/restart-hub.sh:/app/restart-hub.sh
       - /var/run/docker.sock:/var/run/docker.sock
     command: start
