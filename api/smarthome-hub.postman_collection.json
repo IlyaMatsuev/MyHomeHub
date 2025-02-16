@@ -98,7 +98,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"test2\",\n    \"type\": \"switch\",\n    \"room\": \"living-room\",\n    \"updateInterval\": 2000,\n    \"deviceAddress\": \"http:://192.168.12.12\",\n    \"controls\": {\n        \"on\": true\n    },\n    \"measurements\": {\n    }\n}\n",
+              "raw": "{\n    \"name\": \"test2\",\n    \"type\": \"switch\",\n    \"room\": \"living-room\",\n    \"updateInterval\": 2000,\n    \"deviceAddress\": \"http://192.168.12.12\",\n    \"controls\": {\n        \"on\": true\n    },\n    \"measurements\": {\n    }\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -153,7 +153,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"christmas-tree-socket\",\n    \"updateInterval\": 0,\n    \"deviceAddress\": \"1111\",\n    \"controls\": {},\n    \"measurements\": {}\n}\n",
+              "raw": "{\n    \"deviceAddress\": \"http://192.168.178.221\"\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -334,6 +334,226 @@
               "raw": "{{baseUrl}}/auth/register",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "register"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shelly RPC API",
+      "item": [
+        {
+          "name": "Get Plug UI Config",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"id\": 1,\n    \"method\": \"PLUGS_UI.GetConfig\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{shellyDeviceAddress1}}/rpc",
+              "host": ["{{shellyDeviceAddress1}}"],
+              "path": ["rpc"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Plug UI Config",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"id\": 1,\n    \"method\": \"PLUGS_UI.SetConfig\",\n    \"params\": {\n        \"config\": {\n            \"leds\": {\n                \"mode\": \"power\",\n                \"night_mode\": {\n                    \"enable\": true,\n                    \"brightness\": 10,\n                    \"active_between\": [\n                        \"22:00\",\n                        \"06:00\"\n                    ]\n                }\n            },\n            \"controls\": {\n                \"switch:0\": {\n                    \"in_mode\": \"momentary\"\n                }\n            }\n        }\n    }\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{shellyDeviceAddress1}}/rpc",
+              "host": ["{{shellyDeviceAddress1}}"],
+              "path": ["rpc"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Switch Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"id\": 1,\n    \"method\": \"Switch.GetStatus\",\n    \"params\": {\n        \"id\": 0\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{shellyDeviceAddress1}}/rpc",
+              "host": ["{{shellyDeviceAddress1}}"],
+              "path": ["rpc"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Switch",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"id\": 1,\n    \"method\": \"Switch.Set\",\n    \"params\": {\n        \"id\": 0,\n        \"on\": false\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{shellyDeviceAddress1}}/rpc",
+              "host": ["{{shellyDeviceAddress1}}"],
+              "path": ["rpc"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Config",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"id\": 1,\n    \"method\": \"Sys.GetConfig\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{shellyDeviceAddress1}}/rpc",
+              "host": ["{{shellyDeviceAddress1}}"],
+              "path": ["rpc"]
             }
           },
           "response": []

@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 import { Model } from 'mongoose';
 import { Device, DeviceFilter, GetDeviceOptions } from 'devices/interfaces';
 import { CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
-import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
+import { DEVICE_MODEL_PROVIDER_NAME, DEVICE_EXCLUDED_INTERNAL_FIELDS } from 'devices/devices.constants';
 
 @Injectable()
 export class DevicesService {
@@ -12,7 +12,7 @@ export class DevicesService {
     ) {}
 
     getDevices(): Promise<Array<Device>> {
-        return this.deviceModel.find().exec();
+        return this.deviceModel.find().select(DEVICE_EXCLUDED_INTERNAL_FIELDS).exec();
     }
 
     getDeviceByExternalId(externalId: string, options: GetDeviceOptions = { strict: true }): Promise<Device> {
@@ -20,7 +20,7 @@ export class DevicesService {
     }
 
     async getDevice(filter: DeviceFilter, options: GetDeviceOptions = { strict: true }): Promise<Device> {
-        const device = await this.deviceModel.findOne(filter).exec();
+        const device = await this.deviceModel.findOne(filter).select(DEVICE_EXCLUDED_INTERNAL_FIELDS).exec();
         if (!device && options.strict) {
             throw new NotFoundException('There is no device matching these criteria');
         }
