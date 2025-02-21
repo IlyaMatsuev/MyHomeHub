@@ -1,0 +1,2 @@
+export const SCENARIO_MODEL_PROVIDER_NAME = 'SCENARIO_MODEL';
+export const SCENARIO_SCHEMA_NAME = 'Scenario';

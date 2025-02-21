@@ -46,5 +46,7 @@ export const DeviceSchema = new Schema({
     },
     measurements: {
         type: Object,
+        required: false,
+        default: () => ({}),
     },
 });
