@@ -8,7 +8,7 @@ import { DeviceType, Room } from 'devices/interfaces/common';
 export class UpdateDeviceDto {
     @ApiProperty({
         required: false,
-        description: 'The new name the device',
+        description: 'The new name for the device',
         minLength: 3,
         maxLength: 20,
     })
