@@ -8,6 +8,7 @@ export class MongoErrorExceptionHandler implements ExceptionHandler<MongooseErro
         return MongooseError;
     }
 
+    // TODO: Add more details about what fields caused an error
     handleException(exception: MongooseError, context: ExecutionContext): void | never {
         if (exception.name === 'ValidationError') {
             if (context.getType() === 'http') {
