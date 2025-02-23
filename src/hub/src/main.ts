@@ -4,7 +4,6 @@ import { WsAdapter } from '@nestjs/platform-ws';
 import { SwaggerModule, DocumentBuilder, SwaggerDocumentOptions } from '@nestjs/swagger';
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from 'common/filters/http-exception.filter';
 import { SwaggerCustomOptions } from '@nestjs/swagger/dist/interfaces/swagger-custom-options.interface';
 
 bootstrap();
@@ -13,7 +12,6 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     app.enableCors();
     app.useWebSocketAdapter(new WsAdapter(app));
-    app.useGlobalFilters(new HttpExceptionFilter());
 
     setupSwagger(app);
     await app.listen(process.env.PORT ?? 3000);
