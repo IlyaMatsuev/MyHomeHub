@@ -3,6 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { ScenarioTriggerSourceType } from 'scenarios/interfaces';
 
 // TODO: Add validations for trigger sources
+// https://mongoosejs.com/docs/validation.html#custom-validators
 export const ScenarioSchema = new Schema({
     externalId: {
         type: String,

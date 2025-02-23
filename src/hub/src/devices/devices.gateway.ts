@@ -15,7 +15,7 @@ import { Device, DeviceGatewayEvent, DeviceGatewayResponse } from 'devices/inter
 import { UpdateDeviceStateDto } from 'devices/dto';
 import { UseFilters, UseInterceptors } from '@nestjs/common';
 import { WsExceptionFilter } from 'common/filters/ws-exception.filter';
-import { MongoErrorInterceptor } from 'common/interceptors';
+import { GlobalInterceptor } from 'common/interceptors';
 import { ConfigService } from '@nestjs/config';
 
 interface WebSocketClient extends WebSocket {
@@ -23,7 +23,7 @@ interface WebSocketClient extends WebSocket {
 }
 
 @UseFilters(WsExceptionFilter)
-@UseInterceptors(MongoErrorInterceptor)
+@UseInterceptors(GlobalInterceptor)
 @WebSocketGateway({ cors: { origin: '*' }, transports: ['websocket'] })
 export class DevicesGateway implements OnGatewayConnection, OnGatewayDisconnect {
     clients: Map<string, WebSocketClient> = new Map();

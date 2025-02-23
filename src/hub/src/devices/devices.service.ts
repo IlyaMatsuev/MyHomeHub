@@ -27,7 +27,6 @@ export class DevicesService {
         return device;
     }
 
-    // TODO: Internal mongo fields are still exposed when saving
     async addDevice(deviceDto: CreateDeviceDto): Promise<Device> {
         const existingDevice = await this.getDevice({ name: deviceDto.name }, { strict: false });
         if (existingDevice) {

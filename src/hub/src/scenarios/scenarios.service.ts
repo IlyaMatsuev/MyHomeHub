@@ -27,6 +27,8 @@ export class ScenariosService {
         return scenario;
     }
 
+    // TODO: Schedule a cron service if there is a cron in the sources
+    // https://docs.nestjs.com/techniques/task-scheduling#declarative-cron-jobs
     async addScenario(scenarioDto: CreateScenarioDto): Promise<Scenario> {
         const existingScenario = await this.getScenario({ name: scenarioDto.name }, { strict: false });
         if (existingScenario) {

@@ -1,1 +1,1 @@
-export * from 'common/interceptors/exceptions/mongo-error.interceptor';
+export * from 'common/interceptors/global.interceptor';

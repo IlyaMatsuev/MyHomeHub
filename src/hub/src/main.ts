@@ -5,7 +5,6 @@ import { SwaggerModule, DocumentBuilder, SwaggerDocumentOptions } from '@nestjs/
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from 'common/filters/http-exception.filter';
-import { MongoErrorInterceptor } from 'common/interceptors';
 import { SwaggerCustomOptions } from '@nestjs/swagger/dist/interfaces/swagger-custom-options.interface';
 
 bootstrap();
@@ -15,7 +14,6 @@ async function bootstrap() {
     app.enableCors();
     app.useWebSocketAdapter(new WsAdapter(app));
     app.useGlobalFilters(new HttpExceptionFilter());
-    app.useGlobalInterceptors(new MongoErrorInterceptor());
 
     setupSwagger(app);
     await app.listen(process.env.PORT ?? 3000);
