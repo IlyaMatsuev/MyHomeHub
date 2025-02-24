@@ -6,7 +6,7 @@
       "users/*": ["src/users/*"],
       "auth/*": ["src/auth/*"],
       "common/*": ["src/common/*"],
-      "ws/*": ["src/ws/*"],
+      "scheduler/*": ["src/scheduler/*"],
       "db/*": ["src/db/*"]
     },
     "module": "commonjs",

@@ -2,14 +2,23 @@ import { Schema } from 'mongoose';
 import { v4 as uuid } from 'uuid';
 import { isValidCron } from 'cron-validator';
 import {
+    Scenario,
     ScenarioCronTriggerSource,
     ScenarioDeviceTriggerSource,
     ScenarioTriggerSource,
     ScenarioTriggerSourceType,
 } from 'scenarios/interfaces';
 
+const MAX_CRON_TRIGGER_SOURCES_PER_SCENARIO = 1;
+
 const TRIGGER_SOURCE_TYPE_VALIDATORS: { [key in ScenarioTriggerSourceType]: (triggerSource: ScenarioTriggerSource) => boolean | never } = {
     [ScenarioTriggerSourceType.Cron]: (triggerSource: ScenarioCronTriggerSource): boolean | never => {
+        const scenario: Scenario = triggerSource['parent']();
+        if (
+            scenario.trigger.sources.filter(s => s.type === ScenarioTriggerSourceType.Cron).length > MAX_CRON_TRIGGER_SOURCES_PER_SCENARIO
+        ) {
+            throw new Error('There can be only one cron trigger source per scenario');
+        }
         if (Object['hasOwn'](triggerSource, 'device')) {
             throw new Error(`The "device" field is only valid for the "${ScenarioTriggerSourceType.Device}" trigger source type`);
         }

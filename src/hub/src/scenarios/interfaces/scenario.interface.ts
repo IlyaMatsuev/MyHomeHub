@@ -1,4 +1,5 @@
 import { Document } from 'mongoose';
+import { ObjectId } from 'mongodb';
 import { ScenarioTriggerSourceType } from 'scenarios/interfaces/common.interface';
 
 export interface ScenarioTriggerSource {
@@ -36,7 +37,7 @@ export interface ScenarioDevice {
     };
 }
 
-export interface Scenario extends Document<string> {
+export interface Scenario extends Document<ObjectId> {
     externalId: string;
     name: string;
     description?: string;
@@ -44,7 +45,7 @@ export interface Scenario extends Document<string> {
     devices: Array<ScenarioDevice>;
 }
 
-export type ScenarioFilter = Partial<Omit<Scenario, keyof Document> & { _id: string }>;
+export type ScenarioFilter = Partial<Omit<Scenario, keyof Document> & { _id: ObjectId }>;
 
 export interface GetScenariosOptions {
     strict: boolean;
