@@ -1,5 +1,5 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { DeviceType, Room } from 'devices/interfaces/common';
+import { DeviceType, Room } from 'devices/interfaces';
 
 @ApiSchema({ name: 'CreateDeviceRequest', description: 'DTO used to add a new device to the hub control' })
 export class CreateDeviceDto {

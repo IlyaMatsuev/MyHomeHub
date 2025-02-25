@@ -1,5 +1,5 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { DeviceType, Room } from 'devices/interfaces/common';
+import { DeviceType, Room } from 'devices/interfaces';
 
 @ApiSchema({
     name: 'UpdateDeviceRequest',

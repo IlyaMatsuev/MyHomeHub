@@ -18,7 +18,7 @@ export class ConditionsEvaluatorService {
             if (!conditions) {
                 return true;
             }
-            return Object.keys(conditions ?? {}).reduce((res, field) => res && device[controllingField][field] === conditions[field], true);
+            return Object.keys(conditions).reduce((res, field) => res && device[controllingField][field] === conditions[field], true);
         };
         return meetsConditions(controlsConditions, 'controls') && meetsConditions(measurementsConditions, 'measurements');
     }

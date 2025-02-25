@@ -21,6 +21,17 @@ export class ScenariosExecutionService {
 
             console.warn(`Executing job for scenario ${scenario.externalId}, ${new Date().toISOString()}`);
             console.warn(`Evaluating conditions: ${shouldExecuteScenario}`);
+
+            if (shouldExecuteScenario) {
+                for (const deviceAction of scenario.devices) {
+                    const device = await this.devicesService.getDeviceByExternalId(deviceAction.externalId);
+                    const deviceControlService = this.devicesService.getControlService(device);
+                    if (deviceAction.set.controls) {
+                        await deviceControlService.setControls(deviceAction.set.controls);
+                        await this.devicesService.updateDevice(device.externalId, { controls: deviceAction.set.controls });
+                    }
+                }
+            }
         } catch (error) {
             console.error(`Error during cron job execution for scenario: ${scenarioExternalId}`);
             console.error(error);

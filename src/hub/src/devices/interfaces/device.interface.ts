@@ -1,5 +1,5 @@
 import { Document } from 'mongoose';
-import { DeviceType, Room } from './common';
+import { DeviceType, Room } from 'devices/interfaces';
 
 export interface Device extends Document<string> {
     externalId: string;

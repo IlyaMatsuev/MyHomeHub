@@ -3,13 +3,19 @@ import { Model } from 'mongoose';
 import { Device, DeviceFilter, GetDeviceOptions } from 'devices/interfaces';
 import { CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
+import { BaseDeviceControlService, DeviceControlServiceFactory } from 'devices/control-services';
 
 @Injectable()
 export class DevicesService {
     constructor(
         @Inject(DEVICE_MODEL_PROVIDER_NAME)
         private readonly deviceModel: Model<Device>,
+        private readonly deviceControlServiceFactory: DeviceControlServiceFactory,
     ) {}
+
+    getControlService<T extends BaseDeviceControlService>(device: Device): T {
+        return this.deviceControlServiceFactory.getControlService<T>(device);
+    }
 
     getDevices(): Promise<Array<Device>> {
         return this.deviceModel.find().exec();

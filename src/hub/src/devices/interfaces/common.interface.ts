@@ -9,4 +9,5 @@ export enum DeviceType {
     ESP32 = 'esp32',
     Socket = 'socket',
     Switch = 'switch',
+    ShellyPlug = 'shelly-plug',
 }
