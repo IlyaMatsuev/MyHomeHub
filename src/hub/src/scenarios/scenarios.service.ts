@@ -4,6 +4,7 @@ import { GetScenariosOptions, Scenario, ScenarioCronTriggerSource, ScenarioFilte
 import { CreateScenarioDto, UpdateScenarioDto } from 'scenarios/dto';
 import { SCENARIO_MODEL_PROVIDER_NAME } from 'scenarios/scenarios.constants';
 import { SchedulerService } from 'scheduler/scheduler.service';
+import { ScenariosExecutionService } from 'scenarios/scenarios-execution.service';
 
 @Injectable()
 export class ScenariosService implements OnModuleInit {
@@ -11,6 +12,7 @@ export class ScenariosService implements OnModuleInit {
         @Inject(SCENARIO_MODEL_PROVIDER_NAME)
         private readonly scenarioModel: Model<Scenario>,
         private readonly schedulerService: SchedulerService,
+        private readonly scenariosExecutionService: ScenariosExecutionService,
     ) {}
 
     async onModuleInit(): Promise<void> {
@@ -88,22 +90,11 @@ export class ScenariosService implements OnModuleInit {
             this.schedulerService.scheduleJob({
                 name: scenario.name,
                 cron: cronTriggerSource.cron,
-                handler: () => this.handleScenarioCronExecution(scenario.externalId),
+                handler: () => this.scenariosExecutionService.execute(scenario.externalId, true),
             });
         } catch (ex) {
             await onFailure();
             throw new InternalServerErrorException(`Failed to schedule a scenario on "${cronTriggerSource.cron}: ${ex.message}"`);
-        }
-    }
-
-    private async handleScenarioCronExecution(scenarioExternalId: string): Promise<void> {
-        try {
-            // TODO: Check other conditions on the scenario and execute devices setup
-            const scenario = await this.getScenarioByExternalId(scenarioExternalId);
-            console.warn(`Executing job for scenario ${scenario.externalId}, ${new Date().toISOString()}`);
-        } catch (error) {
-            console.error(`Error during cron job execution for scenario: ${scenarioExternalId}`);
-            console.error(error);
         }
     }
 }

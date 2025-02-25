@@ -9,5 +9,6 @@ import { devicesProviders } from 'devices/devices.providers';
     imports: [DatabaseModule],
     controllers: [DevicesController],
     providers: [DevicesService, DevicesGateway, ...devicesProviders],
+    exports: [DevicesService],
 })
 export class DevicesModule {}
