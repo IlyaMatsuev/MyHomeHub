@@ -98,7 +98,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"test2\",\n    \"type\": \"switch\",\n    \"room\": \"living-room\",\n    \"updateInterval\": 2000,\n    \"deviceAddress\": \"http://192.168.12.12\",\n    \"controls\": {\n        \"on\": true\n    },\n    \"measurements\": {\n    }\n}\n",
+              "raw": "{\n    \"name\": \"light-sensor\",\n    \"type\": \"esp32\",\n    \"room\": \"living-room\",\n    \"updateInterval\": 10000,\n    \"controls\": {\n        \"on\": true\n    },\n    \"measurements\": {\n        \"light\": \"bright\"\n    }\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -153,7 +153,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"deviceAddress\": \"http://192.168.178.221\"\n}\n",
+              "raw": "{\n    \"type\": \"shelly-plug\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -273,8 +273,9 @@
             {
               "listen": "prerequest",
               "script": {
-                "exec": [],
-                "type": "text/javascript"
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
               }
             }
           ],
@@ -554,6 +555,252 @@
               "raw": "{{shellyDeviceAddress1}}/rpc",
               "host": ["{{shellyDeviceAddress1}}"],
               "path": ["rpc"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Scenarios",
+      "item": [
+        {
+          "name": "Get All Scenarios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const allScenarios = pm.response.json();",
+                  "    if (allScenarios.length) {",
+                  "        const lastQueriedScenario = allScenarios.pop();",
+                  "        pm.environment.set('lastQueriedScenarioId', lastQueriedScenario.externalId);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/scenarios",
+              "host": ["{{baseUrl}}"],
+              "path": ["scenarios"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Scenario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const lastAddedScenario = pm.response.json();",
+                  "    pm.environment.set('lastQueriedScenarioId', lastAddedScenario.externalId);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test Scenario2\",\n    \"description\": \"Bla blababjbdqw\",\n    \"trigger\": {\n        \"sources\": [\n            {\n                \"type\": \"cron\",\n                \"cron\": \"* * * * *\"\n            },\n            {\n                \"type\": \"device\",\n                \"device\": {\n                    \"externalId\": \"9bb39cf7-dbad-4c12-9f53-cd7f39277a44\",\n                    \"controls\": {\n                        \"are\": {\n                            \"on\": false\n                        }\n                    }\n                }\n            }\n        ],\n        \"logic\": \"1 OR 2\"\n    },\n    \"devices\": [\n        {\n            \"externalId\": \"f7b954f7-1f16-452e-b478-22774bfcb2f4\",\n            \"set\": {\n                \"controls\": {\n                    \"on\": true\n                }\n            }\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/scenarios",
+              "host": ["{{baseUrl}}"],
+              "path": ["scenarios"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Scenario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/scenarios/{{lastQueriedScenarioId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["scenarios", "{{lastQueriedScenarioId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Scenario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const lastUpdatedDevice = pm.response.json();",
+                  "    pm.environment.set('lastQueriedScenarioId', lastUpdatedDevice.externalId);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"trigger\": {\n        \"sources\": [\n            {\n                \"type\": \"cron\",\n                \"cron\": \"* * * * *\"\n            },\n            {\n                \"device\": {\n                    \"controls\": {\n                        \"are\": {\n                            \"on\": false\n                        }\n                    },\n                    \"externalId\": \"f7b954f7-1f16-452e-b478-22774bfcb2f4\"\n                },\n                \"type\": \"device\"\n            }\n        ],\n        \"logic\": \"1 AND 2\"\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/scenarios/{{lastQueriedScenarioId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["scenarios", "{{lastQueriedScenarioId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Scenario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/scenarios/{{lastQueriedScenarioId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["scenarios", "{{lastQueriedScenarioId}}"]
             }
           },
           "response": []
