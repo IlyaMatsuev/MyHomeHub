@@ -73,6 +73,7 @@ export class ScenariosService implements OnModuleInit {
 
     private async scheduleExistingScenarios(): Promise<void> {
         const scenarios = await this.getScenarios();
+        console.warn(`${new Date().toISOString()}: Scheduling scenarios: ${JSON.stringify(scenarios, null, 2)}`);
         for (const scenario of scenarios) {
             await this.scheduleScenarioJob(scenario, async () => {});
         }
@@ -83,6 +84,7 @@ export class ScenariosService implements OnModuleInit {
             s => s.type === ScenarioTriggerSourceType.Cron,
         ) as ScenarioCronTriggerSource;
         if (!cronTriggerSource) {
+            console.warn(`No cron trigger source found in the scenario ${scenario.name}`);
             return;
         }
 
