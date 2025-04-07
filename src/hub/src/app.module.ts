@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CommonModule } from 'common/common.module';
 import { AuthModule } from 'auth/auth.module';
@@ -16,6 +17,7 @@ import { ScenariosModule } from 'scenarios/scenarios.module';
         ScenariosModule,
 
         ScheduleModule.forRoot(),
+        EventEmitterModule.forRoot(),
         ConfigModule.forRoot({ isGlobal: true, envFilePath: `.env.${process.env.NODE_ENV}` }),
     ],
     controllers: [],

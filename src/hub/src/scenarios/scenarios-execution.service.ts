@@ -1,8 +1,10 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { ScenariosService } from 'scenarios/scenarios.service';
-import { DevicesService } from 'devices/devices.service';
+import { OnEvent } from '@nestjs/event-emitter';
 import { ConditionsEvaluatorService } from 'common/services/conditions-evaluator.service';
 import { ScenarioDeviceTriggerSource, ScenarioTriggerSource, ScenarioTriggerSourceType } from 'scenarios/interfaces';
+import { ScenariosService } from 'scenarios/scenarios.service';
+import { DevicesService } from 'devices/devices.service';
+import { DeviceUpdatedEvent } from 'devices/events';
 
 @Injectable()
 export class ScenariosExecutionService {
@@ -36,6 +38,15 @@ export class ScenariosExecutionService {
         } catch (error) {
             this.logger.error(`Error during cron job execution for scenario: ${scenarioExternalId}`);
             this.logger.error(error);
+        }
+    }
+
+    @OnEvent(DeviceUpdatedEvent.eventName)
+    private async onDeviceUpdated(event: DeviceUpdatedEvent) {
+        if (Object.keys(event.update.controls).length) {
+            const device = await this.devicesService.getDeviceByExternalId(event.deviceExternalId);
+            const controlService = this.devicesService.getControlService(device);
+            await controlService.setControls(event.update.controls);
         }
     }
 

@@ -1,9 +1,11 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Model } from 'mongoose';
 import { Device, DeviceFilter, DevicesPage, GetDeviceOptions } from 'devices/interfaces';
 import { GetDevicesDto, CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
+import { DeviceUpdatedEvent } from 'devices/events';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
-import { BaseDeviceControlService, DeviceControlServiceFactory } from 'devices/control-services';
+import { DeviceControlService, DeviceControlServiceFactory } from 'devices/control-services';
 
 @Injectable()
 export class DevicesService {
@@ -11,9 +13,10 @@ export class DevicesService {
         @Inject(DEVICE_MODEL_PROVIDER_NAME)
         private readonly deviceModel: Model<Device>,
         private readonly deviceControlServiceFactory: DeviceControlServiceFactory,
+        private readonly eventEmitter: EventEmitter2,
     ) {}
 
-    getControlService<T extends BaseDeviceControlService>(device: Device): T {
+    getControlService<T extends DeviceControlService>(device: Device): T {
         return this.deviceControlServiceFactory.getControlService<T>(device);
     }
 
@@ -51,11 +54,13 @@ export class DevicesService {
         return new this.deviceModel(deviceDto).save({ validateBeforeSave: true });
     }
 
-    // TODO: Emit event when device controls are updated
-    // Shelly plug docs: https://shelly-api-docs.shelly.cloud/gen2/Devices/Gen2/ShellyPlusPlugS/
     async updateDevice(externalId: string, updateDeviceInfoDto: UpdateDeviceDto): Promise<Device> {
         const device = await this.getDeviceByExternalId(externalId);
-        return this.deviceModel.findByIdAndUpdate(device._id, { ...updateDeviceInfoDto }, { new: true, runValidators: true }).exec();
+        const updatedDevice = await this.deviceModel
+            .findByIdAndUpdate(device._id, { ...updateDeviceInfoDto }, { new: true, runValidators: true })
+            .exec();
+        this.eventEmitter.emit(DeviceUpdatedEvent.eventName, new DeviceUpdatedEvent(externalId, updateDeviceInfoDto));
+        return updatedDevice;
     }
 
     async removeDevice(externalId: string): Promise<Device> {
