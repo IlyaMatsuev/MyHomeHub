@@ -47,6 +47,6 @@ export interface Scenario extends Document<ObjectId> {
 
 export type ScenarioFilter = Partial<Omit<Scenario, keyof Document> & { _id: ObjectId }>;
 
-export interface GetScenariosOptions {
+export interface GetScenarioOptions {
     strict: boolean;
 }

@@ -1,4 +1,4 @@
-import { Controller, Body, Param, Get, Delete, Post, Put } from '@nestjs/common';
+import { Controller, Body, Param, Query, Get, Delete, Post, Put } from '@nestjs/common';
 import {
     ApiBadRequestResponse,
     ApiBearerAuth,
@@ -10,8 +10,9 @@ import {
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { DevicesService } from 'devices/devices.service';
-import { Device } from 'devices/interfaces';
+import { Device, DevicesPage } from 'devices/interfaces';
 import { CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
+import { GetDevicesDto } from 'devices/dto/get-devices.dto';
 
 @ApiBearerAuth()
 @Controller('devices')
@@ -22,8 +23,8 @@ export class DevicesController {
     @ApiOperation({ summary: 'Get all added devices' })
     @ApiOkResponse()
     @ApiUnauthorizedResponse()
-    async getDevices(): Promise<Array<Device>> {
-        return this.deviceService.getDevices();
+    async getDevices(@Query() query: GetDevicesDto): Promise<DevicesPage> {
+        return this.deviceService.getDevices(query);
     }
 
     @Get('/:externalId')

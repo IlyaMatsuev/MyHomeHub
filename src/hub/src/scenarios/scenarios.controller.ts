@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Param, Query, Delete, Get, Post, Put } from '@nestjs/common';
 import {
     ApiBadRequestResponse,
     ApiBearerAuth,
@@ -10,8 +10,8 @@ import {
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ScenariosService } from 'scenarios/scenarios.service';
-import { Scenario } from 'scenarios/interfaces';
-import { CreateScenarioDto, UpdateScenarioDto } from 'scenarios/dto';
+import { Scenario, ScenariosPage } from 'scenarios/interfaces';
+import { CreateScenarioDto, GetScenariosDto, UpdateScenarioDto } from 'scenarios/dto';
 
 @ApiBearerAuth()
 @Controller('scenarios')
@@ -22,8 +22,8 @@ export class ScenariosController {
     @ApiOperation({ summary: 'Get all added scenarios' })
     @ApiOkResponse()
     @ApiUnauthorizedResponse()
-    async getScenarios(): Promise<Array<Scenario>> {
-        return this.scenariosService.getScenarios();
+    async getScenarios(@Query() query: GetScenariosDto): Promise<ScenariosPage> {
+        return this.scenariosService.getScenarios(query);
     }
 
     @Get('/:externalId')

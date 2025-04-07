@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Model } from 'mongoose';
-import { Device, DeviceFilter, GetDeviceOptions } from 'devices/interfaces';
-import { CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
+import { Device, DeviceFilter, DevicesPage, GetDeviceOptions } from 'devices/interfaces';
+import { GetDevicesDto, CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
 import { BaseDeviceControlService, DeviceControlServiceFactory } from 'devices/control-services';
 
@@ -17,8 +17,18 @@ export class DevicesService {
         return this.deviceControlServiceFactory.getControlService<T>(device);
     }
 
-    getDevices(): Promise<Array<Device>> {
-        return this.deviceModel.find().exec();
+    async getDevices(options: GetDevicesDto = new GetDevicesDto()): Promise<DevicesPage> {
+        const [devices, total] = await Promise.all([
+            this.deviceModel.find().skip(options.skipRecords).limit(options.pageSize).lean(),
+            this.deviceModel.countDocuments(),
+        ]);
+
+        return {
+            devices,
+            page: options.page,
+            pageSize: options.pageSize,
+            totalPages: Math.ceil(total / options.pageSize),
+        };
     }
 
     getDeviceByExternalId(externalId: string, options: GetDeviceOptions = { strict: true }): Promise<Device> {

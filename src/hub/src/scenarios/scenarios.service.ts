@@ -1,7 +1,14 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { Model } from 'mongoose';
-import { GetScenariosOptions, Scenario, ScenarioCronTriggerSource, ScenarioFilter, ScenarioTriggerSourceType } from 'scenarios/interfaces';
-import { CreateScenarioDto, UpdateScenarioDto } from 'scenarios/dto';
+import {
+    ScenariosPage,
+    GetScenarioOptions,
+    Scenario,
+    ScenarioCronTriggerSource,
+    ScenarioFilter,
+    ScenarioTriggerSourceType,
+} from 'scenarios/interfaces';
+import { CreateScenarioDto, GetScenariosDto, UpdateScenarioDto } from 'scenarios/dto';
 import { SCENARIO_MODEL_PROVIDER_NAME } from 'scenarios/scenarios.constants';
 import { SchedulerService } from 'scheduler/scheduler.service';
 import { ScenariosExecutionService } from 'scenarios/scenarios-execution.service';
@@ -19,15 +26,25 @@ export class ScenariosService implements OnModuleInit {
         await this.scheduleExistingScenarios();
     }
 
-    getScenarios(): Promise<Array<Scenario>> {
-        return this.scenarioModel.find().exec();
+    async getScenarios(options: GetScenariosDto = new GetScenariosDto()): Promise<ScenariosPage> {
+        const [scenarios, total] = await Promise.all([
+            this.scenarioModel.find().skip(options.skipRecords).limit(options.pageSize).lean(),
+            this.scenarioModel.countDocuments(),
+        ]);
+
+        return {
+            scenarios,
+            page: options.page,
+            pageSize: options.pageSize,
+            totalPages: Math.ceil(total / options.pageSize),
+        };
     }
 
-    getScenarioByExternalId(externalId: string, options: GetScenariosOptions = { strict: true }): Promise<Scenario> {
+    getScenarioByExternalId(externalId: string, options: GetScenarioOptions = { strict: true }): Promise<Scenario> {
         return this.getScenario({ externalId }, options);
     }
 
-    async getScenario(filter: ScenarioFilter, options: GetScenariosOptions = { strict: true }): Promise<Scenario> {
+    async getScenario(filter: ScenarioFilter, options: GetScenarioOptions = { strict: true }): Promise<Scenario> {
         const scenario = await this.scenarioModel.findOne(filter).exec();
         if (!scenario && options.strict) {
             throw new NotFoundException('There is no scenario matching these criteria');
@@ -72,7 +89,7 @@ export class ScenariosService implements OnModuleInit {
     }
 
     private async scheduleExistingScenarios(): Promise<void> {
-        const scenarios = await this.getScenarios();
+        const scenarios = await this.scenarioModel.find().exec();
         for (const scenario of scenarios) {
             await this.scheduleScenarioJob(scenario, async () => {});
         }

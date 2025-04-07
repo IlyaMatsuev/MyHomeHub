@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { SwaggerModule, DocumentBuilder, SwaggerDocumentOptions } from '@nestjs/swagger';
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
@@ -12,6 +12,7 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     app.enableCors();
     app.useWebSocketAdapter(new WsAdapter(app));
+    app.useGlobalPipes(new ValidationPipe({ transform: true, transformOptions: { enableImplicitConversion: true } }));
 
     setupSwagger(app);
     await app.listen(process.env.PORT ?? 3000);
