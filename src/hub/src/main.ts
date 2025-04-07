@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ConsoleLogger, INestApplication, ValidationPipe } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { SwaggerModule, DocumentBuilder, SwaggerDocumentOptions } from '@nestjs/swagger';
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
@@ -9,7 +9,11 @@ import { SwaggerCustomOptions } from '@nestjs/swagger/dist/interfaces/swagger-cu
 bootstrap();
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule, {
+        logger: new ConsoleLogger({
+            prefix: 'SmartHome Hub',
+        }),
+    });
     app.enableCors();
     app.useWebSocketAdapter(new WsAdapter(app));
     app.useGlobalPipes(new ValidationPipe({ transform: true, transformOptions: { enableImplicitConversion: true } }));
