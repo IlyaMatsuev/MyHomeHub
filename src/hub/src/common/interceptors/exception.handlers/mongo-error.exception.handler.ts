@@ -13,7 +13,7 @@ export class MongoErrorExceptionHandler implements ExceptionHandler<MongooseErro
             const allErrors = this.collectValidationErrors(exception as Error.ValidationError);
             if (context.getType() === 'http') {
                 throw new BadRequestException({
-                    message: allErrors[0].message,
+                    messages: [allErrors[0].message],
                     details: {
                         errors: allErrors,
                     },
