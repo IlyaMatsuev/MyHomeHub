@@ -7,4 +7,8 @@ export class DeviceUpdatedEvent {
         public readonly deviceExternalId: string,
         public readonly update: UpdateDeviceDto,
     ) {}
+
+    get controlsUpdated(): boolean {
+        return !!Object.keys(this.update.controls ?? {}).length;
+    }
 }

@@ -10,26 +10,27 @@ export class GoogleSpeakerDeviceControlService extends DeviceControlService {
 
     async setControls<T>(controls: Record<string, unknown>): Promise<T> {
         const speechText = controls.text as string;
-        // TODO: Move deviceCastName to a separate field
-        const deviceName = this.device.measurements.name as string;
 
         if (!speechText) {
             return;
         }
 
-        if (!deviceName) {
-            this.logger.warn(
-                `Cannot set the controls for device "${this.device.externalId}". The Google Device name is missing: measurements.name = ${deviceName}`,
-            );
-            return;
-        }
-
         try {
-            const castClient = await CastClient.find(deviceName);
+            const castClient = await CastClient.find(this.getDeviceIP());
             await castClient.play(await textToSpeech(speechText));
             await castClient.close();
         } catch (error) {
             this.logger.error(`Was not able to find a device or play the media file: ${error}`);
         }
+    }
+
+    private getDeviceIP(): string | never {
+        const deviceAddress = this.device.deviceAddress;
+        if (!deviceAddress) {
+            throw new Error(
+                `The Google Speaker with id "${this.device.externalId}" does not have an address, not possible to set the controls`,
+            );
+        }
+        return deviceAddress.slice(deviceAddress.lastIndexOf('/') + 1);
     }
 }
