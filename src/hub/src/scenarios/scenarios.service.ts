@@ -53,6 +53,19 @@ export class ScenariosService implements OnModuleInit {
             .exec();
     }
 
+    getDeviceTriggeredScenarios(deviceExternalId: string): Promise<Array<Scenario>> {
+        return this.scenarioModel
+            .find({
+                'trigger.sources': {
+                    $elemMatch: {
+                        type: 'device',
+                        'device.externalId': deviceExternalId,
+                    },
+                },
+            })
+            .exec();
+    }
+
     getScenarioByExternalId(externalId: string, options: GetScenarioOptions = { strict: true }): Promise<Scenario> {
         return this.getScenario({ externalId }, options);
     }

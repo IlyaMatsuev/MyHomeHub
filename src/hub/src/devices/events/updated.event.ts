@@ -11,4 +11,8 @@ export class DeviceUpdatedEvent {
     get controlsUpdated(): boolean {
         return !!Object.keys(this.update.controls ?? {}).length;
     }
+
+    get measurementsUpdated(): boolean {
+        return !!Object.keys(this.update.measurements ?? {}).length;
+    }
 }

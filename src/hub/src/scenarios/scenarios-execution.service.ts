@@ -23,14 +23,12 @@ export class ScenariosExecutionService {
             const conditions = await this.extractConditions(scenario.trigger.sources, wasScheduled);
             const shouldExecuteScenario = this.conditionsEvaluatorService.evaluateTriggerExpression(scenario.trigger.logic, conditions);
 
-            this.logger.log(`Executing job for scenario ${scenario.externalId}. Conditions met: ${shouldExecuteScenario}`);
+            this.logger.debug(`Executing scenario ${scenario.externalId}. Conditions met: ${shouldExecuteScenario}`);
 
             if (shouldExecuteScenario) {
                 for (const deviceAction of scenario.devices) {
                     const device = await this.devicesService.getDeviceByExternalId(deviceAction.externalId);
-                    const deviceControlService = this.devicesService.getControlService(device);
                     if (deviceAction.set.controls) {
-                        await deviceControlService.setControls(deviceAction.set.controls);
                         await this.devicesService.updateDevice(device.externalId, { controls: deviceAction.set.controls });
                     }
                 }
@@ -43,10 +41,21 @@ export class ScenariosExecutionService {
 
     @OnEvent(DeviceUpdatedEvent.eventName)
     private async onDeviceUpdated(event: DeviceUpdatedEvent) {
-        if (Object.keys(event.update.controls).length) {
-            const device = await this.devicesService.getDeviceByExternalId(event.deviceExternalId);
+        const device = await this.devicesService.getDeviceByExternalId(event.deviceExternalId);
+        if (event.controlsUpdated) {
             const controlService = this.devicesService.getControlService(device);
             await controlService.setControls(event.update.controls);
+        }
+
+        if (event.controlsUpdated || event.measurementsUpdated) {
+            this.logger.debug(`Received controls/measurements update for a device "${event.deviceExternalId}"`);
+            const triggeredScenarios = await this.scenariosService.getDeviceTriggeredScenarios(device.externalId);
+
+            this.logger.debug(`Triggered scenarios: "${triggeredScenarios.length}"`);
+
+            for (const triggeredScenario of triggeredScenarios) {
+                await this.execute(triggeredScenario.externalId, false);
+            }
         }
     }
 
