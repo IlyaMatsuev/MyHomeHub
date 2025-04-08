@@ -10,6 +10,7 @@ export class GoogleSpeakerDeviceControlService extends DeviceControlService {
 
     async setControls<T>(controls: Record<string, unknown>): Promise<T> {
         const speechText = controls.text as string;
+        // TODO: Move deviceCastName to a separate field
         const deviceName = this.device.measurements.name as string;
 
         if (!speechText) {
@@ -24,7 +25,7 @@ export class GoogleSpeakerDeviceControlService extends DeviceControlService {
         }
 
         try {
-            const castClient = await CastClient.find('Home Office Speaker');
+            const castClient = await CastClient.find(deviceName);
             await castClient.play(await textToSpeech(speechText));
             await castClient.close();
         } catch (error) {

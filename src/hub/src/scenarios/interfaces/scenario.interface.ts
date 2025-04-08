@@ -1,6 +1,6 @@
 import { Document } from 'mongoose';
 import { ObjectId } from 'mongodb';
-import { ScenarioTriggerSourceType } from 'scenarios/interfaces/common.interface';
+import { ScenarioCronTimeAdjustOption, ScenarioTriggerSourceType } from 'scenarios/interfaces';
 
 export interface ScenarioTriggerSource {
     type: ScenarioTriggerSourceType;
@@ -9,6 +9,7 @@ export interface ScenarioTriggerSource {
 export interface ScenarioCronTriggerSource extends ScenarioTriggerSource {
     type: ScenarioTriggerSourceType.Cron;
     cron: string;
+    adjustTo?: ScenarioCronTimeAdjustOption;
 }
 
 export interface ScenarioDeviceTriggerSourceConditions {

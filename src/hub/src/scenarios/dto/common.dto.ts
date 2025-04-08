@@ -6,6 +6,7 @@ import {
     ScenarioTrigger,
     ScenarioTriggerSource,
     ScenarioTriggerSourceType,
+    ScenarioCronTimeAdjustOption,
 } from 'scenarios/interfaces';
 import { ApiExtraModels, ApiProperty, ApiSchema, getSchemaPath } from '@nestjs/swagger';
 
@@ -23,6 +24,13 @@ export class ScenarioCronTriggerSourceDto implements ScenarioCronTriggerSource {
         description: 'The CRON expression that will be used for triggering the scenario',
     })
     cron: string;
+
+    @ApiProperty({
+        required: false,
+        description: 'Option to adjust the cron expression to a specific (dynamic) time of the day. E.g. sunset or sunrise time',
+        enum: ScenarioCronTimeAdjustOption,
+    })
+    adjustTo?: ScenarioCronTimeAdjustOption;
 }
 
 @ApiSchema({ name: 'ScenarioDeviceTriggerSourceConditions' })

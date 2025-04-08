@@ -1,2 +1,5 @@
 export const SCENARIO_MODEL_PROVIDER_NAME = 'SCENARIO_MODEL';
 export const SCENARIO_SCHEMA_NAME = 'Scenario';
+export const MAX_CRON_TRIGGER_SOURCES_PER_SCENARIO = 1;
+export const DAY_TIME_ADJUSTMENT_JOB_CRON = '0 2 * * *';
+export const CRON_WITH_SECONDS_LENGTH = 6;

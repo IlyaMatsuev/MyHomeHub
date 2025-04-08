@@ -1,25 +1,40 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, OnModuleInit } from '@nestjs/common';
-import { Model } from 'mongoose';
 import {
-    ScenariosPage,
+    BadRequestException,
+    Inject,
+    Injectable,
+    InternalServerErrorException,
+    Logger,
+    NotFoundException,
+    OnModuleInit,
+} from '@nestjs/common';
+import { Model } from 'mongoose';
+import { getSunrise, getSunset } from 'sunrise-sunset-js';
+import {
     GetScenarioOptions,
     Scenario,
+    ScenarioCronTimeAdjustOption,
     ScenarioCronTriggerSource,
     ScenarioFilter,
+    ScenariosPage,
     ScenarioTriggerSourceType,
 } from 'scenarios/interfaces';
 import { CreateScenarioDto, GetScenariosDto, UpdateScenarioDto } from 'scenarios/dto';
-import { SCENARIO_MODEL_PROVIDER_NAME } from 'scenarios/scenarios.constants';
+import { DAY_TIME_ADJUSTMENT_JOB_CRON, SCENARIO_MODEL_PROVIDER_NAME, CRON_WITH_SECONDS_LENGTH } from 'scenarios/scenarios.constants';
 import { SchedulerService } from 'scheduler/scheduler.service';
 import { ScenariosExecutionService } from 'scenarios/scenarios-execution.service';
+import { Cron } from '@nestjs/schedule';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ScenariosService implements OnModuleInit {
+    private readonly logger = new Logger(ScenariosService.name);
+
     constructor(
         @Inject(SCENARIO_MODEL_PROVIDER_NAME)
         private readonly scenarioModel: Model<Scenario>,
         private readonly schedulerService: SchedulerService,
         private readonly scenariosExecutionService: ScenariosExecutionService,
+        private readonly configService: ConfigService,
     ) {}
 
     async onModuleInit(): Promise<void> {
@@ -113,5 +128,63 @@ export class ScenariosService implements OnModuleInit {
             await onFailure();
             throw new InternalServerErrorException(`Failed to schedule a scenario on "${cronTriggerSource.cron}: ${ex.message}"`);
         }
+    }
+
+    @Cron(DAY_TIME_ADJUSTMENT_JOB_CRON)
+    private async handleDayTimeAdjustments() {
+        this.logger.log('Recalculating scenarios day-time adjustments');
+        try {
+            const latitude = this.configService.get<number>('TZ_LATITUDE');
+            const longitude = this.configService.get<number>('TZ_LONGITUDE');
+            const sunriseTime = getSunrise(latitude, longitude);
+            const sunsetTime = getSunset(latitude, longitude);
+
+            this.logger.debug(`Sunrise time: ${sunriseTime}`);
+            this.logger.debug(`Sunset time: ${sunsetTime}`);
+
+            const scenariosWithDayTimeAdjustments = await this.scenarioModel
+                .find({
+                    'trigger.sources': {
+                        $elemMatch: {
+                            type: ScenarioTriggerSourceType.Cron,
+                            adjustTo: { $exists: true },
+                        },
+                    },
+                })
+                .exec();
+
+            for (const scenario of scenariosWithDayTimeAdjustments) {
+                const trigger = {
+                    ...scenario.trigger,
+                    sources: scenario.trigger.sources.map(source => {
+                        if (source.type === ScenarioTriggerSourceType.Cron) {
+                            const cronSource = source as ScenarioCronTriggerSource;
+                            if (cronSource.adjustTo === ScenarioCronTimeAdjustOption.Sunrise) {
+                                cronSource.cron = this.updateCronTime(cronSource.cron, sunriseTime);
+                            } else if (cronSource.adjustTo === ScenarioCronTimeAdjustOption.Sunset) {
+                                cronSource.cron = this.updateCronTime(cronSource.cron, sunsetTime);
+                            }
+                        }
+                        return source;
+                    }),
+                };
+                await this.updateScenario(scenario.externalId, { trigger });
+            }
+        } catch (error) {
+            this.logger.error(`Failed to adjust day time of the scenarios: ${error}`);
+        }
+    }
+
+    private updateCronTime(cron: string, dateTime: Date): string {
+        const hours = dateTime.getHours().toString();
+        const minutes = dateTime.getMinutes().toString();
+
+        const cronParts = cron.split(' ');
+        if (cronParts.length === CRON_WITH_SECONDS_LENGTH) {
+            cronParts.shift();
+        }
+        cronParts.shift();
+        cronParts.shift();
+        return [minutes, hours, ...cronParts].join(' ');
     }
 }

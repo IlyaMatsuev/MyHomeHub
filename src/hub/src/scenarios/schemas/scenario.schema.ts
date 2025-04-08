@@ -7,26 +7,32 @@ import {
     ScenarioDeviceTriggerSource,
     ScenarioTriggerSource,
     ScenarioTriggerSourceType,
+    ScenarioCronTimeAdjustOption,
 } from 'scenarios/interfaces';
-
-const MAX_CRON_TRIGGER_SOURCES_PER_SCENARIO = 1;
+import { MAX_CRON_TRIGGER_SOURCES_PER_SCENARIO } from 'scenarios/scenarios.constants';
 
 const TRIGGER_SOURCE_TYPE_VALIDATORS: { [key in ScenarioTriggerSourceType]: (triggerSource: ScenarioTriggerSource) => boolean | never } = {
     [ScenarioTriggerSourceType.Cron]: (triggerSource: ScenarioCronTriggerSource): boolean | never => {
+        const plainTriggerSource = triggerSource['toObject']({ getters: true });
         const scenario: Scenario = triggerSource['parent']();
         if (
             scenario.trigger.sources.filter(s => s.type === ScenarioTriggerSourceType.Cron).length > MAX_CRON_TRIGGER_SOURCES_PER_SCENARIO
         ) {
             throw new Error('There can be only one cron trigger source per scenario');
         }
-        if (Object['hasOwn'](triggerSource, 'device')) {
+
+        if ('device' in plainTriggerSource) {
             throw new Error(`The "device" field is only valid for the "${ScenarioTriggerSourceType.Device}" trigger source type`);
         }
         return true;
     },
     [ScenarioTriggerSourceType.Device]: (triggerSource: ScenarioDeviceTriggerSource): boolean | never => {
-        if (Object['hasOwn'](triggerSource, 'cron')) {
+        const plainTriggerSource = triggerSource['toObject']({ getters: true });
+        if ('cron' in plainTriggerSource) {
             throw new Error(`The "cron" field is only valid for the "${ScenarioTriggerSourceType.Cron}" trigger source type`);
+        }
+        if ('adjustTo' in plainTriggerSource) {
+            throw new Error(`The "adjustTo" field is only valid for the "${ScenarioTriggerSourceType.Cron}" trigger source type`);
         }
         return true;
     },
@@ -84,6 +90,11 @@ export const ScenarioSchema = new Schema({
                         message: 'Cron expression is not valid',
                     },
                     trim: true,
+                },
+                adjustTo: {
+                    type: String,
+                    required: false,
+                    enum: Object.values(ScenarioCronTimeAdjustOption) as Array<string>,
                 },
                 device: {
                     externalId: {
