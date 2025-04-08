@@ -9,8 +9,9 @@ import { CommonModule } from 'common/common.module';
 import { scenariosProviders } from 'scenarios/scenarios.providers';
 
 @Module({
-    imports: [DatabaseModule, SchedulerModule, DevicesModule, CommonModule],
+    imports: [DatabaseModule, DevicesModule, CommonModule, SchedulerModule],
     controllers: [ScenariosController],
     providers: [ScenariosService, ScenariosExecutionService, ...scenariosProviders],
+    exports: [ScenariosService],
 })
 export class ScenariosModule {}
