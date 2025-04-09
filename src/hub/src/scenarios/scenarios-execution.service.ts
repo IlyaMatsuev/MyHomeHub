@@ -40,7 +40,7 @@ export class ScenariosExecutionService {
     }
 
     @OnEvent(DeviceUpdatedEvent.eventName)
-    private async onDeviceUpdated(event: DeviceUpdatedEvent) {
+    private async onDeviceUpdated(event: DeviceUpdatedEvent): Promise<void> {
         const device = await this.devicesService.getDeviceByExternalId(event.deviceExternalId);
         if (event.controlsUpdated) {
             const controlService = this.devicesService.getControlService(device);

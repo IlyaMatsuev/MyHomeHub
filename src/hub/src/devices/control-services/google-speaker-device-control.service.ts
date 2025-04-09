@@ -1,11 +1,10 @@
 import * as CastClient from 'castv2-promise';
 import * as textToSpeech from 'google-tts-api';
 import { DeviceControlService } from 'devices/control-services/device-control.service';
-import { Device } from 'devices/interfaces';
 
 export class GoogleSpeakerDeviceControlService extends DeviceControlService {
-    constructor(protected readonly device: Device) {
-        super(device, GoogleSpeakerDeviceControlService.name);
+    protected getServiceName(): string {
+        return GoogleSpeakerDeviceControlService.name;
     }
 
     async setControls<T>(controls: Record<string, unknown>): Promise<T> {

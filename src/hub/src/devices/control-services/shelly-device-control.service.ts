@@ -1,5 +1,4 @@
-import { DeviceControlService } from 'devices/control-services/device-control.service';
-import { Device } from 'devices/interfaces';
+import { DeviceControlService } from 'devices/control-services';
 import { request } from 'gaxios';
 
 enum ShellyMethod {
@@ -7,8 +6,8 @@ enum ShellyMethod {
 }
 
 export class ShellyDeviceControlService extends DeviceControlService {
-    constructor(protected readonly device: Device) {
-        super(device, ShellyDeviceControlService.name);
+    protected getServiceName(): string {
+        return ShellyDeviceControlService.name;
     }
 
     async setControls<T>(controls: Record<string, unknown>): Promise<T> {
