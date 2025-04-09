@@ -27,8 +27,8 @@ export class ScenariosExecutionService {
 
             if (shouldExecuteScenario) {
                 for (const deviceAction of scenario.devices) {
-                    const device = await this.devicesService.getDeviceByExternalId(deviceAction.externalId);
                     if (deviceAction.set.controls) {
+                        const device = await this.devicesService.getDeviceByExternalId(deviceAction.externalId);
                         await this.devicesService.updateDevice(device.externalId, { controls: deviceAction.set.controls });
                     }
                 }

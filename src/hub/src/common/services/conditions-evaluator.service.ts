@@ -62,8 +62,8 @@ export class ConditionsEvaluatorService {
     }
 
     private evaluateExpression(expression: TriggerExpression, conditions: Array<boolean>): boolean {
-        let result = false;
-        let operator: typeof OPERATOR_OR | typeof OPERATOR_AND;
+        let result: boolean = undefined;
+        let operator: typeof OPERATOR_OR | typeof OPERATOR_AND = undefined;
         for (const expressionItem of expression) {
             if (expressionItem === OPERATOR_OR || expressionItem === OPERATOR_AND) {
                 operator = expressionItem;
@@ -72,7 +72,7 @@ export class ConditionsEvaluatorService {
                     typeof expressionItem === 'number'
                         ? conditions[expressionItem - 1]
                         : this.evaluateExpression(expressionItem, conditions);
-                if (result && operator) {
+                if (result !== undefined && operator !== undefined) {
                     if (operator === OPERATOR_OR) {
                         result ||= condition;
                     }
