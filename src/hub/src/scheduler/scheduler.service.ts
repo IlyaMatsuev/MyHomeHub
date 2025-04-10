@@ -41,9 +41,11 @@ export class SchedulerService {
         try {
             const latitude = this.configService.get<number>('TZ_LATITUDE');
             const longitude = this.configService.get<number>('TZ_LONGITUDE');
-            const sunriseTime = getSunrise(latitude, longitude);
-            const sunsetTime = getSunset(latitude, longitude);
+            const today = new Date();
+            const sunriseTime = getSunrise(latitude, longitude, today);
+            const sunsetTime = getSunset(latitude, longitude, today);
 
+            this.logger.debug(`today's date: ${today}`);
             this.logger.debug(`Sunrise time: ${sunriseTime}`);
             this.logger.debug(`Sunset time: ${sunsetTime}`);
 
