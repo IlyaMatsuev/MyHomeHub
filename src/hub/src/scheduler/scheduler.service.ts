@@ -4,7 +4,7 @@ import { CronJob } from 'cron';
 import { SchedulerJob } from 'scheduler/interfaces';
 import { ScenariosService } from 'scenarios/scenarios.service';
 import { CRON_WITH_SECONDS_LENGTH, DAY_TIME_ADJUSTMENT_JOB_CRON } from 'scheduler/scheduler.constants';
-import { getSunrise, getSunset } from 'sunrise-sunset-js';
+import { getTimes } from 'suncalc';
 import {
     ScenarioCronTimeAdjustOption,
     ScenarioCronTriggerSource,
@@ -41,16 +41,10 @@ export class SchedulerService {
         try {
             const latitude = this.configService.get<number>('TZ_LATITUDE');
             const longitude = this.configService.get<number>('TZ_LONGITUDE');
-            const now = new Date();
-            this.logger.debug(`now: ${now}`);
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            this.logger.debug(`today: ${today}`);
-            this.logger.debug(`today utc: ${Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())}`);
-            const sunriseTime = getSunrise(latitude, longitude, today);
-            const sunsetTime = getSunset(latitude, longitude, today);
+            const { sunrise, sunset } = getTimes(new Date(), latitude, longitude);
 
-            this.logger.debug(`Sunrise time: ${sunriseTime}`);
-            this.logger.debug(`Sunset time: ${sunsetTime}`);
+            this.logger.debug(`Sunrise time: ${sunrise}`);
+            this.logger.debug(`Sunset time: ${sunset}`);
 
             const scenariosWithDayTimeAdjustments = await this.scenariosService.getScenariosWithAdjustableTime();
 
@@ -59,7 +53,7 @@ export class SchedulerService {
             for (const scenario of scenariosWithDayTimeAdjustments) {
                 const trigger = {
                     ...scenario.trigger,
-                    sources: scenario.trigger.sources.map(source => this.adjustScenarioSource(source, sunriseTime, sunsetTime)),
+                    sources: scenario.trigger.sources.map(source => this.adjustScenarioSource(source, sunrise, sunset)),
                 };
                 await this.scenariosService.updateScenario(scenario.externalId, { trigger });
             }
