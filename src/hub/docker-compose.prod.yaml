@@ -34,6 +34,17 @@ services:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_DISABLE_CONTAINERS=mongodb-prod,mongodb-test,mongodb
 
+  smarthome-hub-server-image-watcher-once:
+    image: containrrr/watchtower:latest
+    container_name: smarthome-hub-server-image-watcher-once
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=Europe/Amsterdam
+      - WATCHTOWER_RUN_ONCE=true
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_DISABLE_CONTAINERS=mongodb-prod,mongodb-test,mongodb
+
 networks:
   smarthome-network:
     driver: bridge
