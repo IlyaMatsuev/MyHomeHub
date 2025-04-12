@@ -56,9 +56,9 @@ export class DevicesService {
 
     async updateDevice(externalId: string, updateDeviceInfoDto: UpdateDeviceDto): Promise<Device> {
         const device = await this.getDeviceByExternalId(externalId);
-        const updatedDevice = await this.deviceModel
-            .findByIdAndUpdate(device._id, { ...updateDeviceInfoDto }, { new: true, runValidators: true })
-            .exec();
+        Object.keys(updateDeviceInfoDto).forEach(field => (device[field] = updateDeviceInfoDto[field]));
+        const updatedDevice = await device.save({ validateBeforeSave: true });
+        // TODO: Rollback in case of error in event
         this.eventEmitter.emit(DeviceUpdatedEvent.eventName, new DeviceUpdatedEvent(externalId, updateDeviceInfoDto));
         return updatedDevice;
     }

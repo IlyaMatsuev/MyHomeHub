@@ -8,8 +8,8 @@ const CONTROLS_TO_TUYA_COMMANDS = {
     brightness: 'bright_value',
     // Example value: { h: 240, s: 1000, v: 1000 }
     // - h (hue): 0 - 360
-    // - s (saturation): 0 - 255
-    // - v (value): 0 - 255
+    // - s (saturation): 0 - 1000
+    // - v (value): 0 - 1000
     color: 'colour_data',
 };
 
@@ -26,12 +26,11 @@ export class TuyaDeviceControlService extends DeviceControlService {
     }
 
     private getTuyaDeviceId(): string | never {
-        // TODO: Move to a separate field
-        const deviceId = this.device.measurements.deviceId as string;
-        if (!deviceId || typeof deviceId !== 'string') {
+        const tuyaDeviceId = this.device.tuyaDeviceId;
+        if (!tuyaDeviceId) {
             throw new Error(`The Tuya device with id "${this.device.externalId}" is missing a Tuya device Id`);
         }
-        return this.device.measurements.deviceId as string;
+        return tuyaDeviceId;
     }
 
     private executeCommand(tuyaDeviceId: string, controls: Record<string, unknown>): Promise<TuyaResponse<unknown>> {

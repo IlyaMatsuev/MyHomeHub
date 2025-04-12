@@ -33,6 +33,18 @@ export const DeviceSchema = new Schema({
         validate: [/^http(s)?:\/\/[A-Za-z\d.\/]+$/, 'Device address must be a valid URL'],
         required: false,
     },
+    tuyaDeviceId: {
+        type: String,
+        required: function () {
+            return this.type === DeviceType.TuyaDevice;
+        },
+        validate: {
+            validator: function (): boolean {
+                return this.type === DeviceType.TuyaDevice;
+            },
+            message: `Tuya device id can be specified only for a device of type "${DeviceType.TuyaDevice}"`,
+        },
+    },
     updateInterval: {
         type: Number,
         required: false,

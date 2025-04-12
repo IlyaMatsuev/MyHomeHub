@@ -41,6 +41,12 @@ export class CreateDeviceDto {
     deviceAddress?: string;
 
     @ApiProperty({
+        required: false,
+        description: 'The device ID of the Tuya smart device',
+    })
+    tuyaDeviceId?: string;
+
+    @ApiProperty({
         required: true,
         description: 'Set of controls available to set for the device. Can be different for each device',
         default: {},
