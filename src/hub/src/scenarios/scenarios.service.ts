@@ -83,7 +83,11 @@ export class ScenariosService implements OnModuleInit {
         if (existingScenario) {
             throw new BadRequestException(`Scenario with the same name ('${scenarioDto.name}') already exists`);
         }
-        const newScenario = await new this.scenarioModel(scenarioDto).save({ validateBeforeSave: true });
+        const cronSource = this.findScenarioCronSource(scenarioDto);
+        if (cronSource && cronSource.adjustTo) {
+            cronSource.cron = this.schedulerService.adjustScenarioDayTimeCron(cronSource);
+        }
+        const newScenario: Scenario = await new this.scenarioModel(scenarioDto).save({ validateBeforeSave: true });
         await this.scheduleScenarioJob(newScenario, () => this.removeScenario(newScenario.externalId));
         return newScenario;
     }
@@ -95,6 +99,11 @@ export class ScenariosService implements OnModuleInit {
         scenario.description = scenarioDto.description ?? scenario.description;
         scenario.trigger = scenarioDto.trigger ?? scenario.trigger;
         scenario.devices = scenarioDto.devices ?? scenario.devices;
+
+        const cronSource = this.findScenarioCronSource(scenario);
+        if (cronSource && cronSource.adjustTo && scenarioDto.trigger) {
+            cronSource.cron = this.schedulerService.adjustScenarioDayTimeCron(cronSource);
+        }
 
         const updatedScenario = await scenario.save({ validateBeforeSave: true });
         if (scenarioDto.trigger?.sources && scenarioDto.trigger?.sources.some(s => s.type === ScenarioTriggerSourceType.Cron)) {
@@ -139,5 +148,9 @@ export class ScenariosService implements OnModuleInit {
             await onFailure();
             throw new InternalServerErrorException(`Failed to schedule a scenario on "${cronTriggerSource.cron}: ${ex.message}"`);
         }
+    }
+
+    private findScenarioCronSource(scenario: Scenario | CreateScenarioDto): ScenarioCronTriggerSource | undefined {
+        return scenario.trigger.sources.find(s => s.type === ScenarioTriggerSourceType.Cron) as ScenarioCronTriggerSource;
     }
 }
