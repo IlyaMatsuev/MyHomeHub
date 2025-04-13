@@ -3,7 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Model } from 'mongoose';
 import { Device, DeviceFilter, DevicesPage, GetDeviceOptions } from 'devices/interfaces';
 import { GetDevicesDto, CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
-import { DeviceUpdatedEvent } from 'devices/events';
+import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from 'devices/events';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
 import { DeviceControlService, DeviceControlServiceFactory } from 'devices/control-services';
 
@@ -58,8 +58,15 @@ export class DevicesService {
         const device = await this.getDeviceByExternalId(externalId);
         Object.keys(updateDeviceInfoDto).forEach(field => (device[field] = updateDeviceInfoDto[field]));
         const updatedDevice = await device.save({ validateBeforeSave: true });
-        // TODO: Rollback in case of error in event
-        this.eventEmitter.emit(DeviceUpdatedEvent.eventName, new DeviceUpdatedEvent(externalId, updateDeviceInfoDto));
+        if (updateDeviceInfoDto.controlsUpdated) {
+            this.eventEmitter.emit(
+                DeviceControlsUpdatedEvent.eventName,
+                new DeviceControlsUpdatedEvent(externalId, updateDeviceInfoDto.controls),
+            );
+        }
+        if (updateDeviceInfoDto.measurementsUpdated) {
+            this.eventEmitter.emit(DeviceMeasurementsUpdatedEvent.eventName, new DeviceMeasurementsUpdatedEvent(externalId));
+        }
         return updatedDevice;
     }
 

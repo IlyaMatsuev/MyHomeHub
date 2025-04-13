@@ -12,7 +12,7 @@ import { WebSocketServer as WSServer, WebSocket } from 'ws';
 import { v4 as uuid } from 'uuid';
 import { DevicesService } from 'devices/devices.service';
 import { Device, DeviceGatewayEvent, DeviceGatewayResponse } from 'devices/interfaces';
-import { UpdateDeviceStateDto } from 'devices/dto';
+import { UpdateDeviceDto, UpdateDeviceStateDto } from 'devices/dto';
 import { UseFilters, UseInterceptors } from '@nestjs/common';
 import { WsExceptionFilter } from 'common/filters/ws-exception.filter';
 import { GlobalInterceptor } from 'common/interceptors';
@@ -86,7 +86,7 @@ export class DevicesGateway implements OnGatewayConnection, OnGatewayDisconnect 
         }
 
         const device = this.pairedDevices.get(client.id);
-        await this.devicesService.updateDevice(device.externalId, stateDto);
+        await this.devicesService.updateDevice(device.externalId, new UpdateDeviceDto(stateDto.controls, stateDto.measurements));
         return {
             event: DeviceGatewayEvent.State,
             data: {

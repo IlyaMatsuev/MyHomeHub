@@ -60,6 +60,23 @@ export class UpdateDeviceDto {
         default: {},
     })
     measurements?: Record<string, object>;
+
+    get controlsUpdated(): boolean {
+        return !!Object.keys(this.controls ?? {}).length;
+    }
+
+    get measurementsUpdated(): boolean {
+        return !!Object.keys(this.measurements ?? {}).length;
+    }
+
+    constructor(controls?: Record<string, object>, measurements?: Record<string, object>) {
+        if (controls) {
+            this.controls = controls;
+        }
+        if (measurements) {
+            this.measurements = measurements;
+        }
+    }
 }
 
 export class UpdateDeviceStateDto {

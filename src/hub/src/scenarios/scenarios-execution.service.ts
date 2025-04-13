@@ -4,7 +4,8 @@ import { ConditionsEvaluatorService } from 'common/services/conditions-evaluator
 import { ScenarioDeviceTriggerSource, ScenarioTriggerSource, ScenarioTriggerSourceType } from 'scenarios/interfaces';
 import { ScenariosService } from 'scenarios/scenarios.service';
 import { DevicesService } from 'devices/devices.service';
-import { DeviceUpdatedEvent } from 'devices/events';
+import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from 'devices/events';
+import { UpdateDeviceDto } from 'devices/dto';
 
 @Injectable()
 export class ScenariosExecutionService {
@@ -29,7 +30,7 @@ export class ScenariosExecutionService {
                 for (const deviceAction of scenario.devices) {
                     if (deviceAction.set.controls) {
                         const device = await this.devicesService.getDeviceByExternalId(deviceAction.externalId);
-                        await this.devicesService.updateDevice(device.externalId, { controls: deviceAction.set.controls });
+                        await this.devicesService.updateDevice(device.externalId, new UpdateDeviceDto(deviceAction.set.controls));
                     }
                 }
             }
@@ -39,24 +40,16 @@ export class ScenariosExecutionService {
         }
     }
 
-    @OnEvent(DeviceUpdatedEvent.eventName)
-    private async onDeviceUpdated(event: DeviceUpdatedEvent): Promise<void> {
+    @OnEvent(DeviceControlsUpdatedEvent.eventName)
+    private async onDeviceControlsUpdated(event: DeviceControlsUpdatedEvent): Promise<void> {
         const device = await this.devicesService.getDeviceByExternalId(event.deviceExternalId);
-        if (event.controlsUpdated) {
-            const controlService = this.devicesService.getControlService(device);
-            await controlService.setControls(event.update.controls);
-        }
+        await this.devicesService.getControlService(device).setControls(event.controls);
+        return this.triggerDeviceRelatedScenarios(event.deviceExternalId);
+    }
 
-        if (event.controlsUpdated || event.measurementsUpdated) {
-            this.logger.debug(`Received controls/measurements update for a device "${event.deviceExternalId}"`);
-            const triggeredScenarios = await this.scenariosService.getDeviceTriggeredScenarios(device.externalId);
-
-            this.logger.debug(`Triggered scenarios: "${triggeredScenarios.length}"`);
-
-            for (const triggeredScenario of triggeredScenarios) {
-                await this.execute(triggeredScenario.externalId, false);
-            }
-        }
+    @OnEvent(DeviceMeasurementsUpdatedEvent.eventName)
+    private async onDeviceMeasurementsUpdated(event: DeviceMeasurementsUpdatedEvent): Promise<void> {
+        return this.triggerDeviceRelatedScenarios(event.deviceExternalId);
     }
 
     private async extractConditions(triggerSources: Array<ScenarioTriggerSource>, wasScheduled: boolean): Promise<Array<boolean>> {
@@ -72,5 +65,16 @@ export class ScenariosExecutionService {
             }
         }
         return conditions;
+    }
+
+    private async triggerDeviceRelatedScenarios(deviceExternalId: string): Promise<void> {
+        this.logger.debug(`Received controls/measurements update for a device "${deviceExternalId}"`);
+        const triggeredScenarios = await this.scenariosService.getDeviceTriggeredScenarios(deviceExternalId);
+
+        this.logger.debug(`Triggered scenarios: "${triggeredScenarios.length}"`);
+
+        for (const triggeredScenario of triggeredScenarios) {
+            await this.execute(triggeredScenario.externalId, false);
+        }
     }
 }
