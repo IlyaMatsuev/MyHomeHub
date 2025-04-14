@@ -9,6 +9,23 @@ services:
     networks:
       - smarthome-network
 
+  # Can be tested using an online client https://testclient-cloud.mqtt.cool/
+  # To crete a new user for a container:
+  #   docker exec -it mqtt-broker sh
+  #   mosquitto_passwd -c /mosquitto/config/pwfile <username>
+  mqtt-broker:
+    image: eclipse-mosquitto
+    container_name: mqtt-broker
+    restart: always
+    tty: true
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mqtt:/mosquitto/config:rw
+    networks:
+      - smarthome-network
+
   smarthome-hub-server:
     build: .
     image: ilyamatsuev/smarthome-hub-server

@@ -20,6 +20,9 @@
 /coverage
 /.nyc_output
 
+# Secrets
+**/pwfile
+
 # dotenv environment variable files
 .env.test
 .env.prod

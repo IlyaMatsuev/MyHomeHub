@@ -10,6 +10,19 @@ services:
     networks:
       - smarthome-network
 
+  mqtt-broker-prod:
+    image: eclipse-mosquitto
+    container_name: mqtt-broker-prod
+    restart: always
+    tty: true
+    ports:
+      - "1884:1884"
+      - "9003:9003"
+    volumes:
+      - ./mqtt:/mosquitto/config:rw
+    networks:
+      - smarthome-network
+
   smarthome-hub-server-prod:
     image: ilyamatsuev/smarthome-hub-server
     container_name: smarthome-hub-server-prod
@@ -43,7 +56,7 @@ services:
       - TZ=Europe/Amsterdam
       - WATCHTOWER_RUN_ONCE=true
       - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_DISABLE_CONTAINERS=mongodb-prod,mongodb-test,mongodb
+      - WATCHTOWER_DISABLE_CONTAINERS=mongodb-prod,mongodb-test,mongodb,mqtt-broker,mqtt-broker-test,mqtt-broker-prod
 
 networks:
   smarthome-network:

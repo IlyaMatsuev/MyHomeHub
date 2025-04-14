@@ -10,6 +10,19 @@ services:
     networks:
       - smarthome-network
 
+  mqtt-broker-test:
+    image: eclipse-mosquitto
+    container_name: mqtt-broker-test
+    restart: always
+    tty: true
+    ports:
+      - "1884:1884"
+      - "9002:9002"
+    volumes:
+      - ./mqtt:/mosquitto/config:rw
+    networks:
+      - smarthome-network
+
   smarthome-hub-server-test:
     image: ilyamatsuev/smarthome-hub-server
     container_name: smarthome-hub-server-test
