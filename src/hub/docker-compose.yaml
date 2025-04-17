@@ -19,6 +19,7 @@ services:
       - "1883:1883"
     volumes:
       - ./mqtt/mosquitto.local.conf:/mosquitto/config/mosquitto.conf:rw
+      - ./mqtt/pwfile.local:/mosquitto/config/pwfile:rw
     networks:
       - smarthome-network
 

@@ -20,6 +20,9 @@
 /coverage
 /.nyc_output
 
+# Secrets
+**/mqtt/pwfile.*
+
 # dotenv environment variable files
 .env.test
 .env.prod

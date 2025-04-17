@@ -1,5 +1,9 @@
 # MQTT Broker (Mosquitto)
 
+## Requisites
+
+In order to store the mosquitto credentials, the password file has to be created under the `mqtt/` folder. The pattern of the file name is the following: `pwfile.env`, where `env` is the alias of one of three environments: `local`, `test`, `prod`.
+
 ## Running
 
 The broker can be started from the `hub` folder using command:
@@ -40,3 +44,9 @@ All available config options are listed [here](https://mosquitto.org/man/mosquit
 ## Testing
 
 The running MQTT broker can be tested using [this online client](https://testclient-cloud.mqtt.cool).
+
+Or, from withing the container using the `mosquitto_sub` util:
+
+```shell
+mosquitto_sub -h <hostname> -p <port> -t "<topic>" -u <username> -P <password>
+```
