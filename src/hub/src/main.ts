@@ -1,10 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { ConsoleLogger, INestApplication, ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { WsAdapter } from '@nestjs/platform-ws';
-import { SwaggerModule, DocumentBuilder, SwaggerDocumentOptions } from '@nestjs/swagger';
+import { SwaggerCustomOptions } from '@nestjs/swagger/dist/interfaces/swagger-custom-options.interface';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { DocumentBuilder, SwaggerDocumentOptions, SwaggerModule } from '@nestjs/swagger';
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 import { AppModule } from './app.module';
-import { SwaggerCustomOptions } from '@nestjs/swagger/dist/interfaces/swagger-custom-options.interface';
 
 bootstrap();
 
@@ -14,11 +16,24 @@ async function bootstrap() {
             prefix: 'SmartHome Hub',
         }),
     });
+    const config = app.get<ConfigService>(ConfigService);
+    app.connectMicroservice<MicroserviceOptions>({
+        transport: Transport.MQTT,
+        options: {
+            protocol: 'mqtt',
+            hostname: config.get<string>('MQTT_DOMAIN'),
+            port: config.get('MQTT_PORT'),
+            username: config.get('MQTT_USERNAME'),
+            password: config.get('MQTT_PASSWORD'),
+        },
+    });
     app.enableCors();
     app.useWebSocketAdapter(new WsAdapter(app));
     app.useGlobalPipes(new ValidationPipe({ transform: true, transformOptions: { enableImplicitConversion: true } }));
 
     setupSwagger(app);
+
+    await app.startAllMicroservices();
     await app.listen(process.env.PORT ?? 3000);
 }
 
