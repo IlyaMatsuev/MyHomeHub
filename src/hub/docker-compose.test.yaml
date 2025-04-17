@@ -13,13 +13,13 @@ services:
   mqtt-broker-test:
     image: eclipse-mosquitto
     container_name: mqtt-broker-test
+    env_file: .env.test
     restart: always
     tty: true
     ports:
       - "1884:1884"
-      - "9002:9002"
     volumes:
-      - ./mqtt:/mosquitto/config:rw
+      - ./mqtt/mosquitto.test.conf:/mosquitto/config/mosquitto.conf:rw
     networks:
       - smarthome-network
 
