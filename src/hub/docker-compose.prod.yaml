@@ -30,6 +30,8 @@ services:
     restart: always
     ports:
       - "3020:3020"
+    volumes:
+      - ./.env.prod:/usr/src/app/.env.prod
     expose:
       - "3020"
     networks:

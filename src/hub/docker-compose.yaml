@@ -29,6 +29,8 @@ services:
     env_file: .env.local
     ports:
       - "3000:3000"
+    volumes:
+      - ./.env.local:/usr/src/app/.env.local
     expose:
       - "3000"
     networks:

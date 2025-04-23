@@ -30,6 +30,8 @@ services:
     restart: always
     ports:
       - "3010:3010"
+    volumes:
+      - ./.env.test:/usr/src/app/.env.test
     expose:
       - "3010"
     networks:
