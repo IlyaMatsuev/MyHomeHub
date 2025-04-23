@@ -47,6 +47,14 @@ The running MQTT broker can be tested using [this online client](https://testcli
 
 Or, from withing the container using the `mosquitto_sub` util:
 
+To subscribe to the `<topic>` topic:
+
 ```shell
 mosquitto_sub -h <hostname> -p <port> -t "<topic>" -u <username> -P <password>
+```
+
+To publish a message to the `<topic>` topic:
+
+```shell
+mosquitto_pub -h <hostname> -p <port> -t "<topic>" -u <username> -P <password> -i <client-name> -m "<message>"
 ```

@@ -5,6 +5,7 @@
       "scenarios/*": ["src/scenarios/*"],
       "users/*": ["src/users/*"],
       "auth/*": ["src/auth/*"],
+      "mqtt/*": ["src/mqtt/*"],
       "common/*": ["src/common/*"],
       "scheduler/*": ["src/scheduler/*"],
       "db/*": ["src/db/*"]

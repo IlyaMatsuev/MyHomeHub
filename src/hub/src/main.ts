@@ -21,6 +21,7 @@ async function bootstrap() {
         transport: Transport.MQTT,
         options: {
             protocol: 'mqtt',
+            clientId: config.get<string>('MQTT_CLIENT_ID'),
             hostname: config.get<string>('MQTT_DOMAIN'),
             port: config.get('MQTT_PORT'),
             username: config.get('MQTT_USERNAME'),
