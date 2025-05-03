@@ -59,4 +59,10 @@ export class CreateDeviceDto {
         default: {},
     })
     measurements: Record<string, object>;
+
+    constructor(device?: Partial<CreateDeviceDto>) {
+        if (device) {
+            Object.assign(this, device);
+        }
+    }
 }
