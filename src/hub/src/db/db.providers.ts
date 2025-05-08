@@ -11,7 +11,7 @@ export const databaseProviders = [
             const dbName = configService.get<string>('MONGO_INITDB_DATABASE');
             const dbDomain = configService.get<string>('MONGO_DOMAIN');
             const dbPort = configService.get<string>('MONGO_PORT');
-            const connectionUrl = `mongodb://${username}:${password}@${dbDomain}/${dbName}:${dbPort}?authSource=admin`;
+            const connectionUrl = `mongodb://${username}:${password}@${dbDomain}:${dbPort}/${dbName}?authSource=admin`;
             return mongoose.connect(connectionUrl);
         },
         inject: [ConfigService],

@@ -1,11 +1,24 @@
 services:
+  smarthome-hub-server-prod:
+    image: ilyamatsuev/smarthome-hub-server
+    container_name: smarthome-hub-server-prod
+    env_file: .env.prod
+    restart: always
+    ports:
+      - "3020:3020"
+    volumes:
+      - ./.env.prod:/usr/src/app/.env.prod
+    expose:
+      - "3020"
+    network_mode: host
+
   mongodb-prod:
     image: mongo:7.0.16-jammy
     container_name: mongodb-prod
     env_file: .env.prod
     restart: always
     ports:
-      - "27019:27019"
+      - "27019:27017"
     networks:
       - smarthome-network
 
@@ -20,20 +33,6 @@ services:
     volumes:
       - ./mqtt/mosquitto.prod.conf:/mosquitto/config/mosquitto.conf:rw
       - ./mqtt/pwfile.prod:/mosquitto/config/pwfile:rw
-    networks:
-      - smarthome-network
-
-  smarthome-hub-server-prod:
-    image: ilyamatsuev/smarthome-hub-server
-    container_name: smarthome-hub-server-prod
-    env_file: .env.prod
-    restart: always
-    ports:
-      - "3020:3020"
-    volumes:
-      - ./.env.prod:/usr/src/app/.env.prod
-    expose:
-      - "3020"
     networks:
       - smarthome-network
 

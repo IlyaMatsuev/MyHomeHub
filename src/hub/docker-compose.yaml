@@ -1,4 +1,17 @@
 services:
+  smarthome-hub-server:
+    build: .
+    image: ilyamatsuev/smarthome-hub-server
+    container_name: smarthome-hub-server
+    env_file: .env.local
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./.env.local:/usr/src/app/.env.local
+    expose:
+      - "3000"
+    network_mode: host
+
   mongodb:
     image: mongo:7.0.16-jammy
     container_name: mongodb
@@ -19,20 +32,6 @@ services:
     volumes:
       - ./mqtt/mosquitto.local.conf:/mosquitto/config/mosquitto.conf:rw
       - ./mqtt/pwfile.local:/mosquitto/config/pwfile:rw
-    networks:
-      - smarthome-network
-
-  smarthome-hub-server:
-    build: .
-    image: ilyamatsuev/smarthome-hub-server
-    container_name: smarthome-hub-server
-    env_file: .env.local
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./.env.local:/usr/src/app/.env.local
-    expose:
-      - "3000"
     networks:
       - smarthome-network
 

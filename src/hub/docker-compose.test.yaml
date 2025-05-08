@@ -1,11 +1,24 @@
 services:
+  smarthome-hub-server-test:
+    image: ilyamatsuev/smarthome-hub-server
+    container_name: smarthome-hub-server-test
+    env_file: .env.test
+    restart: always
+    ports:
+      - "3010:3010"
+    volumes:
+      - ./.env.test:/usr/src/app/.env.test
+    expose:
+      - "3010"
+    network_mode: host
+
   mongodb-test:
     image: mongo:7.0.16-jammy
     container_name: mongodb-test
     env_file: .env.test
     restart: always
     ports:
-      - "27018:27018"
+      - "27018:27017"
     networks:
       - smarthome-network
 
@@ -20,20 +33,6 @@ services:
     volumes:
       - ./mqtt/mosquitto.test.conf:/mosquitto/config/mosquitto.conf:rw
       - ./mqtt/pwfile.test:/mosquitto/config/pwfile:rw
-    networks:
-      - smarthome-network
-
-  smarthome-hub-server-test:
-    image: ilyamatsuev/smarthome-hub-server
-    container_name: smarthome-hub-server-test
-    env_file: .env.test
-    restart: always
-    ports:
-      - "3010:3010"
-    volumes:
-      - ./.env.test:/usr/src/app/.env.test
-    expose:
-      - "3010"
     networks:
       - smarthome-network
 
