@@ -18,6 +18,8 @@ services:
     env_file: .env.local
     ports:
       - "27017:27017"
+    volumes:
+      - ./data/local/:/data/db
     networks:
       - smarthome-network
 

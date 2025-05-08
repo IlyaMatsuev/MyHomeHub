@@ -19,6 +19,8 @@ services:
     restart: always
     ports:
       - "27018:27017"
+    volumes:
+      - ./data/test/:/data/db
     networks:
       - smarthome-network
 
