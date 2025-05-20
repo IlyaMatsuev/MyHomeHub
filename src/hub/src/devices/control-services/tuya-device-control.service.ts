@@ -3,11 +3,14 @@ import TuyaDevice from 'tuyapi';
 import Color from 'color';
 
 const TUYA_DEVICE_PROTOCOL_VERSION = '3.3';
+
+const DEFAULT_MODE = 'colour';
 const DEFAULT_COLOR = '#FFFFFF';
 const DEFAULT_COLOR_BRIGHTNESS = 100;
 
 enum TuyaControlsDps {
-    On = 21,
+    On = 20,
+    Mode = 21,
     Color = 24,
 }
 
@@ -50,13 +53,18 @@ export class TuyaDeviceControlService extends DeviceControlService {
     }
 
     private mapTuyaControls(controls: Record<string, unknown>): TuyaDeviceControls {
-        const tuyaControls: TuyaDeviceControls = {};
-        if (controls.on) {
+        const tuyaControls: TuyaDeviceControls = {
+            [TuyaControlsDps.Mode]: DEFAULT_MODE,
+        };
+        if (this.controlProvided(controls.on)) {
             tuyaControls[TuyaControlsDps.On] = !!controls.on;
         }
-        if (controls.color || controls.brightness) {
+        if (this.controlProvided(controls.color) || this.controlProvided(controls.brightness)) {
             const color = `${controls.color ?? this.device.controls?.color ?? DEFAULT_COLOR}`;
-            const brightness = +(controls.brightness ?? this.device.controls?.brightness ?? DEFAULT_COLOR_BRIGHTNESS);
+            let brightness = +(controls.brightness ?? this.device.controls?.brightness ?? DEFAULT_COLOR_BRIGHTNESS);
+            if (brightness < 1 || brightness > 100) {
+                brightness = DEFAULT_COLOR_BRIGHTNESS;
+            }
             tuyaControls[TuyaControlsDps.Color] = this.convertToTuyaColorFormat(color, brightness);
         }
         return tuyaControls;
@@ -74,5 +82,9 @@ export class TuyaDeviceControlService extends DeviceControlService {
         const vHex = value.toString(16).padStart(4, '0');
 
         return `${hHex}${sHex}${vHex}`.toLowerCase();
+    }
+
+    private controlProvided(control: unknown): boolean {
+        return control !== undefined && control !== null;
     }
 }
