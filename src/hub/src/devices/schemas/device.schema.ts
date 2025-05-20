@@ -45,6 +45,18 @@ export const DeviceSchema = new Schema({
             message: `Tuya device id can be specified only for a device of type "${DeviceType.TuyaDevice}"`,
         },
     },
+    tuyaDeviceLocalKey: {
+        type: String,
+        required: function () {
+            return this.type === DeviceType.TuyaDevice;
+        },
+        validate: {
+            validator: function (): boolean {
+                return this.type === DeviceType.TuyaDevice;
+            },
+            message: `Tuya device local key can be specified only for a device of type "${DeviceType.TuyaDevice}"`,
+        },
+    },
     updateInterval: {
         type: Number,
         required: false,

@@ -8,6 +8,7 @@ export interface Device extends Document<string> {
     room: Room;
     deviceAddress: string;
     tuyaDeviceId: string;
+    tuyaDeviceLocalKey: string;
     updateInterval: number;
     controls: Record<string, unknown>;
     measurements: Record<string, unknown>;

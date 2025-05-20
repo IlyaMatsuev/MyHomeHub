@@ -49,6 +49,12 @@ export class UpdateDeviceDto {
 
     @ApiProperty({
         required: false,
+        description: 'The new device local key of the Tuya smart device',
+    })
+    tuyaDeviceLocalKey?: string;
+
+    @ApiProperty({
+        required: false,
         description: 'Updated set of controls for the device',
         default: {},
     })

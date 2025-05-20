@@ -61,8 +61,7 @@ export class DevicesService {
 
     async updateDevice(externalId: string, updateDeviceInfoDto: UpdateDeviceDto): Promise<Device> {
         const device = await this.getDeviceByExternalId(externalId);
-        Object.keys(updateDeviceInfoDto).forEach(field => (device[field] = updateDeviceInfoDto[field]));
-        const updatedDevice = await device.save({ validateBeforeSave: true });
+        const updatedDevice = await this.updateDtoValues(device, updateDeviceInfoDto);
         if (updateDeviceInfoDto.controlsUpdated) {
             this.eventEmitter.emit(
                 DeviceControlsUpdatedEvent.eventName,
@@ -79,5 +78,16 @@ export class DevicesService {
         const device = await this.getDeviceByExternalId(externalId);
         await this.deviceModel.deleteOne({ _id: device._id }).exec();
         return device;
+    }
+
+    private updateDtoValues(device: Device, updatedDevice: UpdateDeviceDto): Promise<Device> {
+        Object.keys(updatedDevice).forEach(field => {
+            if (field === 'controls') {
+                device.controls = { ...(device.controls || {}), ...updatedDevice.controls };
+            } else {
+                device[field] = updatedDevice[field];
+            }
+        });
+        return device.save({ validateBeforeSave: true });
     }
 }
