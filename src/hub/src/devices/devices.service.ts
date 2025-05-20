@@ -38,9 +38,8 @@ export class DevicesService {
         return this.getDevice({ externalId }, options);
     }
 
-    // TODO: Rename field "deviceAddress" to "deviceLocalIP"
     getDeviceByIp(ip: string, options: GetDeviceOptions = { strict: true }): Promise<Device> {
-        return this.getDevice({ deviceAddress: `http://${ip}` }, options);
+        return this.getDevice({ ip }, options);
     }
 
     async getDevice(filter: DeviceFilter, options: GetDeviceOptions = { strict: true }): Promise<Device> {

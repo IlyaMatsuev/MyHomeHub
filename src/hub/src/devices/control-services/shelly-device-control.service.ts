@@ -11,13 +11,8 @@ export class ShellyDeviceControlService extends DeviceControlService {
     }
 
     async setControls<T>(controls: Record<string, unknown>): Promise<T> {
-        if (!this.device.deviceAddress) {
-            throw new Error(
-                `The shelly device with id "${this.device.externalId}" does not have an address, not possible to set the controls`,
-            );
-        }
         const response = await request<T>({
-            url: `${this.device.deviceAddress}/rpc`,
+            url: `http://${this.getDeviceIP()}/rpc`,
             method: 'POST',
             headers: {},
             data: {

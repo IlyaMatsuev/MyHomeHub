@@ -38,7 +38,7 @@ export class CreateDeviceDto {
         required: false,
         description: 'The IP address of the device',
     })
-    deviceAddress?: string;
+    ip?: string;
 
     @ApiProperty({
         required: false,

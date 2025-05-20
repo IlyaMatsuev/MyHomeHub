@@ -28,9 +28,9 @@ export const DeviceSchema = new Schema({
         required: false,
         enum: Object.values(Room) as Array<string>,
     },
-    deviceAddress: {
+    ip: {
         type: String,
-        validate: [/^http(s)?:\/\/[A-Za-z\d.\/]+$/, 'Device address must be a valid URL'],
+        validate: [/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/, 'The value must be a valid IP address'],
         required: false,
     },
     tuyaDeviceId: {

@@ -14,7 +14,7 @@ export class PairRequestDto {
             name: this.deviceName,
             type: DeviceType.ESP32,
             updateInterval: this.updateInterval ?? MEASUREMENTS_DEFAULT_UPDATE_INTERVAL,
-            deviceAddress: `http://${this.deviceIp}`,
+            ip: this.deviceIp,
             controls: this.controls,
             measurements: this.measurements,
         });

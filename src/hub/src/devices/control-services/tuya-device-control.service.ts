@@ -28,16 +28,6 @@ export class TuyaDeviceControlService extends DeviceControlService {
         return this.device.tuyaDeviceLocalKey;
     }
 
-    private get deviceIP(): string | never {
-        const deviceAddress = this.device.deviceAddress;
-        if (!deviceAddress) {
-            throw new Error(
-                `The Tuya device with id "${this.device.externalId}" does not have an address, not possible to set the controls`,
-            );
-        }
-        return deviceAddress.slice(deviceAddress.lastIndexOf('/') + 1);
-    }
-
     protected getServiceName(): string {
         return TuyaDeviceControlService.name;
     }
@@ -45,7 +35,7 @@ export class TuyaDeviceControlService extends DeviceControlService {
     async setControls(controls: Record<string, unknown>): Promise<void> {
         const tuyaDevice = new TuyaDevice({
             id: this.tuyaDeviceId,
-            ip: this.deviceIP,
+            ip: this.getDeviceIP(),
             key: this.tuyaDeviceLocalKey,
             version: TUYA_DEVICE_PROTOCOL_VERSION,
         });

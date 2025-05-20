@@ -6,7 +6,7 @@ export interface Device extends Document<string> {
     name: string;
     type: DeviceType;
     room: Room;
-    deviceAddress: string;
+    ip: string;
     tuyaDeviceId: string;
     tuyaDeviceLocalKey: string;
     updateInterval: number;

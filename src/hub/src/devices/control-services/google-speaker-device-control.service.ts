@@ -22,14 +22,4 @@ export class GoogleSpeakerDeviceControlService extends DeviceControlService {
             this.logger.error(`Was not able to find a device or play the media file: ${error}`);
         }
     }
-
-    private getDeviceIP(): string | never {
-        const deviceAddress = this.device.deviceAddress;
-        if (!deviceAddress) {
-            throw new Error(
-                `The Google Speaker with id "${this.device.externalId}" does not have an address, not possible to set the controls`,
-            );
-        }
-        return deviceAddress.slice(deviceAddress.lastIndexOf('/') + 1);
-    }
 }

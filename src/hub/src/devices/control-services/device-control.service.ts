@@ -14,4 +14,11 @@ export abstract class DeviceControlService {
 
     protected abstract getServiceName(): string;
     abstract setControls<T>(controls: Record<string, unknown>): Promise<T | void>;
+
+    protected getDeviceIP(): string | never {
+        if (!this.device.ip) {
+            throw new Error(`The device with id "${this.device.externalId}" does not have an IP address, not possible to set the controls`);
+        }
+        return this.device.ip;
+    }
 }
