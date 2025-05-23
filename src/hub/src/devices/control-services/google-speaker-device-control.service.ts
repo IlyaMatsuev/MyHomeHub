@@ -1,5 +1,5 @@
 import * as CastClient from 'castv2-promise';
-import * as textToSpeech from 'google-tts-api';
+import TextToSpeech from 'google-tts-api';
 import { DeviceControlService } from 'devices/control-services/device-control.service';
 
 export class GoogleSpeakerDeviceControlService extends DeviceControlService {
@@ -16,7 +16,7 @@ export class GoogleSpeakerDeviceControlService extends DeviceControlService {
 
         try {
             const castClient = await CastClient.find(this.getDeviceIP());
-            await castClient.play(await textToSpeech(speechText));
+            await castClient.play(await TextToSpeech(speechText));
             await castClient.close();
         } catch (error) {
             this.logger.error(`Was not able to find a device or play the media file: ${error}`);
