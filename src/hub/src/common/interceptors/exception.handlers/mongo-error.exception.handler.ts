@@ -1,7 +1,7 @@
 import { MongooseError, Error } from 'mongoose';
 import { BadRequestException, ExecutionContext } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
-import { ExceptionHandler, ValidationError } from 'common/interceptors/interfaces';
+import { ExceptionHandler, ValidationError } from 'common/interfaces';
 
 export class MongoErrorExceptionHandler implements ExceptionHandler<MongooseError> {
     getExceptionType(): new (...args: Array<unknown>) => MongooseError {
@@ -13,14 +13,14 @@ export class MongoErrorExceptionHandler implements ExceptionHandler<MongooseErro
             const allErrors = this.collectValidationErrors(exception as Error.ValidationError);
             if (context.getType() === 'http') {
                 throw new BadRequestException({
-                    messages: [allErrors[0].message],
+                    messages: allErrors.map(e => e.message),
                     details: {
                         errors: allErrors,
                     },
                 });
             }
             if (context.getType() === 'ws') {
-                throw new WsException(exception.message);
+                throw new WsException(allErrors[0].message);
             }
         }
     }

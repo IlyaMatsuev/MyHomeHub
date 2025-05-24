@@ -53,7 +53,6 @@ export class DevicesService {
         return device;
     }
 
-    // TODO: Add validators for controls depending on device type
     async addDevice(deviceDto: CreateDeviceDto): Promise<Device> {
         const existingDevice = await this.getDevice({ name: deviceDto.name }, { strict: false });
         if (existingDevice) {
@@ -86,6 +85,7 @@ export class DevicesService {
     private updateDtoValues(device: Device, updatedDevice: UpdateDeviceDto): Promise<Device> {
         Object.keys(updatedDevice).forEach(field => {
             if (field === 'controls') {
+                this.getControlService(device).validateControls(updatedDevice.controls);
                 device.controls = { ...(device.controls || {}), ...updatedDevice.controls };
             } else {
                 device[field] = updatedDevice[field];

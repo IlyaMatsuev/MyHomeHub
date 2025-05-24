@@ -16,6 +16,12 @@ export abstract class DevicesControlService {
     protected abstract getServiceName(): string;
     protected abstract setDeviceControls<T>(controls: Record<string, unknown>): Promise<T | void | never>;
 
+    validateControls(controls: Record<string, unknown>): boolean | never {
+        // TODO: Add validators for controls depending on device type
+        this.logger.debug(`controls: ${JSON.stringify(controls)}`);
+        return true;
+    }
+
     setControls<T>(controls: Record<string, unknown>): Promise<T | void | never> {
         try {
             return this.setDeviceControls(controls);
