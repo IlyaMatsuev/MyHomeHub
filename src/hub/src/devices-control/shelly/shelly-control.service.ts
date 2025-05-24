@@ -1,5 +1,7 @@
-import { DevicesControlService } from 'devices-control/devices-control.service';
 import { request } from 'gaxios';
+import { ClassConstructor } from 'class-transformer/types/interfaces';
+import { DevicesControlService } from 'devices-control/devices-control.service';
+import { ShellyControlsDto } from 'devices-control/shelly/shelly-controls.dto';
 
 enum ShellyMethod {
     SwitchSet = 'Switch.Set',
@@ -10,7 +12,11 @@ export class ShellyControlService extends DevicesControlService {
         return ShellyControlService.name;
     }
 
-    protected async setDeviceControls<T>(controls: Record<string, unknown>): Promise<T> {
+    protected getControlsDtoType<T extends object>(): ClassConstructor<T> {
+        return ShellyControlsDto as ClassConstructor<T>;
+    }
+
+    protected async setDeviceControls<T>(controls: ShellyControlsDto): Promise<T> {
         const response = await request<T>({
             url: `http://${this.getDeviceIP()}/rpc`,
             method: 'POST',

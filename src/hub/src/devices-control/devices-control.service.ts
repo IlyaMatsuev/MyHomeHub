@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Device } from 'devices/interfaces';
 import { ConfigService } from '@nestjs/config';
+import { ClassConstructor } from 'class-transformer/types/interfaces';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { CustomValidationException } from 'common/exceptions';
 
 @Injectable()
 export abstract class DevicesControlService {
@@ -14,17 +18,20 @@ export abstract class DevicesControlService {
     }
 
     protected abstract getServiceName(): string;
-    protected abstract setDeviceControls<T>(controls: Record<string, unknown>): Promise<T | void | never>;
+    protected abstract getControlsDtoType<T extends object>(): ClassConstructor<T>;
+    protected abstract setDeviceControls<T extends Record<string, unknown>, V>(controls: T): Promise<V | void | never>;
 
-    validateControls(controls: Record<string, unknown>): boolean | never {
-        // TODO: Add validators for controls depending on device type
-        this.logger.debug(`controls: ${JSON.stringify(controls)}`);
-        return true;
+    async validateControls(controls: Record<string, unknown>): Promise<void | never> {
+        const controlsDto = this.getControlsDto(controls);
+        const errors = await validate(controlsDto);
+        if (errors.length) {
+            throw CustomValidationException.fromClassValidator(errors);
+        }
     }
 
-    setControls<T>(controls: Record<string, unknown>): Promise<T | void | never> {
+    setControls<T extends Record<string, unknown>>(controls: Record<string, unknown>): Promise<T | void | never> {
         try {
-            return this.setDeviceControls(controls);
+            return this.setDeviceControls(this.getControlsDto<T>(controls));
         } catch (error) {
             this.logger.error(`Failed to set controls: ${error}`);
         }
@@ -35,5 +42,9 @@ export abstract class DevicesControlService {
             throw new Error(`The device with id "${this.device.externalId}" does not have an IP address, not possible to set the controls`);
         }
         return this.device.ip;
+    }
+
+    private getControlsDto<T extends object>(controls: Record<string, unknown>): T {
+        return plainToInstance(this.getControlsDtoType<T>(), controls);
     }
 }

@@ -1,6 +1,8 @@
-import { DevicesControlService } from 'devices-control/devices-control.service';
 import TuyaDevice from 'tuyapi';
 import Color from 'color';
+import { ClassConstructor } from 'class-transformer/types/interfaces';
+import { DevicesControlService } from 'devices-control/devices-control.service';
+import { TuyaControlsDto } from 'devices-control/tuya/tuya-controls.dto';
 
 const TUYA_DEVICE_PROTOCOL_VERSION = '3.3';
 
@@ -35,14 +37,19 @@ export class TuyaControlService extends DevicesControlService {
         return TuyaControlService.name;
     }
 
-    protected async setDeviceControls(controls: Record<string, unknown>): Promise<void | never> {
+    protected getControlsDtoType<T extends object>(): ClassConstructor<T> {
+        return TuyaControlsDto as ClassConstructor<T>;
+    }
+
+    protected async setDeviceControls(controls: object): Promise<void | never> {
+        const controlsDto = controls as TuyaControlsDto;
         const tuyaDevice = new TuyaDevice({
             id: this.tuyaDeviceId,
             ip: this.getDeviceIP(),
             key: this.tuyaDeviceLocalKey,
             version: TUYA_DEVICE_PROTOCOL_VERSION,
         });
-        const tuyaControls = this.mapTuyaControls(controls);
+        const tuyaControls = this.mapTuyaControls(controlsDto);
 
         try {
             await tuyaDevice.connect();
@@ -52,14 +59,14 @@ export class TuyaControlService extends DevicesControlService {
         }
     }
 
-    private mapTuyaControls(controls: Record<string, unknown>): TuyaDeviceControls {
+    private mapTuyaControls(controls: TuyaControlsDto): TuyaDeviceControls {
         const tuyaControls: TuyaDeviceControls = {
             [TuyaControlsDps.Mode]: DEFAULT_MODE,
         };
-        if (this.controlProvided(controls.on)) {
+        if (controls.switched()) {
             tuyaControls[TuyaControlsDps.On] = !!controls.on;
         }
-        if (this.controlProvided(controls.color) || this.controlProvided(controls.brightness)) {
+        if (controls.changedColor() || controls.changedBrightness()) {
             const color = `${controls.color ?? this.device.controls?.color ?? DEFAULT_COLOR}`;
             let brightness = +(controls.brightness ?? this.device.controls?.brightness ?? DEFAULT_COLOR_BRIGHTNESS);
             if (brightness < 1 || brightness > 100) {
@@ -82,9 +89,5 @@ export class TuyaControlService extends DevicesControlService {
         const vHex = value.toString(16).padStart(4, '0');
 
         return `${hHex}${sHex}${vHex}`.toLowerCase();
-    }
-
-    private controlProvided(control: unknown): boolean {
-        return control !== undefined && control !== null;
     }
 }

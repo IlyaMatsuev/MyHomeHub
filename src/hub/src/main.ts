@@ -9,7 +9,6 @@ import { ValidationError as ClassValidationError } from 'class-validator';
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 import { AppModule } from './app.module';
 import { CustomValidationException } from 'common/exceptions';
-import { ValidationError } from 'common/interfaces';
 
 bootstrap();
 
@@ -37,7 +36,8 @@ async function bootstrap() {
         new ValidationPipe({
             transform: true,
             transformOptions: { enableImplicitConversion: true },
-            exceptionFactory: validationExceptionFactory,
+            exceptionFactory: (validationErrors: Array<ClassValidationError>) =>
+                CustomValidationException.fromClassValidator(validationErrors),
         }),
     );
 
@@ -68,26 +68,4 @@ function setupSwagger(app: INestApplication) {
         },
     };
     SwaggerModule.setup('api', app, () => SwaggerModule.createDocument(app, config, documentOptions), swaggerOptions);
-}
-
-function validationExceptionFactory(validationErrors: Array<ClassValidationError>) {
-    const transformErrors = (target: ClassValidationError, paths: Array<string>) => {
-        paths.push(target.property);
-
-        if (target.constraints) {
-            const messages = Object.entries(target.constraints).map(([, message]) => message);
-            const path = paths.join('.');
-            return messages.map(m => ({ message: m, path, value: target.value }));
-        }
-        return target.children.reduce((result, child) => {
-            result.push(...transformErrors(child, paths));
-            return result;
-        }, []);
-    };
-
-    const transformedErrors: Array<ValidationError> = validationErrors.reduce((transformedErrors, error) => {
-        transformedErrors.push(...transformErrors(error, []));
-        return transformedErrors;
-    }, []);
-    return new CustomValidationException(...transformedErrors);
 }

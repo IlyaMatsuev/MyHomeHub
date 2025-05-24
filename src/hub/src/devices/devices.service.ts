@@ -82,15 +82,15 @@ export class DevicesService {
         return device;
     }
 
-    private updateDtoValues(device: Device, updatedDevice: UpdateDeviceDto): Promise<Device> {
-        Object.keys(updatedDevice).forEach(field => {
+    private async updateDtoValues(device: Device, updatedDevice: UpdateDeviceDto): Promise<Device> {
+        for (const field of Object.keys(updatedDevice)) {
             if (field === 'controls') {
-                this.getControlService(device).validateControls(updatedDevice.controls);
+                await this.getControlService(device).validateControls(updatedDevice.controls);
                 device.controls = { ...(device.controls || {}), ...updatedDevice.controls };
             } else {
                 device[field] = updatedDevice[field];
             }
-        });
+        }
         return device.save({ validateBeforeSave: true });
     }
 }
