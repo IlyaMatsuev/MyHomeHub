@@ -1,6 +1,7 @@
 import { Schema } from 'mongoose';
 import { v4 as uuid } from 'uuid';
 import { DeviceType, Room } from 'devices/interfaces';
+import { DEVICE_DEFAULT_UPDATE_INTERVAL, DEVICE_NAME_MAX_LENGTH, DEVICE_NAME_MIN_LENGTH } from 'devices/devices.constants';
 
 export const DeviceSchema = new Schema({
     externalId: {
@@ -15,8 +16,8 @@ export const DeviceSchema = new Schema({
         required: true,
         unique: true,
         trim: true,
-        minLength: 3,
-        maxLength: 40,
+        minLength: DEVICE_NAME_MIN_LENGTH,
+        maxLength: DEVICE_NAME_MAX_LENGTH,
     },
     // TODO: Add separate field for "brand". So that I have { "brand": "google", "type": "speaker" } or { "brand": "shelly", "type": "plug" }
     type: {
@@ -61,8 +62,8 @@ export const DeviceSchema = new Schema({
     updateInterval: {
         type: Number,
         required: false,
-        default: 0,
-        min: 0,
+        default: DEVICE_DEFAULT_UPDATE_INTERVAL,
+        min: DEVICE_DEFAULT_UPDATE_INTERVAL,
     },
     controls: {
         type: Object,

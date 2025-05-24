@@ -1,16 +1,40 @@
+import {
+    IsString,
+    IsNotEmpty,
+    Length,
+    IsEnum,
+    IsOptional,
+    IsInt,
+    Min,
+    IsIP,
+    IsObject,
+    IsNotEmptyObject,
+    ValidateIf,
+} from 'class-validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { DeviceType, Room } from 'devices/interfaces';
+import {
+    DEVICE_ALLOWED_IP_VERSION,
+    DEVICE_DEFAULT_UPDATE_INTERVAL,
+    DEVICE_NAME_MAX_LENGTH,
+    DEVICE_NAME_MIN_LENGTH,
+} from 'devices/devices.constants';
 
 @ApiSchema({ name: 'CreateDeviceRequest', description: 'DTO used to add a new device to the hub control' })
 export class CreateDeviceDto {
+    @IsString()
+    @IsNotEmpty()
+    @Length(DEVICE_NAME_MIN_LENGTH, DEVICE_NAME_MAX_LENGTH)
     @ApiProperty({
         required: true,
         description: 'The unique name of the device',
-        minLength: 3,
-        maxLength: 20,
+        minLength: DEVICE_NAME_MIN_LENGTH,
+        maxLength: DEVICE_NAME_MAX_LENGTH,
     })
     name: string;
 
+    @IsNotEmpty()
+    @IsEnum(DeviceType)
     @ApiProperty({
         required: true,
         description: 'The type of the device',
@@ -18,6 +42,8 @@ export class CreateDeviceDto {
     })
     type: DeviceType;
 
+    @IsOptional()
+    @IsEnum(Room)
     @ApiProperty({
         required: false,
         description: 'The room where device is placed at',
@@ -25,46 +51,63 @@ export class CreateDeviceDto {
     })
     room?: Room;
 
+    @IsOptional()
+    @IsInt()
+    @Min(DEVICE_DEFAULT_UPDATE_INTERVAL)
     @ApiProperty({
-        required: true,
+        required: false,
         description:
             'Time interval of sending controls and measurements updates from devices to hub (ms). Setting to 0 means that device will not send updates itself',
-        default: 0,
-        minimum: 0,
+        default: DEVICE_DEFAULT_UPDATE_INTERVAL,
+        minimum: DEVICE_DEFAULT_UPDATE_INTERVAL,
     })
-    updateInterval: number;
+    updateInterval?: number;
 
+    @IsOptional()
+    @IsIP(DEVICE_ALLOWED_IP_VERSION)
     @ApiProperty({
         required: false,
         description: 'The IP address of the device',
     })
     ip?: string;
 
+    @IsNotEmpty()
+    @IsString()
+    @ValidateIf(d => d.type === DeviceType.TuyaDevice)
     @ApiProperty({
         required: false,
         description: 'The device ID of the Tuya smart device',
     })
     tuyaDeviceId?: string;
 
+    @IsNotEmpty()
+    @IsString()
+    @ValidateIf(d => d.type === DeviceType.TuyaDevice)
     @ApiProperty({
         required: false,
         description: 'The device local key of the Tuya smart device',
     })
     tuyaDeviceLocalKey?: string;
 
+    @IsOptional()
+    @IsNotEmptyObject()
+    @IsObject()
     @ApiProperty({
         required: true,
         description: 'Set of controls available to set for the device. Can be different for each device',
         default: {},
     })
-    controls: Record<string, object>;
+    controls?: Record<string, object>;
 
+    @IsOptional()
+    @IsNotEmptyObject()
+    @IsObject()
     @ApiProperty({
         required: true,
         description: 'Set of measurements available to read for the device. Can be different for each device',
         default: {},
     })
-    measurements: Record<string, object>;
+    measurements?: Record<string, object>;
 
     constructor(device?: Partial<CreateDeviceDto>) {
         if (device) {
