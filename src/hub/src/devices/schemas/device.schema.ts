@@ -18,6 +18,7 @@ export const DeviceSchema = new Schema({
         minLength: 3,
         maxLength: 40,
     },
+    // TODO: Add separate field for "brand". So that I have { "brand": "google", "type": "speaker" } or { "brand": "shelly", "type": "plug" }
     type: {
         type: String,
         required: true,

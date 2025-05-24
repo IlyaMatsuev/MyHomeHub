@@ -1,4 +1,4 @@
-import { DeviceControlService } from 'devices/control-services';
+import { DevicesControlService } from 'devices-control/devices-control.service';
 import TuyaDevice from 'tuyapi';
 import Color from 'color';
 
@@ -16,7 +16,7 @@ enum TuyaControlsDps {
 
 type TuyaDeviceControls = { [key: number]: boolean | string | number };
 
-export class TuyaDeviceControlService extends DeviceControlService {
+export class TuyaControlService extends DevicesControlService {
     private get tuyaDeviceId() {
         if (!this.device.tuyaDeviceId) {
             throw new Error(`The Tuya device with id "${this.device.externalId}" is missing a Tuya device Id`);
@@ -32,10 +32,10 @@ export class TuyaDeviceControlService extends DeviceControlService {
     }
 
     protected getServiceName(): string {
-        return TuyaDeviceControlService.name;
+        return TuyaControlService.name;
     }
 
-    async setControls(controls: Record<string, unknown>): Promise<void> {
+    protected async setDeviceControls(controls: Record<string, unknown>): Promise<void | never> {
         const tuyaDevice = new TuyaDevice({
             id: this.tuyaDeviceId,
             ip: this.getDeviceIP(),

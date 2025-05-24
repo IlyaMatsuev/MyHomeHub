@@ -1,8 +1,9 @@
-import { Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from '@nestjs/common';
 import { Device } from 'devices/interfaces';
+import { ConfigService } from '@nestjs/config';
 
-export abstract class DeviceControlService {
+@Injectable()
+export abstract class DevicesControlService {
     protected readonly logger: Logger;
 
     constructor(
@@ -13,7 +14,15 @@ export abstract class DeviceControlService {
     }
 
     protected abstract getServiceName(): string;
-    abstract setControls<T>(controls: Record<string, unknown>): Promise<T | void>;
+    protected abstract setDeviceControls<T>(controls: Record<string, unknown>): Promise<T | void | never>;
+
+    setControls<T>(controls: Record<string, unknown>): Promise<T | void | never> {
+        try {
+            return this.setDeviceControls(controls);
+        } catch (error) {
+            this.logger.error(`Failed to set controls: ${error}`);
+        }
+    }
 
     protected getDeviceIP(): string | never {
         if (!this.device.ip) {

@@ -1,16 +1,16 @@
-import { DeviceControlService } from 'devices/control-services';
+import { DevicesControlService } from 'devices-control/devices-control.service';
 import { request } from 'gaxios';
 
 enum ShellyMethod {
     SwitchSet = 'Switch.Set',
 }
 
-export class ShellyDeviceControlService extends DeviceControlService {
+export class ShellyControlService extends DevicesControlService {
     protected getServiceName(): string {
-        return ShellyDeviceControlService.name;
+        return ShellyControlService.name;
     }
 
-    async setControls<T>(controls: Record<string, unknown>): Promise<T> {
+    protected async setDeviceControls<T>(controls: Record<string, unknown>): Promise<T> {
         const response = await request<T>({
             url: `http://${this.getDeviceIP()}/rpc`,
             method: 'POST',

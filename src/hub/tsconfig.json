@@ -2,6 +2,7 @@
   "compilerOptions": {
     "paths": {
       "devices/*": ["src/devices/*"],
+      "devices-control/*": ["src/devices-control/*"],
       "scenarios/*": ["src/scenarios/*"],
       "users/*": ["src/users/*"],
       "auth/*": ["src/auth/*"],

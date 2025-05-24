@@ -1,23 +1,26 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Model } from 'mongoose';
+import { DevicesControlServiceFactory } from 'devices-control/devices-control-service.factory';
+import { DevicesControlService } from 'devices-control/devices-control.service';
+import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { Device, DeviceFilter, DevicesPage, GetDeviceOptions } from 'devices/interfaces';
 import { GetDevicesDto, CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
 import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from 'devices/events';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
-import { DeviceControlService, DeviceControlServiceFactory } from 'devices/control-services';
 
 @Injectable()
 export class DevicesService {
     constructor(
         @Inject(DEVICE_MODEL_PROVIDER_NAME)
         private readonly deviceModel: Model<Device>,
-        private readonly deviceControlServiceFactory: DeviceControlServiceFactory,
+        @Inject(DEVICES_CONTROL_FACTORY_PROVIDER)
+        private readonly deviceControlServiceFactory: DevicesControlServiceFactory,
         private readonly eventEmitter: EventEmitter2,
     ) {}
 
-    getControlService<T extends DeviceControlService>(device: Device): T {
-        return this.deviceControlServiceFactory.getControlService<T>(device);
+    getControlService(device: Device): DevicesControlService {
+        return this.deviceControlServiceFactory.getControlService(device);
     }
 
     async getDevices(options: GetDevicesDto = new GetDevicesDto()): Promise<DevicesPage> {
@@ -50,6 +53,7 @@ export class DevicesService {
         return device;
     }
 
+    // TODO: Add validators for controls depending on device type
     async addDevice(deviceDto: CreateDeviceDto): Promise<Device> {
         const existingDevice = await this.getDevice({ name: deviceDto.name }, { strict: false });
         if (existingDevice) {
