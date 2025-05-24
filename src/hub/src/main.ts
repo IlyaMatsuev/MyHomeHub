@@ -5,8 +5,11 @@ import { WsAdapter } from '@nestjs/platform-ws';
 import { SwaggerCustomOptions } from '@nestjs/swagger/dist/interfaces/swagger-custom-options.interface';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerDocumentOptions, SwaggerModule } from '@nestjs/swagger';
+import { ValidationError as ClassValidationError } from 'class-validator';
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 import { AppModule } from './app.module';
+import { CustomValidationException } from 'common/exceptions';
+import { ValidationError } from 'common/interfaces';
 
 bootstrap();
 
@@ -30,7 +33,13 @@ async function bootstrap() {
     });
     app.enableCors();
     app.useWebSocketAdapter(new WsAdapter(app));
-    app.useGlobalPipes(new ValidationPipe({ transform: true, transformOptions: { enableImplicitConversion: true } }));
+    app.useGlobalPipes(
+        new ValidationPipe({
+            transform: true,
+            transformOptions: { enableImplicitConversion: true },
+            exceptionFactory: validationExceptionFactory,
+        }),
+    );
 
     setupSwagger(app);
 
@@ -59,4 +68,18 @@ function setupSwagger(app: INestApplication) {
         },
     };
     SwaggerModule.setup('api', app, () => SwaggerModule.createDocument(app, config, documentOptions), swaggerOptions);
+}
+
+function validationExceptionFactory(validationErrors: Array<ClassValidationError>) {
+    const transformedErrors: Array<ValidationError> = validationErrors.reduce((transformedErrors, error) => {
+        const transformed = Object.keys(error.constraints).map(c => ({
+            message: error.constraints[c],
+            path: error.property,
+            value: error.value,
+        }));
+
+        transformedErrors.push(...transformed);
+        return transformedErrors;
+    }, []);
+    return new CustomValidationException(...transformedErrors);
 }
