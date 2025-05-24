@@ -9,7 +9,15 @@ import {
     ScenarioTriggerSourceType,
     ScenarioCronTimeAdjustOption,
 } from 'scenarios/interfaces';
-import { MAX_CRON_TRIGGER_SOURCES_PER_SCENARIO } from 'scenarios/scenarios.constants';
+import {
+    MAX_CRON_TRIGGER_SOURCES_PER_SCENARIO,
+    SCENARIO_DESCRIPTION_MAX_LENGTH,
+    SCENARIO_DESCRIPTION_MIN_LENGTH,
+    SCENARIO_NAME_MAX_LENGTH,
+    SCENARIO_NAME_MIN_LENGTH,
+    SCENARIO_TRIGGER_LOGIC_MAX_LENGTH,
+    SCENARIO_TRIGGER_LOGIC_MIN_LENGTH,
+} from 'scenarios/scenarios.constants';
 
 const TRIGGER_SOURCE_TYPE_VALIDATORS: { [key in ScenarioTriggerSourceType]: (triggerSource: ScenarioTriggerSource) => boolean | never } = {
     [ScenarioTriggerSourceType.Cron]: (triggerSource: ScenarioCronTriggerSource): boolean | never => {
@@ -55,15 +63,15 @@ export const ScenarioSchema = new Schema({
         required: true,
         unique: true,
         trim: true,
-        minLength: 3,
-        maxLength: 80,
+        minLength: SCENARIO_NAME_MIN_LENGTH,
+        maxLength: SCENARIO_NAME_MAX_LENGTH,
     },
     description: {
         type: String,
         required: false,
         trim: true,
-        minLength: 5,
-        maxLength: 255,
+        minLength: SCENARIO_DESCRIPTION_MIN_LENGTH,
+        maxLength: SCENARIO_DESCRIPTION_MAX_LENGTH,
     },
     trigger: {
         sources: [
@@ -128,7 +136,8 @@ export const ScenarioSchema = new Schema({
             required: true,
             trim: true,
             uppercase: true,
-            maxLength: 80,
+            minLength: SCENARIO_TRIGGER_LOGIC_MIN_LENGTH,
+            maxLength: SCENARIO_TRIGGER_LOGIC_MAX_LENGTH,
             validate: {
                 validator: function (value: string): boolean | never {
                     if (!/^\(*\d+\)*(?: *(?:AND|OR) *\(*\d+\)*)*$/.test(value)) {

@@ -9,6 +9,20 @@ import {
     ScenarioCronTimeAdjustOption,
 } from 'scenarios/interfaces';
 import { ApiExtraModels, ApiProperty, ApiSchema, getSchemaPath } from '@nestjs/swagger';
+import {
+    ArrayNotEmpty,
+    IsArray,
+    IsDefined,
+    IsNotEmpty,
+    IsNotEmptyObject,
+    IsObject,
+    IsOptional,
+    IsUUID,
+    Length,
+    ValidateNested,
+} from 'class-validator';
+import { EXTERNAL_ID_UUID_VERSION } from 'common/common.constants';
+import { SCENARIO_TRIGGER_LOGIC_MAX_LENGTH, SCENARIO_TRIGGER_LOGIC_MIN_LENGTH } from 'scenarios/scenarios.constants';
 
 @ApiSchema({ name: 'ScenarioCronTriggerSource' })
 export class ScenarioCronTriggerSourceDto implements ScenarioCronTriggerSource {
@@ -81,6 +95,9 @@ export class ScenarioDeviceTriggerSourceDto implements ScenarioDeviceTriggerSour
 @ApiExtraModels(ScenarioCronTriggerSourceDto, ScenarioDeviceTriggerSourceDto)
 @ApiSchema({ name: 'ScenarioTrigger' })
 export class ScenarioTriggerDto implements ScenarioTrigger {
+    @IsDefined()
+    @IsArray()
+    @ArrayNotEmpty()
     @ApiProperty({
         type: 'array',
         items: {
@@ -91,17 +108,23 @@ export class ScenarioTriggerDto implements ScenarioTrigger {
     })
     sources: Array<ScenarioTriggerSource>;
 
+    @IsNotEmpty()
+    @Length(SCENARIO_TRIGGER_LOGIC_MIN_LENGTH, SCENARIO_TRIGGER_LOGIC_MAX_LENGTH)
     @ApiProperty({
         required: true,
         description: 'The boolean expression used to evaluate the scenario execution',
         example: '1 OR 2',
-        maxLength: 80,
+        minLength: SCENARIO_TRIGGER_LOGIC_MIN_LENGTH,
+        maxLength: SCENARIO_TRIGGER_LOGIC_MAX_LENGTH,
     })
     logic: string;
 }
 
 @ApiSchema({ name: 'ScenarioDeviceSetting' })
 export class ScenarioDeviceSettingDto {
+    @IsOptional()
+    @IsObject()
+    @IsNotEmptyObject()
     @ApiProperty({
         required: false,
         description: 'The set of control fields to be set on the triggered device for the scenario',
@@ -109,6 +132,9 @@ export class ScenarioDeviceSettingDto {
     })
     controls?: Record<string, object>;
 
+    @IsOptional()
+    @IsObject()
+    @IsNotEmptyObject()
     @ApiProperty({
         required: false,
         description: 'The set of measurements fields to be set on the triggered device for the scenario',
@@ -119,12 +145,16 @@ export class ScenarioDeviceSettingDto {
 
 @ApiSchema({ name: 'ScenarioDevice' })
 export class ScenarioDeviceDto implements ScenarioDevice {
+    @IsNotEmpty()
+    @IsUUID(EXTERNAL_ID_UUID_VERSION)
     @ApiProperty({
         required: true,
         description: 'The id of the device that needs to be changed on scenario execution',
     })
     externalId: string;
 
+    @IsDefined()
+    @ValidateNested()
     @ApiProperty({
         required: true,
         description: 'The set of device controls or measurements to be changed on scenario execution',

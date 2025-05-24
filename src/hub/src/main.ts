@@ -71,14 +71,22 @@ function setupSwagger(app: INestApplication) {
 }
 
 function validationExceptionFactory(validationErrors: Array<ClassValidationError>) {
-    const transformedErrors: Array<ValidationError> = validationErrors.reduce((transformedErrors, error) => {
-        const transformed = Object.keys(error.constraints).map(c => ({
-            message: error.constraints[c],
-            path: error.property,
-            value: error.value,
-        }));
+    const transformErrors = (target: ClassValidationError, paths: Array<string>) => {
+        paths.push(target.property);
 
-        transformedErrors.push(...transformed);
+        if (target.constraints) {
+            const messages = Object.entries(target.constraints).map(([, message]) => message);
+            const path = paths.join('.');
+            return messages.map(m => ({ message: m, path, value: target.value }));
+        }
+        return target.children.reduce((result, child) => {
+            result.push(...transformErrors(child, paths));
+            return result;
+        }, []);
+    };
+
+    const transformedErrors: Array<ValidationError> = validationErrors.reduce((transformedErrors, error) => {
+        transformedErrors.push(...transformErrors(error, []));
         return transformedErrors;
     }, []);
     return new CustomValidationException(...transformedErrors);
