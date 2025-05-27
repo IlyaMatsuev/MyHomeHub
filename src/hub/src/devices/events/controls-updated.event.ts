@@ -3,6 +3,6 @@ export class DeviceControlsUpdatedEvent {
 
     constructor(
         public readonly deviceExternalId: string,
-        public readonly controls: Record<string, object>,
+        public readonly controls: Record<string, unknown>,
     ) {}
 }

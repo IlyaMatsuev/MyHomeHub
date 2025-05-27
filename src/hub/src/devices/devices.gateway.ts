@@ -86,7 +86,10 @@ export class DevicesGateway implements OnGatewayConnection, OnGatewayDisconnect 
         }
 
         const device = this.pairedDevices.get(client.id);
-        await this.devicesService.updateDevice(device.externalId, new UpdateDeviceDto(stateDto.controls, stateDto.measurements));
+        await this.devicesService.updateDevice(
+            device.externalId,
+            new UpdateDeviceDto({ controls: stateDto.controls, measurements: stateDto.measurements }),
+        );
         return {
             event: DeviceGatewayEvent.State,
             data: {

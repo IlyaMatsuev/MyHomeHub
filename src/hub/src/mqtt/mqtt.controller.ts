@@ -9,6 +9,7 @@ import {
 } from 'mqtt/mqtt.constants';
 import { DevicesService } from 'devices/devices.service';
 import { PairRequestDto } from 'mqtt/dto';
+import { UpdateDeviceDto } from 'devices/dto';
 
 @Controller()
 export class MqttController {
@@ -49,9 +50,7 @@ export class MqttController {
         const [deviceId] = this.extractTopicWildcards(MEASUREMENTS_UPDATE_TOPIC_NAME, context.getTopic());
         try {
             this.logger.debug(`Updating measurements for a device with id "${deviceId}": ${JSON.stringify(measurements)}`);
-            const device = await this.devicesService.getDeviceByExternalId(deviceId);
-            // TODO: Update measurements
-            this.logger.debug(`Device name: ${device.name}`);
+            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ measurements }));
         } catch (error) {
             this.logger.error(`Error while retrieving measurements for a device with id "${deviceId}"`);
             this.logger.error(error);

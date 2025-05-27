@@ -120,7 +120,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Office Desk LED strip\",\n    \"type\": \"tuya\",\n    \"room\": \"office\",\n    \"deviceAddress\": \"http://192.168.0.13\",\n    \"tuyaDeviceId\": \"id\",\n    \"tuyaDeviceLocalKey\": \"qwe\"\n}",
+              "raw": "{\n    \"name\": \"\",\n    \"type\": \"google-speaker\",\n    \"room\": \"living-room\",\n    \"ip\": \"192.168.0.15\",\n    \"controls\": null\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -186,7 +186,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"controls\": {\n        \"brightness\": 100\n    }\n}",
+              "raw": "{\n    \"type\": \"led\",\n    \"brand\": \"tuya\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -539,7 +539,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Christmas Tree Lights Off\",\n    \"description\": \"Switches off the christmas tree lights\",\n    \"trigger\": {\n        \"sources\": [\n            {\n                \"type\": \"cron\",\n                \"cron\": \"30 0 * * *\"\n            },\n            {\n                \"type\": \"device\",\n                \"device\": {\n                    \"externalId\": \"5f9ffdce-bf7b-4fdf-9a3e-7c62edf77ca0\",\n                    \"controls\": {\n                        \"are\": {\n                            \"on\": true\n                        }\n                    }\n                }\n            }\n        ],\n        \"logic\": \"1 AND 2\"\n    },\n    \"devices\": [\n        {\n            \"externalId\": \"5f9ffdce-bf7b-4fdf-9a3e-7c62edf77ca0\",\n            \"set\": {\n                \"controls\": {\n                    \"on\": false\n                }\n            }\n        }\n    ]\n}",
+              "raw": "{\n    \"name\": \"Christmas Tree Lights\",\n    \"description\": \"Switches off the christmas tree lights\",\n    \"trigger\": {\n        \"sources\": [{}],\n        \"logic\": \"1 AND 2\"\n    },\n    \"devices\": [\n        {\"externalId\": \"5f9ffdce-bf7b-4fdf-9a3e-7c62edf77ca0\", \"set\": {}}\n    ]\n}",
               "options": {
                 "raw": {
                   "language": "json"

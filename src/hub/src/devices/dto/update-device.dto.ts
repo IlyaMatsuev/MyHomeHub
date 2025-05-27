@@ -93,7 +93,7 @@ export class UpdateDeviceDto {
         description: 'Updated set of controls for the device',
         default: {},
     })
-    controls?: Record<string, object>;
+    controls?: Record<string, unknown>;
 
     @IsOptional()
     @IsNotEmptyObject()
@@ -103,7 +103,7 @@ export class UpdateDeviceDto {
         description: 'Updated set of measurements for the device',
         default: {},
     })
-    measurements?: Record<string, object>;
+    measurements?: Record<string, unknown>;
 
     get controlsUpdated(): boolean {
         return !!Object.keys(this.controls ?? {}).length;
@@ -113,12 +113,9 @@ export class UpdateDeviceDto {
         return !!Object.keys(this.measurements ?? {}).length;
     }
 
-    constructor(controls?: Record<string, object>, measurements?: Record<string, object>) {
-        if (controls) {
-            this.controls = controls;
-        }
-        if (measurements) {
-            this.measurements = measurements;
+    constructor(device?: Partial<UpdateDeviceDto>) {
+        if (device) {
+            Object.assign(this, device);
         }
     }
 }

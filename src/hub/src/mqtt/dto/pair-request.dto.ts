@@ -6,8 +6,8 @@ export class PairRequestDto {
     deviceIp: string;
     deviceName: string;
     updateInterval?: number;
-    controls?: Record<string, object>;
-    measurements?: Record<string, object>;
+    controls?: Record<string, unknown>;
+    measurements?: Record<string, unknown>;
 
     toCreateDevice(): CreateDeviceDto {
         return new CreateDeviceDto({

@@ -106,7 +106,7 @@ export class CreateDeviceDto {
         description: 'Set of controls available to set for the device. Can be different for each device',
         default: {},
     })
-    controls?: Record<string, object>;
+    controls?: Record<string, unknown>;
 
     @IsOptional()
     @IsNotEmptyObject()
@@ -116,7 +116,7 @@ export class CreateDeviceDto {
         description: 'Set of measurements available to read for the device. Can be different for each device',
         default: {},
     })
-    measurements?: Record<string, object>;
+    measurements?: Record<string, unknown>;
 
     constructor(device?: Partial<CreateDeviceDto>) {
         if (device) {
