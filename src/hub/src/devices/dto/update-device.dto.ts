@@ -1,5 +1,5 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { DeviceType, Room } from 'devices/interfaces';
+import { DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import { IsEnum, IsInt, IsIP, IsNotEmptyObject, IsObject, IsOptional, IsString, Length, Min } from 'class-validator';
 import {
     DEVICE_ALLOWED_IP_VERSION,
@@ -32,6 +32,15 @@ export class UpdateDeviceDto {
         enum: DeviceType,
     })
     type?: DeviceType;
+
+    @IsOptional()
+    @IsEnum(DeviceBrand)
+    @ApiProperty({
+        required: false,
+        description: 'The new brand for the device',
+        enum: DeviceBrand,
+    })
+    brand?: DeviceBrand;
 
     @IsOptional()
     @IsEnum(Room)

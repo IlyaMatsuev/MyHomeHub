@@ -12,7 +12,7 @@ import {
     ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { DeviceType, Room } from 'devices/interfaces';
+import { DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import {
     DEVICE_ALLOWED_IP_VERSION,
     DEVICE_DEFAULT_UPDATE_INTERVAL,
@@ -41,6 +41,15 @@ export class CreateDeviceDto {
         enum: DeviceType,
     })
     type: DeviceType;
+
+    @IsOptional()
+    @IsEnum(DeviceBrand)
+    @ApiProperty({
+        required: false,
+        description: 'The brand of the device',
+        enum: DeviceBrand,
+    })
+    brand: DeviceBrand;
 
     @IsOptional()
     @IsEnum(Room)
@@ -73,7 +82,7 @@ export class CreateDeviceDto {
 
     @IsNotEmpty()
     @IsString()
-    @ValidateIf(d => d.type === DeviceType.TuyaDevice)
+    @ValidateIf(d => d.brand === DeviceBrand.Tuya)
     @ApiProperty({
         required: false,
         description: 'The device ID of the Tuya smart device',
@@ -82,7 +91,7 @@ export class CreateDeviceDto {
 
     @IsNotEmpty()
     @IsString()
-    @ValidateIf(d => d.type === DeviceType.TuyaDevice)
+    @ValidateIf(d => d.brand === DeviceBrand.Tuya)
     @ApiProperty({
         required: false,
         description: 'The device local key of the Tuya smart device',

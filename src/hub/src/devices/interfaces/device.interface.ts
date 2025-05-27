@@ -1,11 +1,12 @@
 import { Document } from 'mongoose';
-import { DeviceType, Room } from 'devices/interfaces';
+import { DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 
 export interface Device extends Document<string> {
     externalId: string;
     name: string;
     type: DeviceType;
     room: Room;
+    brand: DeviceBrand;
     ip: string;
     tuyaDeviceId: string;
     tuyaDeviceLocalKey: string;

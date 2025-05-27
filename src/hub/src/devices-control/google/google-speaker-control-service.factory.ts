@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Device, DeviceType } from 'devices/interfaces';
+import { Device, DeviceBrand, DeviceType } from 'devices/interfaces';
 import { DeviceControlServiceFactory } from 'devices-control/interfaces';
 import { GoogleSpeakerControlService } from 'devices-control/google/google-speaker-control.service';
 
@@ -9,7 +9,7 @@ export class GoogleSpeakerControlServiceFactory implements DeviceControlServiceF
     constructor(private readonly configService: ConfigService) {}
 
     eligible(device: Device): boolean {
-        return device.type === DeviceType.GoogleSpeaker;
+        return device.type === DeviceType.Speaker && device.brand === DeviceBrand.Google;
     }
 
     createService(device: Device): GoogleSpeakerControlService {

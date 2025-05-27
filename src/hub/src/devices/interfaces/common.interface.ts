@@ -8,7 +8,13 @@ export enum Room {
 
 export enum DeviceType {
     ESP32 = 'esp32',
-    GoogleSpeaker = 'google-speaker',
-    ShellyPlug = 'shelly-plug',
-    TuyaDevice = 'tuya',
+    Speaker = 'speaker',
+    Plug = 'plug',
+    LED = 'led',
+}
+
+export enum DeviceBrand {
+    Google = 'google',
+    Shelly = 'shelly',
+    Tuya = 'tuya',
 }

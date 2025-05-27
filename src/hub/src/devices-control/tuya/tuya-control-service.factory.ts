@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Device, DeviceType } from 'devices/interfaces';
+import { Device, DeviceBrand, DeviceType } from 'devices/interfaces';
 import { TuyaControlService } from 'devices-control/tuya/tuya-control.service';
 import { DeviceControlServiceFactory } from 'devices-control/interfaces';
 
@@ -9,7 +9,7 @@ export class TuyaControlServiceFactory implements DeviceControlServiceFactory {
     constructor(private readonly configService: ConfigService) {}
 
     eligible(device: Device): boolean {
-        return device.type == DeviceType.TuyaDevice;
+        return device.type == DeviceType.LED && device.brand == DeviceBrand.Tuya;
     }
 
     createService(device: Device): TuyaControlService {

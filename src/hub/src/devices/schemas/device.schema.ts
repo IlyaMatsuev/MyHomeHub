@@ -1,6 +1,6 @@
 import { Schema } from 'mongoose';
 import { v4 as uuid } from 'uuid';
-import { DeviceType, Room } from 'devices/interfaces';
+import { DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import { DEVICE_DEFAULT_UPDATE_INTERVAL, DEVICE_NAME_MAX_LENGTH, DEVICE_NAME_MIN_LENGTH } from 'devices/devices.constants';
 
 export const DeviceSchema = new Schema({
@@ -19,11 +19,15 @@ export const DeviceSchema = new Schema({
         minLength: DEVICE_NAME_MIN_LENGTH,
         maxLength: DEVICE_NAME_MAX_LENGTH,
     },
-    // TODO: Add separate field for "brand". So that I have { "brand": "google", "type": "speaker" } or { "brand": "shelly", "type": "plug" }
     type: {
         type: String,
         required: true,
         enum: Object.values(DeviceType) as Array<string>,
+    },
+    brand: {
+        type: String,
+        required: false,
+        enum: Object.values(DeviceBrand) as Array<string>,
     },
     room: {
         type: String,
@@ -38,25 +42,25 @@ export const DeviceSchema = new Schema({
     tuyaDeviceId: {
         type: String,
         required: function () {
-            return this.type === DeviceType.TuyaDevice;
+            return this.brand === DeviceBrand.Tuya;
         },
         validate: {
             validator: function (): boolean {
-                return this.type === DeviceType.TuyaDevice;
+                return this.brand === DeviceBrand.Tuya;
             },
-            message: `Tuya device id can be specified only for a device of type "${DeviceType.TuyaDevice}"`,
+            message: `Tuya device id can be specified only for a device of brand "${DeviceBrand.Tuya}"`,
         },
     },
     tuyaDeviceLocalKey: {
         type: String,
         required: function () {
-            return this.type === DeviceType.TuyaDevice;
+            return this.brand === DeviceBrand.Tuya;
         },
         validate: {
             validator: function (): boolean {
-                return this.type === DeviceType.TuyaDevice;
+                return this.brand === DeviceBrand.Tuya;
             },
-            message: `Tuya device local key can be specified only for a device of type "${DeviceType.TuyaDevice}"`,
+            message: `Tuya device local key can be specified only for a device of brand "${DeviceBrand.Tuya}"`,
         },
     },
     updateInterval: {
