@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -7,6 +7,8 @@ import { IS_PUBLIC_KEY } from 'auth/decorators';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+    private readonly logger = new Logger(AuthGuard.name);
+
     constructor(
         private readonly jwtService: JwtService,
         private readonly reflector: Reflector,
@@ -14,12 +16,14 @@ export class AuthGuard implements CanActivate {
     ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
+        this.logger.debug(`is public endpoint: ${this.isPublicEndpoint(context)}, ${context.getHandler()}, ${context.getClass()}`);
         if (this.isPublicEndpoint(context)) {
             return true;
         }
 
         const request = context.switchToHttp().getRequest();
         const token = this.extractTokenFromHeader(request);
+        this.logger.debug(`Provided token ${token}`);
         if (!token) {
             throw new UnauthorizedException();
         }
@@ -27,7 +31,8 @@ export class AuthGuard implements CanActivate {
         try {
             const jwtSecret = this.configService.get<string>('JWT_SECRET');
             request['user'] = await this.jwtService.verifyAsync(token, { secret: jwtSecret });
-        } catch {
+        } catch (error) {
+            this.logger.debug(`Error: ${error}`);
             throw new UnauthorizedException();
         }
         return true;

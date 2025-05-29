@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
@@ -8,6 +8,8 @@ import { NewUser } from 'users/interfaces';
 
 @Injectable()
 export class AuthService {
+    private readonly logger = new Logger(AuthService.name);
+
     constructor(
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
@@ -27,6 +29,7 @@ export class AuthService {
 
     async register(email: string, password: string, accessKey: string): Promise<NewUser> {
         if (!this.verifyAccessKeyHash(accessKey)) {
+            this.logger.debug(`Registration access key is invalid`);
             throw new UnauthorizedException();
         }
         const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password));
@@ -35,6 +38,8 @@ export class AuthService {
 
     verifyAccessKeyHash(accessKey: string): boolean {
         const actualAccessKey = this.configService.get<string>('REGISTRATION_ACCESS_KEY');
+        // TODO: Delete after I figure out why registration in test env doesn't work
+        this.logger.debug(`Verifying registration rights, received access key: ${accessKey} - ${actualAccessKey}`);
         return accessKey === actualAccessKey;
     }
 
