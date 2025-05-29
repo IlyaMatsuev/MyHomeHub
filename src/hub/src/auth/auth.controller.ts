@@ -21,6 +21,7 @@ export class AuthController {
         return { accessToken };
     }
 
+    // TODO: Not able to register or login in test instance
     @Public()
     @Post('register')
     @HttpCode(HttpStatus.OK)

@@ -10,6 +10,7 @@ import {
 import { DevicesService } from 'devices/devices.service';
 import { PairRequestDto } from 'mqtt/dto';
 import { UpdateDeviceDto } from 'devices/dto';
+import { plainToInstance } from 'class-transformer';
 
 @Controller()
 export class MqttController {
@@ -23,6 +24,7 @@ export class MqttController {
     @MessagePattern(DEVICE_PAIR_REQUEST_TOPIC_NAME)
     async onHomeDevicePairRequest(@Ctx() context: MqttContext, @Payload() pairRequest: PairRequestDto): Promise<void> {
         try {
+            pairRequest = plainToInstance(PairRequestDto, pairRequest);
             this.logger.log(`Received a device (${pairRequest?.deviceName}) pairing request with IP "${pairRequest?.deviceIp}"`);
             this.logger.debug(`request message: ${typeof pairRequest} - ${JSON.stringify(pairRequest)}`);
             if (!pairRequest?.deviceIp || !pairRequest?.deviceName) {
