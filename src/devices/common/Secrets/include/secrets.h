@@ -1,6 +1,5 @@
 extern const char* NETWORK_SSID;
 extern const char* NETWORK_PASSWORD;
-extern const char* ORIGINAL_DEVICE_NAME;
 
 extern const char* MQTT_HOSTNAME;
 extern const int MQTT_PORT;
