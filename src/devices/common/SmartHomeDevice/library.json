@@ -1,0 +1,31 @@
+{
+  "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
+  "name": "SmartHomeDevice",
+  "version": "1.0.0",
+  "description": "A reusable frameworks meant to manage the device connection and controls against the smart home hub",
+  "keywords": ["esp32", "iot", "mqtt"],
+  "authors": [
+    {
+      "name": "Ilya Matsuev",
+      "email": "ilya.matsuev.personal@gmail.com",
+      "url": "https://github.com/IlyaMatsuev",
+      "maintainer": true
+    }
+  ],
+  "headers": ["SmartHomeDevice.h"],
+  "dependencies": [
+    {
+      "owner": "knolleary",
+      "name": "PubSubClient",
+      "version": "^2.8"
+    },
+    {
+      "owner": "bblanchon",
+      "name": "ArduinoJson",
+      "version": "^7.4.1"
+    }
+  ],
+  "frameworks": ["arduino"],
+  "platforms": ["espressif32"],
+  "license": "MIT"
+}

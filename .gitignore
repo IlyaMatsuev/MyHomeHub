@@ -3,11 +3,14 @@
 *.launch
 .settings/
 .project
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+**/.vscode/*
+!**/.vscode/settings.json
+!**/.vscode/tasks.json
+!**/.vscode/launch.json
+!**/.vscode/extensions.json
+# IDE Platform IO
+/src/devices/**/.pio
+/src/devices/**/.vscode/launch.json
 
 # Dependencies
 **/node_modules/**
@@ -24,6 +27,7 @@
 /src/hub/data/**
 
 # Secrets
+**/secrets.cpp
 **/mqtt/pwfile.*
 
 # dotenv environment variable files
