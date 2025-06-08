@@ -12,10 +12,8 @@
     "eslint:verify": "eslint --quiet",
     "hub:start": "cd ./src/hub && npm run start",
     "hub:start:dev": "cd ./src/hub && npm run start:dev",
-    "hub:start:test": "cd ./src/hub && npm run start:test",
     "hub:start:prod": "cd ./src/hub && npm run start:prod",
     "hub:mongo:start": "cd ./src/hub && npm run mongo:start",
-    "hub:mongo:start:test": "cd ./src/hub && npm run mongo:start:test",
     "hub:mongo:start:prod": "cd ./src/hub && npm run mongo:start:prod"
   },
   "author": {

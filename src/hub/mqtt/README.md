@@ -2,7 +2,7 @@
 
 ## Requisites
 
-In order to store the mosquitto credentials, the password file has to be created under the `mqtt/` folder. The pattern of the file name is the following: `pwfile.env`, where `env` is the alias of one of three environments: `local`, `test`, `prod`.
+In order to store the mosquitto credentials, the password file has to be created under the `mqtt/` folder. The pattern of the file name is the following: `pwfile.env`, where `env` is the alias of one of three environments: `local`, `prod`.
 
 ## Running
 
@@ -12,9 +12,6 @@ The broker can be started from the `hub` folder using command:
 # For local development
 npm run mqtt:start
 
-# For test environment
-npm run mqtt:start:test
-
 # For prod environment
 npm run mqtt:start:prod
 ```
@@ -22,7 +19,7 @@ npm run mqtt:start:prod
 If the container is new, user credentials have to be configured. For that you need to interact with the running container...:
 
 ```shell
-# `mqtt-broker` is the name of the running container. Use `mqtt-broker-test` and `mqtt-broker-prod` for test and prod environments accordingly
+# `mqtt-broker` is the name of the running container. Use `mqtt-broker-prod` for prod environment
 docker exec -it mqtt-broker sh
 ```
 
@@ -37,7 +34,7 @@ Use `exit` command to log out of the container.
 
 ## Configuration
 
-Mosquitto MQTT broker is configured by specifying values in [mosquitto.local.conf](mosquitto.local.conf) (or [mosquitto.test.conf](mosquitto.test.conf) and [mosquitto.prod.conf](mosquitto.prod.conf) for test and prod environments accordingly).
+Mosquitto MQTT broker is configured by specifying values in [mosquitto.local.conf](mosquitto.local.conf) (or [mosquitto.prod.conf](mosquitto.prod.conf) for prod environment).
 
 All available config options are listed [here](https://mosquitto.org/man/mosquitto-conf-5.html).
 

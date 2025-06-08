@@ -48,7 +48,7 @@ services:
       - TZ=Europe/Amsterdam
       - WATCHTOWER_SCHEDULE=0 0 * * * *
       - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_DISABLE_CONTAINERS=mongodb-prod,mongodb-test,mongodb
+      - WATCHTOWER_DISABLE_CONTAINERS=mongodb-prod,mongodb
 
   smarthome-hub-server-image-watcher-once:
     image: containrrr/watchtower:latest
@@ -59,7 +59,7 @@ services:
       - TZ=Europe/Amsterdam
       - WATCHTOWER_RUN_ONCE=true
       - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_DISABLE_CONTAINERS=mongodb-prod,mongodb-test,mongodb,mqtt-broker,mqtt-broker-test,mqtt-broker-prod
+      - WATCHTOWER_DISABLE_CONTAINERS=mongodb-prod,mongodb,mqtt-broker,mqtt-broker-prod
 
 networks:
   smarthome-network:

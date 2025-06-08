@@ -38,8 +38,6 @@ export class AuthService {
 
     verifyAccessKeyHash(accessKey: string): boolean {
         const actualAccessKey = this.configService.get<string>('REGISTRATION_ACCESS_KEY');
-        // TODO: Delete after I figure out why registration in test env doesn't work
-        this.logger.debug(`Verifying registration rights, received access key: ${accessKey} - ${actualAccessKey}`);
         return accessKey === actualAccessKey;
     }
 

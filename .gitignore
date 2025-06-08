@@ -31,7 +31,6 @@
 **/mqtt/pwfile.*
 
 # dotenv environment variable files
-.env.test
 .env.prod
 
 # temp directory

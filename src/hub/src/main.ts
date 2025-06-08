@@ -53,7 +53,6 @@ function setupSwagger(app: INestApplication) {
         .setDescription('API documentation describing available methods for controlling devices connected to the hub')
         .setVersion('1.0')
         .addServer('http://localhost:3000/', 'Default local server used for development')
-        .addServer('http://localhost:3010/', 'Server instance used for testing')
         .addBearerAuth()
         .build();
 
@@ -62,7 +61,7 @@ function setupSwagger(app: INestApplication) {
     };
     const swaggerOptions: SwaggerCustomOptions = {
         customCss: new SwaggerTheme().getBuffer(SwaggerThemeNameEnum.ONE_DARK),
-        customSiteTitle: 'smarthome REST API',
+        customSiteTitle: 'SmartHome REST API',
         swaggerOptions: {
             defaultModelsExpandDepth: 3,
         },
