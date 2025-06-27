@@ -1,6 +1,6 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { ScenarioDeviceDto, ScenarioTriggerDto } from 'scenarios/dto/common.dto';
-import { ArrayNotEmpty, IsArray, IsOptional, IsString, Length, ValidateNested } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsBoolean, IsOptional, IsString, Length, ValidateNested } from 'class-validator';
 import {
     SCENARIO_DESCRIPTION_MAX_LENGTH,
     SCENARIO_DESCRIPTION_MIN_LENGTH,
@@ -32,6 +32,14 @@ export class UpdateScenarioDto {
         maxLength: SCENARIO_DESCRIPTION_MAX_LENGTH,
     })
     description?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty({
+        required: false,
+        description: 'Determines if the scenario should be executed',
+    })
+    active?: boolean;
 
     @IsOptional()
     @ValidateNested({ each: true })

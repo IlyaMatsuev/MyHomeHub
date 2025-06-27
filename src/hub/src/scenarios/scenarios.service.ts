@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, OnModuleInit } from '@nestjs/common';
-import { Model } from 'mongoose';
+import { Model, RootFilterQuery } from 'mongoose';
 import {
     GetScenarioOptions,
     Scenario,
@@ -27,9 +27,10 @@ export class ScenariosService implements OnModuleInit {
     }
 
     async getScenarios(options: GetScenariosDto = new GetScenariosDto()): Promise<ScenariosPage> {
+        const conditions: RootFilterQuery<Scenario> = options.includeInactive ? {} : { active: true };
         const [scenarios, total] = await Promise.all([
-            this.scenarioModel.find().skip(options.skipRecords).limit(options.pageSize).lean(),
-            this.scenarioModel.countDocuments(),
+            this.scenarioModel.find(conditions).skip(options.skipRecords).limit(options.pageSize).lean(),
+            this.scenarioModel.countDocuments(conditions),
         ]);
 
         return {
@@ -56,6 +57,7 @@ export class ScenariosService implements OnModuleInit {
     getDeviceTriggeredScenarios(deviceExternalId: string): Promise<Array<Scenario>> {
         return this.scenarioModel
             .find({
+                active: true,
                 'trigger.sources': {
                     $elemMatch: {
                         type: 'device',
@@ -88,15 +90,19 @@ export class ScenariosService implements OnModuleInit {
             cronSource.cron = this.schedulerService.adjustScenarioDayTimeCron(cronSource);
         }
         const newScenario: Scenario = await new this.scenarioModel(scenarioDto).save({ validateBeforeSave: true });
-        await this.scheduleScenarioJob(newScenario, () => this.removeScenario(newScenario.externalId));
+        if (newScenario.active) {
+            await this.scheduleScenarioJob(newScenario, () => this.removeScenario(newScenario.externalId));
+        }
         return newScenario;
     }
 
     async updateScenario(externalId: string, scenarioDto: UpdateScenarioDto): Promise<Scenario> {
         const scenario = await this.getScenarioByExternalId(externalId);
         const oldScenario = { ...scenario } as Scenario;
+
         scenario.name = scenarioDto.name ?? scenario.name;
         scenario.description = scenarioDto.description ?? scenario.description;
+        scenario.active = scenarioDto.active ?? scenario.active;
         scenario.trigger = scenarioDto.trigger ?? scenario.trigger;
         scenario.devices = scenarioDto.devices ?? scenario.devices;
 
@@ -106,8 +112,10 @@ export class ScenariosService implements OnModuleInit {
         }
 
         const updatedScenario = await scenario.save({ validateBeforeSave: true });
-        if (scenarioDto.trigger?.sources && scenarioDto.trigger?.sources.some(s => s.type === ScenarioTriggerSourceType.Cron)) {
-            this.schedulerService.unscheduleJob(updatedScenario.name);
+        if (this.isCronScenario(oldScenario)) {
+            this.schedulerService.unscheduleJob(oldScenario.name);
+        }
+        if (this.isCronScenario(updatedScenario) && updatedScenario.active) {
             await this.scheduleScenarioJob(updatedScenario, async () => {
                 await this.scenarioModel.findByIdAndUpdate(scenario._id, { ...oldScenario }, { runValidators: false }).exec();
                 await this.scheduleScenarioJob(oldScenario, async () => {});
@@ -119,12 +127,14 @@ export class ScenariosService implements OnModuleInit {
     async removeScenario(externalId: string): Promise<Scenario> {
         const scenario = await this.getScenarioByExternalId(externalId);
         await this.scenarioModel.deleteOne({ _id: scenario._id }).exec();
-        this.schedulerService.unscheduleJob(scenario.name);
+        if (scenario.active) {
+            this.schedulerService.unscheduleJob(scenario.name);
+        }
         return scenario;
     }
 
     private async scheduleExistingScenarios(): Promise<void> {
-        const scenarios = await this.scenarioModel.find().exec();
+        const scenarios = await this.scenarioModel.find({ active: true }).exec();
         for (const scenario of scenarios) {
             await this.scheduleScenarioJob(scenario, async () => {});
         }
@@ -148,6 +158,10 @@ export class ScenariosService implements OnModuleInit {
             await onFailure();
             throw new InternalServerErrorException(`Failed to schedule a scenario on "${cronTriggerSource.cron}: ${ex.message}"`);
         }
+    }
+
+    private isCronScenario(scenario: Scenario): boolean {
+        return scenario.trigger?.sources && scenario.trigger.sources.some(s => s.type === ScenarioTriggerSourceType.Cron);
     }
 
     private findScenarioCronSource(scenario: Scenario | CreateScenarioDto): ScenarioCronTriggerSource | undefined {

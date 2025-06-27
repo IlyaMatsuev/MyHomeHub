@@ -73,6 +73,11 @@ export const ScenarioSchema = new Schema({
         minLength: SCENARIO_DESCRIPTION_MIN_LENGTH,
         maxLength: SCENARIO_DESCRIPTION_MAX_LENGTH,
     },
+    active: {
+        type: Boolean,
+        required: false,
+        default: true,
+    },
     trigger: {
         sources: [
             {

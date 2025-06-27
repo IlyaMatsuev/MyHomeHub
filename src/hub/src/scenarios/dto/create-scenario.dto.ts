@@ -6,7 +6,7 @@ import {
     SCENARIO_NAME_MAX_LENGTH,
     SCENARIO_NAME_MIN_LENGTH,
 } from 'scenarios/scenarios.constants';
-import { ArrayNotEmpty, IsArray, IsDefined, IsNotEmpty, IsOptional, IsString, Length, ValidateNested } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsBoolean, IsDefined, IsNotEmpty, IsOptional, IsString, Length, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 @ApiSchema({ name: 'CreateScenarioRequest', description: 'DTO used to add a new scenario to the hub control' })
@@ -32,6 +32,15 @@ export class CreateScenarioDto {
         maxLength: SCENARIO_DESCRIPTION_MAX_LENGTH,
     })
     description?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty({
+        required: false,
+        default: true,
+        description: 'Determines if the scenario should be actively executed',
+    })
+    active: boolean = true;
 
     @IsDefined()
     @ValidateNested({ each: true })
