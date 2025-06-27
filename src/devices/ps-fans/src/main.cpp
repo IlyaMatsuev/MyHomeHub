@@ -1,58 +1,44 @@
 #include <Arduino.h>
 #include "SmartHomeDevice.h"
+#include "PsFansControls.h"
+#include "PsFansMeasurements.h"
 #include "secrets.h"
 
-class PsFansMeasurements : public MeasurementsProvider {
-public:
-    float temperature = 15.0;
-protected:
-    void build(JsonDocument& measurements) override {
-        measurements["temperature"] = temperature;
-    }
-};
+const uint8_t FAN_POWER_PIN = 15;
+const uint8_t SWITCH_BUTTON_PIN = 18;
 
-class PsFansControls : public ControlsProvider {
-public:
-    bool on = true;
+// NetworkSettings networkSettings(NETWORK_SSID, NETWORK_PASSWORD);
+// MqttSettings mqttSettings(MQTT_HOSTNAME, MQTT_PORT, MQTT_USERNAME, MQTT_PASSWORD);
 
-    void onUpdate(JsonDocument& payload) override {
-        on = payload["on"];
-    }
-protected:
-    void build(JsonDocument& controls) override {
-        controls["on"] = on;
-    }
-};
+// PsFansMeasurements measurements;
+// PsFansControls controls;
 
+// SmartHomeDevice device(
+//     "esp32-office",
+//     &measurements,
+//     &controls
+// );
 
-NetworkSettings networkSettings(NETWORK_SSID, NETWORK_PASSWORD);
-MqttSettings mqttSettings(MQTT_HOSTNAME, MQTT_PORT, MQTT_USERNAME, MQTT_PASSWORD);
+bool isOn = false;
 
-PsFansMeasurements measurements;
-PsFansControls controls;
-
-SmartHomeDevice device(
-    "esp32-office",
-    &measurements,
-    &controls
-);
 
 void setup() {
     Serial.begin(115200);
-    device.setup(networkSettings, mqttSettings);
+    pinMode(FAN_POWER_PIN, OUTPUT);
+    pinMode(SWITCH_BUTTON_PIN, INPUT);
+    //device.setup(networkSettings, mqttSettings);
 }
 
 void loop() {
-    device.loop();
+    //device.loop();
 
-    if (controls.on) {
-        measurements.toggleIntervalUpdates();
-        measurements.temperature += 0.1;
-        Serial.printf("New termperature: %.2f\n", measurements.temperature);
-    } else {
-        measurements.toggleIntervalUpdates(false);
-        Serial.println("Device is in Off state");
+    bool switchPressed = digitalRead(SWITCH_BUTTON_PIN) != 0;
+
+    if (switchPressed) {
+        isOn = !isOn;
+        Serial.printf("Switch pressed, new value %d\n", isOn);
     }
 
-    delay(500);
+    digitalWrite(FAN_POWER_PIN, isOn ? HIGH : LOW);
+    delay(300);
 }

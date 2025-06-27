@@ -8,6 +8,7 @@
 !**/.vscode/tasks.json
 !**/.vscode/launch.json
 !**/.vscode/extensions.json
+
 # IDE Platform IO
 /src/devices/**/.pio
 /src/devices/**/.vscode/launch.json
@@ -40,7 +41,6 @@
 # System Files
 .DS_Store
 *.db
-*.ini
 
 # Logs
 *.log
