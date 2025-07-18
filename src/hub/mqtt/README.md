@@ -26,7 +26,8 @@ docker exec -it mqtt-broker sh
 ...And create a new user:
 
 ```shell
-# `username` is the name of the new user. It will prompt to inter a password as well after that
+# `username` is the name of the new user. It will prompt to enter a password as well after that
+# I suggest typing password manually instead of pasting from clipboard. The password is saved differently (for some reason) if you try to paste it
 mosquitto_passwd -c /mosquitto/config/pwfile username
 ```
 
