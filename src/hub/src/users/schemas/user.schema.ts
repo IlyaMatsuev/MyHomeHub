@@ -1,5 +1,4 @@
 import * as mongoose from 'mongoose';
-import { USER_PASSWORD_MAX_LENGTH, USER_PASSWORD_MIN_LENGTH } from 'users/users.constants';
 
 export const UserSchema = new mongoose.Schema({
     email: {
@@ -10,11 +9,10 @@ export const UserSchema = new mongoose.Schema({
         lowercase: true,
         index: true,
     },
+    // No "length" constraints because the password is stored as hash
     password: {
         type: String,
         required: true,
         trim: true,
-        minLength: USER_PASSWORD_MIN_LENGTH,
-        maxLength: USER_PASSWORD_MAX_LENGTH,
     },
 });

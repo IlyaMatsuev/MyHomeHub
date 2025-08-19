@@ -1,8 +1,11 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, Matches, MaxLength, MinLength } from 'class-validator';
 import { USER_PASSWORD_MAX_LENGTH, USER_PASSWORD_MIN_LENGTH } from 'users/users.constants';
 
 @ApiSchema({ name: 'RegisterRequest', description: 'Payload used to register a new user' })
 export class RegisterDto {
+    @IsEmail()
+    @IsNotEmpty()
     @ApiProperty({
         required: true,
         description: 'Unique user email, used for identifying only',
@@ -10,6 +13,9 @@ export class RegisterDto {
     })
     email: string;
 
+    @MinLength(USER_PASSWORD_MIN_LENGTH)
+    @MaxLength(USER_PASSWORD_MAX_LENGTH)
+    @IsNotEmpty()
     @ApiProperty({
         required: true,
         description: 'Password required for authorization',
@@ -18,6 +24,8 @@ export class RegisterDto {
     })
     password: string;
 
+    @Matches(/^\d{6}$/)
+    @IsNotEmpty()
     @ApiProperty({
         required: true,
         description: 'The one-time password from the admins authenticator app',

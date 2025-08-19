@@ -1,7 +1,10 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty } from 'class-validator';
 
 @ApiSchema({ name: 'LoginRequest', description: 'Payload used to login and get an access token used for authentication' })
 export class LoginDto {
+    @IsEmail()
+    @IsNotEmpty()
     @ApiProperty({
         required: true,
         description: 'User email used during the registration',
@@ -9,11 +12,7 @@ export class LoginDto {
     })
     email: string;
 
-    @ApiProperty({
-        required: true,
-        description: 'User password used during the registration',
-        minLength: 4,
-        maxLength: 20,
-    })
+    @IsNotEmpty()
+    @ApiProperty({ required: true, description: 'User password used during the registration' })
     password: string;
 }
