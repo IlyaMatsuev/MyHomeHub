@@ -186,7 +186,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"type\": \"led\",\n    \"brand\": \"tuya\"\n}",
+              "raw": "{\n    \"controls\": {\n        \"on\": false\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -401,7 +401,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"{{username}}\",\n    \"password\": \"{{password}}\",\n    \"accessKey\": \"{{registrationAccessKey}}\"\n}\n",
+              "raw": "{\n    \"email\": \"ilya@test2.com\",\n    \"password\": \"ilyamatsuev2password\",\n    \"totp\": \"111111\"\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -474,7 +474,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/scenarios",
+              "raw": "{{baseUrl}}/scenarios?includeInactive=true",
               "host": ["{{baseUrl}}"],
               "path": ["scenarios"],
               "query": [
@@ -482,6 +482,10 @@
                   "key": "page",
                   "value": "6",
                   "disabled": true
+                },
+                {
+                  "key": "includeInactive",
+                  "value": "true"
                 }
               ]
             }
@@ -657,7 +661,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"devices\": [\n                {\n                    \"externalId\": \"5f9ffdce-bf7b-4fdf-9a3e-7c62edf77ca0\",\n                    \"set\": {\n                        \"controls\": {\n                            \"on\": true\n                        }\n                    }\n                },\n                {\n                    \"externalId\": \"0b90e994-54ba-4aa8-9c55-52840f56ad39\",\n                    \"set\": {\n                        \"controls\": {\n                            \"text\": \"It's sunset bitches\"\n                        }\n                    }\n                }\n            ]\n}",
+              "raw": "{\n    \"active\": false\n}",
               "options": {
                 "raw": {
                   "language": "json"
