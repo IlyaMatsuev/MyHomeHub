@@ -2,6 +2,7 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
+import * as speakeasy from 'speakeasy';
 import { UsersService } from 'users/users.service';
 import { LoginResult } from 'auth/interfaces';
 import { NewUser } from 'users/interfaces';
@@ -27,18 +28,17 @@ export class AuthService {
         return { accessToken };
     }
 
-    async register(email: string, password: string, accessKey: string): Promise<NewUser> {
-        if (!this.verifyAccessKeyHash(accessKey)) {
-            this.logger.debug(`Registration access key is invalid`);
+    async register(email: string, password: string, totp: string): Promise<NewUser> {
+        if (!this.verifyTotp(totp)) {
+            this.logger.debug(`Registration one-time password is not valid`);
             throw new UnauthorizedException();
         }
         const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password));
         return { id: newUser._id, email: newUser.email };
     }
 
-    verifyAccessKeyHash(accessKey: string): boolean {
-        const actualAccessKey = this.configService.get<string>('REGISTRATION_ACCESS_KEY');
-        return accessKey === actualAccessKey;
+    verifyTotp(token: string): boolean {
+        return speakeasy.totp.verify({ secret: this.configService.get('REGISTRATION_TOTP_SECRET'), encoding: 'base32', token });
     }
 
     generateUserPasswordHash(password: string): Promise<string> {

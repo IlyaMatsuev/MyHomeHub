@@ -26,6 +26,6 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Register a new user' })
     register(@Body() registerDto: RegisterDto): Promise<NewUser> {
-        return this.authService.register(registerDto.email, registerDto.password, registerDto.accessKey);
+        return this.authService.register(registerDto.email, registerDto.password, registerDto.totp);
     }
 }
