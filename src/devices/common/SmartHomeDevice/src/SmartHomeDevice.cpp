@@ -92,7 +92,6 @@ void SmartHomeDevice::onMqttMessage(String topic, JsonDocument data) {
         if (data["accepted"]) {
             deviceId = data["deviceId"].as<String>();
             updateIntervalMs = data["updateInterval"];
-            updateIntervalMs = DEFAULT_UPDATE_INTERVAL;
             Serial.printf("Received pairing acceptance (%s), with update interval: %d\n", deviceId.c_str(), updateIntervalMs);
 
             mqttClient.subscribe(getUpdateControlsTopic().c_str());

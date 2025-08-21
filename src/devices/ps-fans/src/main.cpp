@@ -6,6 +6,7 @@
 #include "PsFansMeasurements.h"
 #include "secrets.h"
 
+
 const uint8_t FAN_POWER_PIN = 18;
 const uint8_t FAN_PWM_CHANNEL = 0;
 const int FAN_PWM_FREQUENCY = 25000;
@@ -13,6 +14,7 @@ const uint8_t FAN_PWM_RESOLUTION = 8;
 
 const uint8_t TEMP_SENSOR_PIN = 19;
 const uint8_t TEMP_SENSOR_RESOLUTION = 11;
+
 
 OneWire oneWire(TEMP_SENSOR_PIN);
 DallasTemperature sensors(&oneWire);
@@ -45,11 +47,13 @@ void setup() {
 void loop() {
     sensors.requestTemperatures();
     float temperature = measurements.setTemperature(sensors.getTempCByIndex(0));
-    uint8_t duty = controls.getDuty(temperature);
+    FanSpeedLevel fanSpeed = controls.getFanSpeedLevel(temperature);
 
-    Serial.printf("Temperature: %.2f C, duty: %d\n", temperature, duty);
+    measurements.setFanSpeedLevel(fanSpeed.speedPercentage);
 
-    ledcWrite(FAN_PWM_CHANNEL, duty);
+    Serial.printf("Temperature: %.2f C, fan speed: %.2f, fan duty: %d\n", temperature, fanSpeed.speedPercentage, fanSpeed.duty);
+
+    ledcWrite(FAN_PWM_CHANNEL, fanSpeed.duty);
 
     device.loop();
     delay(500);
