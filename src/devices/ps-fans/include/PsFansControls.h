@@ -4,13 +4,12 @@
 
 class PsFansControls : public ControlsProvider {
 public:
-    bool on = true;
+    PsFansControls();
 
-    void onUpdate(JsonDocument& payload) override {
-        on = payload["on"];
-    }
+    void onUpdate(JsonDocument& payload) override;
+    uint8_t getDuty(float temperature);
 protected:
-    void build(JsonDocument& controls) override {
-        controls["on"] = on;
-    }
+    void build(JsonDocument& controls) override;
+private:
+    bool on;
 };

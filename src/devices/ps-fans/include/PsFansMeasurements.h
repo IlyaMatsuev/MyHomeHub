@@ -4,10 +4,11 @@
 
 class PsFansMeasurements : public MeasurementsProvider {
 public:
-    PsFansMeasurements() {
-        toggleIntervalUpdates(false);
-    }
+    PsFansMeasurements();
 
+    float setTemperature(float temperature);
 protected:
-    void build(JsonDocument& measurements) override {}
+    void build(JsonDocument& measurements) override;
+private:
+    float temperature;
 };
