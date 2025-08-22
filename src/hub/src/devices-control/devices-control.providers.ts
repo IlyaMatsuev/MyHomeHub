@@ -4,12 +4,13 @@ import { DevicesControlServiceFactory } from 'devices-control/devices-control-se
 import { TuyaControlServiceFactory } from 'devices-control/tuya';
 import { GoogleSpeakerControlServiceFactory } from 'devices-control/google';
 import { ShellyControlServiceFactory } from 'devices-control/shelly';
+import { Esp32ControlServiceFactory } from 'devices-control/esp32';
 
 export const providers = [
     {
         provide: DEVICES_CONTROL_FACTORY_PROVIDER,
         useFactory: (...controlServiceFactories: Array<DeviceControlServiceFactory>) =>
             new DevicesControlServiceFactory(controlServiceFactories),
-        inject: [TuyaControlServiceFactory, GoogleSpeakerControlServiceFactory, ShellyControlServiceFactory],
+        inject: [TuyaControlServiceFactory, GoogleSpeakerControlServiceFactory, ShellyControlServiceFactory, Esp32ControlServiceFactory],
     },
 ];

@@ -1,11 +1,11 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { ConditionsEvaluatorService } from 'common/services/conditions-evaluator.service';
+import { UpdateDeviceDto } from 'devices/dto';
+import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from 'devices/events';
+import { DevicesService } from 'devices/devices.service';
 import { ScenarioDeviceTriggerSource, ScenarioTriggerSource, ScenarioTriggerSourceType } from 'scenarios/interfaces';
 import { ScenariosService } from 'scenarios/scenarios.service';
-import { DevicesService } from 'devices/devices.service';
-import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from 'devices/events';
-import { UpdateDeviceDto } from 'devices/dto';
 
 @Injectable()
 export class ScenariosExecutionService {

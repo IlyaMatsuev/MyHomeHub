@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { DEVICE_PAIR_REPLY_TOPIC_NAME, MQTT_CLIENT_PROVIDER_NAME } from 'mqtt/mqtt.constants';
+import { CONTROLS_UPDATE_TOPIC_NAME, DEVICE_PAIR_REPLY_TOPIC_NAME, MQTT_CLIENT_PROVIDER_NAME } from 'mqtt/mqtt.constants';
 import { Device } from 'devices/interfaces';
 import { PairAcceptDto } from 'mqtt/dto';
 
@@ -14,5 +14,9 @@ export class MqttService {
 
     rejectDevice(reason: string) {
         this.client.emit(DEVICE_PAIR_REPLY_TOPIC_NAME, PairAcceptDto.reject(`Device pairing has been rejected: ${reason}`));
+    }
+
+    async updateDeviceControls<T>(deviceId: string, controls: T): Promise<void> {
+        this.client.emit(CONTROLS_UPDATE_TOPIC_NAME.replace('+', deviceId), controls);
     }
 }

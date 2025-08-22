@@ -45,6 +45,12 @@ The running MQTT broker can be tested using [this online client](https://testcli
 
 Or, from withing the container using the `mosquitto_sub` util:
 
+To look into the container:
+
+```shell
+docker exec -it mqtt-broker sh
+```
+
 To subscribe to the `<topic>` topic:
 
 ```shell
