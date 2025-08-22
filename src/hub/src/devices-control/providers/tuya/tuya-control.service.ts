@@ -2,7 +2,7 @@ import TuyaDevice from 'tuyapi';
 import Color from 'color';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { DevicesControlService } from 'devices-control/devices-control.service';
-import { TuyaControlsDto } from 'devices-control/tuya/tuya-controls.dto';
+import { TuyaControlsDto } from 'devices-control/providers';
 
 const TUYA_DEVICE_PROTOCOL_VERSION = '3.3';
 

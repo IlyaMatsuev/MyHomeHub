@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Device, DeviceBrand, DeviceType } from 'devices/interfaces';
 import { DeviceControlServiceFactory } from 'devices-control/interfaces';
-import { GoogleSpeakerControlService } from 'devices-control/google/google-speaker-control.service';
+import { GoogleSpeakerControlService } from 'devices-control/providers';
 
 @Injectable()
 export class GoogleSpeakerControlServiceFactory implements DeviceControlServiceFactory {

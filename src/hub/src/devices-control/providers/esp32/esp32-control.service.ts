@@ -3,7 +3,7 @@ import { MqttService } from 'mqtt/mqtt.service';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { Device } from 'devices/interfaces';
 import { DevicesControlService } from 'devices-control/devices-control.service';
-import { Esp32ControlsDto } from 'devices-control/esp32/esp32-controls.dto';
+import { Esp32ControlsDto } from 'devices-control/providers';
 
 export class Esp32ControlService extends DevicesControlService {
     constructor(

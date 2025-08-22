@@ -1,10 +1,12 @@
 import { DeviceControlServiceFactory } from 'devices-control/interfaces';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { DevicesControlServiceFactory } from 'devices-control/devices-control-service.factory';
-import { TuyaControlServiceFactory } from 'devices-control/tuya';
-import { GoogleSpeakerControlServiceFactory } from 'devices-control/google';
-import { ShellyControlServiceFactory } from 'devices-control/shelly';
-import { Esp32ControlServiceFactory } from 'devices-control/esp32';
+import {
+    GoogleSpeakerControlServiceFactory,
+    ShellyControlServiceFactory,
+    TuyaControlServiceFactory,
+    Esp32ControlServiceFactory,
+} from 'devices-control/providers';
 
 export const providers = [
     {

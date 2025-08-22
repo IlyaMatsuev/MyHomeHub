@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Device, DeviceType } from 'devices/interfaces';
 import { DeviceControlServiceFactory } from 'devices-control/interfaces';
-import { Esp32ControlService } from 'devices-control/esp32/esp32-control.service';
+import { Esp32ControlService } from 'devices-control/providers';
 import { MqttService } from 'mqtt/mqtt.service';
 
 @Injectable()

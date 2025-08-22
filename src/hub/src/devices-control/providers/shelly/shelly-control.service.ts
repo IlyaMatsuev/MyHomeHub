@@ -1,7 +1,7 @@
 import { request } from 'gaxios';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { DevicesControlService } from 'devices-control/devices-control.service';
-import { ShellyControlsDto } from 'devices-control/shelly/shelly-controls.dto';
+import { ShellyControlsDto } from 'devices-control/providers';
 
 enum ShellyMethod {
     SwitchSet = 'Switch.Set',

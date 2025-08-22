@@ -2,7 +2,7 @@ import * as CastClient from 'castv2-promise';
 import TextToSpeech from 'google-tts-api';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { DevicesControlService } from 'devices-control/devices-control.service';
-import { GoogleSpeakerControlsDto } from 'devices-control/google/google-speaker-controls.dto';
+import { GoogleSpeakerControlsDto } from 'devices-control/providers';
 
 export class GoogleSpeakerControlService extends DevicesControlService {
     protected getServiceName(): string {
