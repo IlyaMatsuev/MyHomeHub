@@ -35,8 +35,12 @@ void SmartHomeDevice::setup(const NetworkSettings& networkSettings, const MqttSe
         Serial.printf("\nMessage received [%s]: %s\n", topic, messageBytes);
 
         JsonDocument data;
-        deserializeJson(data, messageBytes, length);
-        this->onMqttMessage(String(topic), data["data"]);
+        DeserializationError error = deserializeJson(data, messageBytes, length);
+        if (error) {
+            Serial.printf("Failed to deserialize JSON: %s\n", error.c_str());
+        } else {
+            this->onMqttMessage(String(topic), data["data"]);
+        }
     });
     connectMqtt(this->mqttSettings.username, this->mqttSettings.password);
 }
@@ -77,6 +81,7 @@ void SmartHomeDevice::connectMqtt(const char* username, const char* password) {
     Serial.printf("\nConnecting to mqtt://%s:%d as %s\n", this->mqttSettings.hostname, this->mqttSettings.port, deviceName);
     while (!mqttClient.connected()) {
         if (mqttClient.connect(deviceName, username, password)) {
+            mqttClient.setBufferSize(MAX_MQTT_PACKET_SIZE);
             mqttClient.subscribe(PAIR_REQUEST_REPLY_TOPIC);
             sendPairRequest();
         } else {
@@ -115,6 +120,7 @@ void SmartHomeDevice::sendPairRequest() {
     JsonDocument request;
     request["deviceIp"] = deviceIp.toString();
     request["deviceName"] = deviceName;
+    request["deviceType"] = deviceType;
     request["updateInterval"] = updateIntervalMs;
     request["controls"] = controlsProvider->getPayload();
     request["measurements"] = measurementsProvider->getPayload();
@@ -152,10 +158,10 @@ String SmartHomeDevice::getUpdateControlsTopic() {
 }
 
 String SmartHomeDevice::getUpdateMeasurementsTopic() {
-    if (measurementsControlsTopic.length() == 0) {
+    if (updateMeasurementsTopic.length() == 0) {
         char topic[128];
         snprintf(topic, sizeof(topic), UPDATE_MEASUREMENTS_TOPIC, deviceId.c_str());
-        measurementsControlsTopic = topic;
+        updateMeasurementsTopic = topic;
     }
-    return measurementsControlsTopic;
+    return updateMeasurementsTopic;
 }

@@ -4,6 +4,8 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 
+// Increase if JSON messages become large than 1MB
+const unsigned int MAX_MQTT_PACKET_SIZE = 1024;
 const unsigned int DEFAULT_UPDATE_INTERVAL = 5000;
 
 class PayloadProvider {
@@ -63,11 +65,13 @@ class SmartHomeDevice {
 public:
     SmartHomeDevice(
         const char* deviceName,
+        const char* deviceType,
         MeasurementsProvider* measurementsProvider,
         ControlsProvider* controlsProvider,
         unsigned long updateIntervalMs = DEFAULT_UPDATE_INTERVAL
     ) :
         deviceName(deviceName),
+        deviceType(deviceType),
         measurementsProvider(measurementsProvider),
         controlsProvider(controlsProvider),
         updateIntervalMs(updateIntervalMs),
@@ -78,6 +82,7 @@ public:
 
 private:
     const char* deviceName;
+    const char* deviceType;
     MeasurementsProvider* measurementsProvider;
     ControlsProvider* controlsProvider;
     unsigned long updateIntervalMs;
@@ -91,7 +96,7 @@ private:
     String deviceId;
 
     String updateControlsTopic;
-    String measurementsControlsTopic;
+    String updateMeasurementsTopic;
 
     unsigned long lastPairRequest = 0;
     unsigned long lastUpdate = 0;

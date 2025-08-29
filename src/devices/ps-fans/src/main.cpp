@@ -27,6 +27,7 @@ PsFansControls controls;
 
 SmartHomeDevice device(
     "ps-fans",
+    "fans",
     &measurements,
     &controls
 );
