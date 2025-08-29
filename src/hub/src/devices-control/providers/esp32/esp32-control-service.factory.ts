@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Device, DeviceType } from 'devices/interfaces';
+import { Device, DeviceBrand, DeviceType } from 'devices/interfaces';
 import { DeviceControlServiceFactory } from 'devices-control/interfaces';
 import { Esp32ControlService } from 'devices-control/providers';
 import { MqttService } from 'mqtt/mqtt.service';
+import { Esp32FansControlService } from 'devices-control/providers/esp32/fans';
 
 @Injectable()
 export class Esp32ControlServiceFactory implements DeviceControlServiceFactory {
@@ -13,10 +14,13 @@ export class Esp32ControlServiceFactory implements DeviceControlServiceFactory {
     ) {}
 
     eligible(device: Device): boolean {
-        return device.type === DeviceType.ESP32;
+        return device.brand === DeviceBrand.ESP32;
     }
 
     createService(device: Device): Esp32ControlService {
+        if (device.type === DeviceType.Fans) {
+            return new Esp32FansControlService(device, this.configService, this.mqttService);
+        }
         return new Esp32ControlService(device, this.configService, this.mqttService);
     }
 }
