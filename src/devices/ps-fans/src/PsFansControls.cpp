@@ -17,7 +17,7 @@ PsFansControls::PsFansControls() {
 {
   "on": true,
   "speedLevels": {
-    "reset": true,
+    "reset": false,
     "0.25": { "higherTemperatureThreshold": 25, "lowerTemperatureThreshold": 23 },
     "0.5": { "higherTemperatureThreshold": 30, "lowerTemperatureThreshold": 28 },
   }
@@ -53,6 +53,19 @@ void PsFansControls::onUpdate(JsonDocument& payload) {
 
 void PsFansControls::build(JsonDocument& controls) {
     controls["on"] = this->on;
+
+    JsonObject speedLevels = controls["speedLevels"].to<JsonObject>();
+    speedLevels["reset"] = false;
+
+    JsonObject speedLevel25 = speedLevels["0.25"].to<JsonObject>();
+    speedLevel25["higherTemperatureThreshold"] = this->fanSpeedLevels[1].higherTemperatureThreshold;
+    speedLevel25["lowerTemperatureThreshold"] = this->fanSpeedLevels[1].lowerTemperatureThreshold;
+    JsonObject speedLevel50 = speedLevels["0.5"].to<JsonObject>();
+    speedLevel50["higherTemperatureThreshold"] = this->fanSpeedLevels[2].higherTemperatureThreshold;
+    speedLevel50["lowerTemperatureThreshold"] = this->fanSpeedLevels[2].lowerTemperatureThreshold;
+    JsonObject speedLevel100 = speedLevels["1"].to<JsonObject>();
+    speedLevel100["higherTemperatureThreshold"] = this->fanSpeedLevels[3].higherTemperatureThreshold;
+    speedLevel100["lowerTemperatureThreshold"] = this->fanSpeedLevels[3].lowerTemperatureThreshold;
 }
 
 FanSpeedLevel PsFansControls::getFanSpeedLevel(float temperature) {

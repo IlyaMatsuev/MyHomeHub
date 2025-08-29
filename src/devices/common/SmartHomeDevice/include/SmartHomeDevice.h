@@ -25,6 +25,10 @@ public:
     ControlsProvider() : PayloadProvider("controls") {}
 
     virtual void onUpdate(JsonDocument& payload) = 0;
+    void toggleControlsSync(bool sync = true);
+    bool controlsUpdated();
+private:
+    bool controlsSynced = true;
 };
 
 class MeasurementsProvider : public PayloadProvider {
@@ -96,6 +100,7 @@ private:
     String deviceId;
 
     String updateControlsTopic;
+    String syncControlsTopic;
     String updateMeasurementsTopic;
 
     unsigned long lastPairRequest = 0;
@@ -106,11 +111,13 @@ private:
     void onMqttMessage(String topic, JsonDocument data);
     void sendPairRequest();
     void sendMeasurementsUpdate();
+    void sendControlsSync();
     bool isPaired() const;
 
     unsigned long msSinceLastPairRequest();
     unsigned long msSinceLastUpdate();
 
     String getUpdateControlsTopic();
+    String getSyncControlsTopic();
     String getUpdateMeasurementsTopic();
 };
