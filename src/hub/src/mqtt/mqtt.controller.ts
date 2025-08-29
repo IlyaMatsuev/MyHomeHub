@@ -2,6 +2,7 @@ import { Controller, Logger } from '@nestjs/common';
 import { Ctx, MessagePattern, MqttContext, Payload } from '@nestjs/microservices';
 import { MqttService } from 'mqtt/mqtt.service';
 import {
+    CONTROLS_SYNC_TOPIC_NAME,
     DEVICE_PAIR_REQUEST_TOPIC_NAME,
     MEASUREMENTS_UPDATE_TOPIC_NAME,
     MQTT_TOPIC_PARTS_SEPARATOR,
@@ -26,7 +27,6 @@ export class MqttController {
         try {
             pairRequest = plainToInstance(PairRequestDto, pairRequest);
             this.logger.log(`Received a device (${pairRequest?.deviceName}) pairing request with IP "${pairRequest?.deviceIp}"`);
-            this.logger.debug(`request message: ${typeof pairRequest} - ${JSON.stringify(pairRequest)}`);
             if (!pairRequest?.deviceIp || !pairRequest?.deviceName) {
                 this.logger.debug(`No device ip and name provided: ${JSON.stringify(context.getPacket())}`);
                 return;
@@ -35,12 +35,32 @@ export class MqttController {
             let existingDevice = await this.devicesService.getDeviceByIp(pairRequest.deviceIp, { strict: false });
             if (!existingDevice) {
                 existingDevice = await this.devicesService.addDevice(pairRequest.toCreateDevice());
+            } else {
+                await this.devicesService.updateDevice(
+                    existingDevice.externalId,
+                    new UpdateDeviceDto({
+                        controls: pairRequest.controls,
+                        measurements: pairRequest.measurements,
+                    }),
+                );
             }
             this.mqttService.pairDevice(existingDevice);
             this.logger.log(`Device (${existingDevice.externalId}) has been successfully paired`);
         } catch (error) {
             this.mqttService.rejectDevice(`${error}`);
             this.logger.error(`Error while pairing a device (${pairRequest?.deviceName}) with IP "${pairRequest?.deviceIp}"`);
+            this.logger.error(error);
+        }
+    }
+
+    @MessagePattern(CONTROLS_SYNC_TOPIC_NAME)
+    async onHomeControlsSync(@Ctx() context: MqttContext, @Payload('controls') controls: Record<string, unknown>): Promise<void> {
+        const [deviceId] = this.extractTopicWildcards(CONTROLS_SYNC_TOPIC_NAME, context.getTopic());
+        try {
+            this.logger.debug(`Syncing controls for a device with id "${deviceId}": ${JSON.stringify(controls)}`);
+            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ controls }));
+        } catch (error) {
+            this.logger.error(`Error while syncing controls for a device with id "${deviceId}"`);
             this.logger.error(error);
         }
     }
