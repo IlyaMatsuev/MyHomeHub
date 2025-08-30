@@ -12,7 +12,11 @@ export interface Device extends Document<string> {
     tuyaDeviceLocalKey: string;
     updateInterval: number;
     controls: Record<string, unknown>;
+    controlsUpdatedAt: Date;
     measurements: Record<string, unknown>;
+    measurementsUpdatedAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export type DeviceFilter = Partial<Omit<Device, keyof Document> & { _id: string }>;

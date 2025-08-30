@@ -50,140 +50,143 @@ const objectIsEmpty = (obj?: Record<string, object>): boolean => {
     return !Object.keys(obj || {}).length;
 };
 
-export const ScenarioSchema = new Schema({
-    externalId: {
-        type: String,
-        required: true,
-        unique: true,
-        index: true,
-        default: () => uuid(),
-    },
-    name: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-        minLength: SCENARIO_NAME_MIN_LENGTH,
-        maxLength: SCENARIO_NAME_MAX_LENGTH,
-    },
-    description: {
-        type: String,
-        required: false,
-        trim: true,
-        minLength: SCENARIO_DESCRIPTION_MIN_LENGTH,
-        maxLength: SCENARIO_DESCRIPTION_MAX_LENGTH,
-    },
-    active: {
-        type: Boolean,
-        required: false,
-        default: true,
-    },
-    trigger: {
-        sources: [
-            {
-                type: {
-                    type: String,
-                    required: true,
-                    enum: Object.values(ScenarioTriggerSourceType) as Array<string>,
-                    validate: {
-                        validator: function (value: ScenarioTriggerSourceType): boolean | never {
-                            return TRIGGER_SOURCE_TYPE_VALIDATORS[value](this);
+export const ScenarioSchema = new Schema(
+    {
+        externalId: {
+            type: String,
+            required: true,
+            unique: true,
+            index: true,
+            default: () => uuid(),
+        },
+        name: {
+            type: String,
+            required: true,
+            unique: true,
+            trim: true,
+            minLength: SCENARIO_NAME_MIN_LENGTH,
+            maxLength: SCENARIO_NAME_MAX_LENGTH,
+        },
+        description: {
+            type: String,
+            required: false,
+            trim: true,
+            minLength: SCENARIO_DESCRIPTION_MIN_LENGTH,
+            maxLength: SCENARIO_DESCRIPTION_MAX_LENGTH,
+        },
+        active: {
+            type: Boolean,
+            required: false,
+            default: true,
+        },
+        trigger: {
+            sources: [
+                {
+                    type: {
+                        type: String,
+                        required: true,
+                        enum: Object.values(ScenarioTriggerSourceType) as Array<string>,
+                        validate: {
+                            validator: function (value: ScenarioTriggerSourceType): boolean | never {
+                                return TRIGGER_SOURCE_TYPE_VALIDATORS[value](this);
+                            },
                         },
                     },
-                },
-                cron: {
-                    type: String,
-                    required: function () {
-                        return this.type === ScenarioTriggerSourceType.Cron;
-                    },
-                    validate: {
-                        validator: function (value: string): boolean | never {
-                            return isValidCron(value);
+                    cron: {
+                        type: String,
+                        required: function () {
+                            return this.type === ScenarioTriggerSourceType.Cron;
                         },
-                        message: 'Cron expression is not valid',
+                        validate: {
+                            validator: function (value: string): boolean | never {
+                                return isValidCron(value);
+                            },
+                            message: 'Cron expression is not valid',
+                        },
+                        trim: true,
                     },
-                    trim: true,
-                },
-                adjustTo: {
-                    type: String,
-                    required: false,
-                    enum: Object.values(ScenarioCronTimeAdjustOption) as Array<string>,
-                },
-                device: {
-                    externalId: {
+                    adjustTo: {
                         type: String,
                         required: false,
-                        validate: {
-                            validator: function (): boolean | never {
-                                const device = this.device;
-                                return !objectIsEmpty(device.controls?.are) || !objectIsEmpty(device.measurements?.are);
+                        enum: Object.values(ScenarioCronTimeAdjustOption) as Array<string>,
+                    },
+                    device: {
+                        externalId: {
+                            type: String,
+                            required: false,
+                            validate: {
+                                validator: function (): boolean | never {
+                                    const device = this.device;
+                                    return !objectIsEmpty(device.controls?.are) || !objectIsEmpty(device.measurements?.are);
+                                },
+                                message: 'Either one of "controls.are" or "measurements.are" conditions needs to be set',
                             },
-                            message: 'Either one of "controls.are" or "measurements.are" conditions needs to be set',
+                        },
+                        controls: {
+                            are: {
+                                type: Object,
+                                required: false,
+                            },
+                        },
+                        measurements: {
+                            are: {
+                                type: Object,
+                                required: false,
+                            },
                         },
                     },
-                    controls: {
-                        are: {
-                            type: Object,
-                            required: false,
+                },
+            ],
+            logic: {
+                type: String,
+                required: true,
+                trim: true,
+                uppercase: true,
+                minLength: SCENARIO_TRIGGER_LOGIC_MIN_LENGTH,
+                maxLength: SCENARIO_TRIGGER_LOGIC_MAX_LENGTH,
+                validate: {
+                    validator: function (value: string): boolean | never {
+                        if (!/^\(*\d+\)*(?: *(?:AND|OR) *\(*\d+\)*)*$/.test(value)) {
+                            throw new Error(
+                                'Trigger logic expression must be a valid boolean expression in the following format: (1 AND 2) OR 3',
+                            );
+                        }
+                        const triggerSources = this.trigger.sources;
+                        const operands = Array.from(value.match(/\d+/g)).map(o => +o);
+                        if (operands.length !== triggerSources.length || operands.some(o => o > triggerSources.length)) {
+                            throw new Error(
+                                'The number of trigger sources does not match the number and combination of operands used in the logic expression',
+                            );
+                        }
+                        return true;
+                    },
+                },
+            },
+        },
+        devices: [
+            {
+                externalId: {
+                    type: String,
+                    required: true,
+                    validate: {
+                        validator: function (): boolean | never {
+                            return !this.set || !objectIsEmpty(this.set.controls) || !objectIsEmpty(this.set.measurements);
                         },
+                        message: 'Either one of "controls" or "measurements" setters needs to be set',
+                    },
+                },
+                set: {
+                    controls: {
+                        type: Object,
+                        required: false,
                     },
                     measurements: {
-                        are: {
-                            type: Object,
-                            required: false,
-                        },
+                        type: Object,
+                        required: false,
                     },
                 },
             },
         ],
-        logic: {
-            type: String,
-            required: true,
-            trim: true,
-            uppercase: true,
-            minLength: SCENARIO_TRIGGER_LOGIC_MIN_LENGTH,
-            maxLength: SCENARIO_TRIGGER_LOGIC_MAX_LENGTH,
-            validate: {
-                validator: function (value: string): boolean | never {
-                    if (!/^\(*\d+\)*(?: *(?:AND|OR) *\(*\d+\)*)*$/.test(value)) {
-                        throw new Error(
-                            'Trigger logic expression must be a valid boolean expression in the following format: (1 AND 2) OR 3',
-                        );
-                    }
-                    const triggerSources = this.trigger.sources;
-                    const operands = Array.from(value.match(/\d+/g)).map(o => +o);
-                    if (operands.length !== triggerSources.length || operands.some(o => o > triggerSources.length)) {
-                        throw new Error(
-                            'The number of trigger sources does not match the number and combination of operands used in the logic expression',
-                        );
-                    }
-                    return true;
-                },
-            },
-        },
     },
-    devices: [
-        {
-            externalId: {
-                type: String,
-                required: true,
-                validate: {
-                    validator: function (): boolean | never {
-                        return !this.set || !objectIsEmpty(this.set.controls) || !objectIsEmpty(this.set.measurements);
-                    },
-                    message: 'Either one of "controls" or "measurements" setters needs to be set',
-                },
-            },
-            set: {
-                controls: {
-                    type: Object,
-                    required: false,
-                },
-                measurements: {
-                    type: Object,
-                    required: false,
-                },
-            },
-        },
-    ],
-});
+    { timestamps: true },
+);
