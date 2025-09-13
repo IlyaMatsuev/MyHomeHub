@@ -13,6 +13,7 @@ import {
     MAX_CRON_TRIGGER_SOURCES_PER_SCENARIO,
     SCENARIO_DESCRIPTION_MAX_LENGTH,
     SCENARIO_DESCRIPTION_MIN_LENGTH,
+    SCENARIO_MINIMUM_REPEAT_TIMES,
     SCENARIO_NAME_MAX_LENGTH,
     SCENARIO_NAME_MIN_LENGTH,
     SCENARIO_TRIGGER_LOGIC_MAX_LENGTH,
@@ -78,6 +79,11 @@ export const ScenarioSchema = new Schema(
             type: Boolean,
             required: false,
             default: true,
+        },
+        repeatTimes: {
+            type: Number,
+            required: false,
+            minLength: SCENARIO_MINIMUM_REPEAT_TIMES,
         },
         trigger: {
             sources: [

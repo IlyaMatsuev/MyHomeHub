@@ -103,6 +103,7 @@ export class ScenariosService implements OnModuleInit {
         scenario.name = scenarioDto.name ?? scenario.name;
         scenario.description = scenarioDto.description ?? scenario.description;
         scenario.active = scenarioDto.active ?? scenario.active;
+        scenario.repeatTimes = scenarioDto.repeatTimes ?? scenario.repeatTimes;
         scenario.trigger = scenarioDto.trigger ?? scenario.trigger;
         scenario.devices = scenarioDto.devices ?? scenario.devices;
 

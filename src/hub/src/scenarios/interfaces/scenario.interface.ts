@@ -43,6 +43,7 @@ export interface Scenario extends Document<ObjectId> {
     name: string;
     description?: string;
     active: boolean;
+    repeatTimes?: number;
     trigger: ScenarioTrigger;
     devices: Array<ScenarioDevice>;
 }

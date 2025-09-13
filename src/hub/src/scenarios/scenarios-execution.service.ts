@@ -4,8 +4,9 @@ import { ConditionsEvaluatorService } from 'common/services/conditions-evaluator
 import { UpdateDeviceDto } from 'devices/dto';
 import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from 'devices/events';
 import { DevicesService } from 'devices/devices.service';
-import { ScenarioDeviceTriggerSource, ScenarioTriggerSource, ScenarioTriggerSourceType } from 'scenarios/interfaces';
+import { Scenario, ScenarioDeviceTriggerSource, ScenarioTriggerSource, ScenarioTriggerSourceType } from 'scenarios/interfaces';
 import { ScenariosService } from 'scenarios/scenarios.service';
+import { UpdateScenarioDto } from 'scenarios/dto';
 
 @Injectable()
 export class ScenariosExecutionService {
@@ -19,27 +20,21 @@ export class ScenariosExecutionService {
     ) {}
 
     async execute(scenarioExternalId: string, wasScheduled: boolean): Promise<void> {
+        let scenario: Scenario;
         try {
-            const scenario = await this.scenariosService.getScenarioByExternalId(scenarioExternalId);
+            scenario = await this.scenariosService.getScenarioByExternalId(scenarioExternalId);
             const conditions = await this.extractConditions(scenario.trigger.sources, wasScheduled);
             const shouldExecuteScenario = this.conditionsEvaluatorService.evaluateTriggerExpression(scenario.trigger.logic, conditions);
 
             this.logger.debug(`Executing scenario ${scenario.externalId}. Conditions met: ${shouldExecuteScenario}`);
 
             if (shouldExecuteScenario) {
-                for (const deviceAction of scenario.devices) {
-                    if (deviceAction.set.controls) {
-                        const device = await this.devicesService.getDeviceByExternalId(deviceAction.externalId);
-                        await this.devicesService.updateDevice(
-                            device.externalId,
-                            new UpdateDeviceDto({ controls: deviceAction.set.controls }),
-                        );
-                    }
-                }
+                await this.executeScenario(scenario);
             }
         } catch (error) {
             this.logger.error(`Error during cron job execution for scenario: ${scenarioExternalId}`);
             this.logger.error(error);
+        } finally {
         }
     }
 
@@ -79,5 +74,29 @@ export class ScenariosExecutionService {
         for (const triggeredScenario of triggeredScenarios) {
             await this.execute(triggeredScenario.externalId, false);
         }
+    }
+
+    private async executeScenario(scenario: Scenario): Promise<void> {
+        for (const deviceAction of scenario.devices) {
+            if (deviceAction.set.controls) {
+                const device = await this.devicesService.getDeviceByExternalId(deviceAction.externalId);
+                await this.devicesService.updateDevice(device.externalId, new UpdateDeviceDto({ controls: deviceAction.set.controls }));
+            }
+        }
+
+        if (Number.isInteger(scenario?.repeatTimes)) {
+            await this.updateScenarioRepeatTimes(scenario);
+        }
+    }
+
+    private async updateScenarioRepeatTimes(scenario: Scenario): Promise<void> {
+        let payload: UpdateScenarioDto;
+        const executionsLeft = scenario.repeatTimes - 1;
+        if (executionsLeft === 0) {
+            payload = { active: false, repeatTimes: undefined };
+        } else {
+            payload = { repeatTimes: executionsLeft };
+        }
+        await this.scenariosService.updateScenario(scenario.externalId, payload);
     }
 }

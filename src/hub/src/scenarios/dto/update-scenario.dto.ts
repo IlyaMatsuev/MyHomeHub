@@ -1,9 +1,10 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { ScenarioDeviceDto, ScenarioTriggerDto } from 'scenarios/dto/common.dto';
-import { ArrayNotEmpty, IsArray, IsBoolean, IsOptional, IsString, Length, ValidateNested } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsBoolean, IsInt, IsOptional, IsString, Length, Min, ValidateNested } from 'class-validator';
 import {
     SCENARIO_DESCRIPTION_MAX_LENGTH,
     SCENARIO_DESCRIPTION_MIN_LENGTH,
+    SCENARIO_MINIMUM_REPEAT_TIMES,
     SCENARIO_NAME_MAX_LENGTH,
     SCENARIO_NAME_MIN_LENGTH,
 } from 'scenarios/scenarios.constants';
@@ -40,6 +41,16 @@ export class UpdateScenarioDto {
         description: 'Determines if the scenario should be executed',
     })
     active?: boolean;
+
+    @IsOptional()
+    @IsInt()
+    @Min(SCENARIO_MINIMUM_REPEAT_TIMES)
+    @ApiProperty({
+        required: false,
+        description:
+            'Determines the number of times the scenario needs to be executed. If not provided, repeat infinitely. Each scenario execution subtracts this value by one. After the last execution, the scenario becomes inactive and the field is set blank',
+    })
+    repeatTimes?: number;
 
     @IsOptional()
     @ValidateNested({ each: true })
