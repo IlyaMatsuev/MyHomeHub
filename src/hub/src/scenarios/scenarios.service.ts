@@ -1,4 +1,12 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, OnModuleInit } from '@nestjs/common';
+import {
+    BadRequestException,
+    Inject,
+    Injectable,
+    InternalServerErrorException,
+    Logger,
+    NotFoundException,
+    OnModuleInit,
+} from '@nestjs/common';
 import { Model, RootFilterQuery } from 'mongoose';
 import {
     GetScenarioOptions,
@@ -15,6 +23,8 @@ import { ScenariosExecutionService } from 'scenarios/scenarios-execution.service
 
 @Injectable()
 export class ScenariosService implements OnModuleInit {
+    private readonly logger = new Logger(ScenariosService.name);
+
     constructor(
         @Inject(SCENARIO_MODEL_PROVIDER_NAME)
         private readonly scenarioModel: Model<Scenario>,
@@ -112,14 +122,23 @@ export class ScenariosService implements OnModuleInit {
             cronSource.cron = this.schedulerService.adjustScenarioDayTimeCron(cronSource);
         }
 
+        this.logger.debug(`scenario: ${JSON.stringify(scenario)}`);
+
         const updatedScenario = await scenario.save({ validateBeforeSave: true });
+        this.logger.debug(`updatedScenario: ${updatedScenario.trigger?.sources}, ${JSON.stringify(updatedScenario)}`);
+        this.logger.debug(`oldScenario: ${oldScenario.trigger?.sources}, ${JSON.stringify(oldScenario)}`);
+
         if (this.isCronScenario(oldScenario)) {
             this.schedulerService.unscheduleJob(oldScenario.name);
         }
+        this.logger.debug(`After isCronScenario(oldScenario)`);
         if (this.isCronScenario(updatedScenario) && updatedScenario.active) {
+            this.logger.debug(`After isCronScenario(updatedScenario)`);
             await this.scheduleScenarioJob(updatedScenario, async () => {
+                this.logger.debug(`After scheduleScenarioJob failed`);
                 await this.scenarioModel.findByIdAndUpdate(scenario._id, { ...oldScenario }, { runValidators: false }).exec();
                 await this.scheduleScenarioJob(oldScenario, async () => {});
+                this.logger.debug(`After scheduleScenarioJob failed 2`);
             });
         }
         return updatedScenario;
@@ -156,6 +175,7 @@ export class ScenariosService implements OnModuleInit {
                 handler: () => this.scenariosExecutionService.execute(scenario.externalId, true),
             });
         } catch (ex) {
+            this.logger.error(`Failed to schedule a scenario on "${cronTriggerSource.cron}: ${ex.message}"`);
             await onFailure();
             throw new InternalServerErrorException(`Failed to schedule a scenario on "${cronTriggerSource.cron}: ${ex.message}"`);
         }
