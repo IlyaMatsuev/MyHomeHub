@@ -108,7 +108,7 @@ export class ScenariosService implements OnModuleInit {
 
     async updateScenario(externalId: string, scenarioDto: UpdateScenarioDto): Promise<Scenario> {
         const scenario = await this.getScenarioByExternalId(externalId);
-        const oldScenario = { ...scenario } as Scenario;
+        const oldScenario: Scenario = scenario.toObject();
 
         scenario.name = scenarioDto.name ?? scenario.name;
         scenario.description = scenarioDto.description ?? scenario.description;
@@ -128,7 +128,7 @@ export class ScenariosService implements OnModuleInit {
         this.logger.debug(`updatedScenario: ${updatedScenario.trigger?.sources}, ${JSON.stringify(updatedScenario)}`);
         this.logger.debug(`oldScenario: ${oldScenario.trigger?.sources}, ${JSON.stringify(oldScenario)}`);
 
-        if (this.isCronScenario(oldScenario)) {
+        if (this.isCronScenario(oldScenario) && oldScenario.active) {
             this.schedulerService.unscheduleJob(oldScenario.name);
         }
         this.logger.debug(`After isCronScenario(oldScenario)`);
