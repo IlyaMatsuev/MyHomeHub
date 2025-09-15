@@ -113,7 +113,7 @@ export class ScenariosService implements OnModuleInit {
         scenario.name = scenarioDto.name ?? scenario.name;
         scenario.description = scenarioDto.description ?? scenario.description;
         scenario.active = scenarioDto.active ?? scenario.active;
-        scenario.repeatTimes = scenarioDto.repeatTimes ?? scenario.repeatTimes;
+        scenario.repeatTimes = scenarioDto.repeatTimes || scenarioDto.repeatTimes === null ? scenarioDto.repeatTimes : scenario.repeatTimes;
         scenario.trigger = scenarioDto.trigger ?? scenario.trigger;
         scenario.devices = scenarioDto.devices ?? scenario.devices;
 
@@ -122,23 +122,16 @@ export class ScenariosService implements OnModuleInit {
             cronSource.cron = this.schedulerService.adjustScenarioDayTimeCron(cronSource);
         }
 
-        this.logger.debug(`scenario: ${JSON.stringify(scenario)}`);
-
         const updatedScenario = await scenario.save({ validateBeforeSave: true });
-        this.logger.debug(`updatedScenario: ${updatedScenario.trigger?.sources}, ${JSON.stringify(updatedScenario)}`);
-        this.logger.debug(`oldScenario: ${oldScenario.trigger?.sources}, ${JSON.stringify(oldScenario)}`);
 
         if (this.isCronScenario(oldScenario) && oldScenario.active) {
             this.schedulerService.unscheduleJob(oldScenario.name);
         }
-        this.logger.debug(`After isCronScenario(oldScenario)`);
+
         if (this.isCronScenario(updatedScenario) && updatedScenario.active) {
-            this.logger.debug(`After isCronScenario(updatedScenario)`);
             await this.scheduleScenarioJob(updatedScenario, async () => {
-                this.logger.debug(`After scheduleScenarioJob failed`);
                 await this.scenarioModel.findByIdAndUpdate(scenario._id, { ...oldScenario }, { runValidators: false }).exec();
                 await this.scheduleScenarioJob(oldScenario, async () => {});
-                this.logger.debug(`After scheduleScenarioJob failed 2`);
             });
         }
         return updatedScenario;

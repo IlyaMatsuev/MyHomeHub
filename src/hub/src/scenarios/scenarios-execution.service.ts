@@ -93,7 +93,7 @@ export class ScenariosExecutionService {
         let payload: UpdateScenarioDto;
         const executionsLeft = scenario.repeatTimes - 1;
         if (executionsLeft === 0) {
-            payload = { active: false, repeatTimes: undefined };
+            payload = { active: false, repeatTimes: null };
         } else {
             payload = { repeatTimes: executionsLeft };
         }
