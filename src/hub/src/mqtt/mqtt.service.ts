@@ -9,7 +9,7 @@ export class MqttService {
     constructor(@Inject(MQTT_CLIENT_PROVIDER_NAME) private readonly client: ClientProxy) {}
 
     pairDevice(device: Device) {
-        this.client.emit(DEVICE_PAIR_REPLY_TOPIC_NAME, PairAcceptDto.accept(device.externalId, device.updateInterval));
+        this.client.emit(DEVICE_PAIR_REPLY_TOPIC_NAME, PairAcceptDto.accept(device.externalId, device.controls, device.updateInterval));
     }
 
     rejectDevice(reason: string) {
