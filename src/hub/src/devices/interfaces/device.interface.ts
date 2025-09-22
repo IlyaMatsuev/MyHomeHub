@@ -1,5 +1,5 @@
 import { Document } from 'mongoose';
-import { DeviceBrand, DeviceType, Room } from 'devices/interfaces';
+import { DeviceBrand, DevicePayload, DeviceType, Room } from 'devices/interfaces';
 
 export interface Device extends Document<string> {
     externalId: string;
@@ -11,9 +11,9 @@ export interface Device extends Document<string> {
     tuyaDeviceId: string;
     tuyaDeviceLocalKey: string;
     updateInterval: number;
-    controls: Record<string, unknown>;
+    controls: DevicePayload;
     controlsUpdatedAt: Date;
-    measurements: Record<string, unknown>;
+    measurements: DevicePayload;
     measurementsUpdatedAt: Date;
     createdAt: Date;
     updatedAt: Date;

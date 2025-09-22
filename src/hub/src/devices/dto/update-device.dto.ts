@@ -1,12 +1,13 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { DeviceBrand, DeviceType, Room } from 'devices/interfaces';
-import { IsEnum, IsInt, IsIP, IsNotEmptyObject, IsObject, IsOptional, IsString, Length, Min } from 'class-validator';
+import { IsEnum, IsInt, IsIP, IsNotEmptyObject, IsOptional, IsString, Length, Min, ValidateNested } from 'class-validator';
 import {
     DEVICE_ALLOWED_IP_VERSION,
     DEVICE_DEFAULT_UPDATE_INTERVAL,
     DEVICE_NAME_MAX_LENGTH,
     DEVICE_NAME_MIN_LENGTH,
 } from 'devices/devices.constants';
+import { DevicePayloadDto } from 'devices/dto';
 
 @ApiSchema({
     name: 'UpdateDeviceRequest',
@@ -87,23 +88,23 @@ export class UpdateDeviceDto {
 
     @IsOptional()
     @IsNotEmptyObject()
-    @IsObject()
+    @ValidateNested()
     @ApiProperty({
         required: false,
         description: 'Updated set of controls for the device',
         default: {},
     })
-    controls?: Record<string, unknown>;
+    controls?: DevicePayloadDto;
 
     @IsOptional()
     @IsNotEmptyObject()
-    @IsObject()
+    @ValidateNested()
     @ApiProperty({
         required: false,
         description: 'Updated set of measurements for the device',
         default: {},
     })
-    measurements?: Record<string, unknown>;
+    measurements?: DevicePayloadDto;
 
     get controlsUpdated(): boolean {
         return !!Object.keys(this.controls ?? {}).length;

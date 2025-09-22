@@ -4,11 +4,11 @@ import { Esp32ControlsDto } from '../esp32-controls.dto';
 export class FanSpeedLevel {
     @IsNotEmpty()
     @IsNumber()
-    higherTemperatureThreshold: number;
+    highTemp: number;
 
     @IsNotEmpty()
     @IsNumber()
-    lowerTemperatureThreshold: number;
+    lowTemp: number;
 }
 
 export class FansSpeedLevelsControls {

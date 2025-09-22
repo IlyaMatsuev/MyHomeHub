@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Device } from 'devices/interfaces';
+import { Device, DevicePayload } from 'devices/interfaces';
 import { ConfigService } from '@nestjs/config';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { plainToInstance } from 'class-transformer';
@@ -19,17 +19,24 @@ export abstract class DevicesControlService {
 
     protected abstract getServiceName(): string;
     protected abstract getControlsDtoType<T extends object>(): ClassConstructor<T>;
-    protected abstract setDeviceControls<T extends Record<string, unknown>, V>(controls: T): Promise<V | void | never>;
+    protected abstract setDeviceControls<T extends DevicePayload, V>(controls: T): Promise<V | void | never>;
 
-    async validateControls(controls: Record<string, unknown>): Promise<void | never> {
+    mergeValidateControls(controls: DevicePayload, oldControls?: DevicePayload): Promise<DevicePayload | never> {
+        const { $override, ...otherControls } = controls;
+        const mergedControls: DevicePayload = $override ? { otherControls } : { ...oldControls, ...otherControls };
+        return this.validateControls(mergedControls);
+    }
+
+    async validateControls(controls: DevicePayload): Promise<DevicePayload | never> {
         const controlsDto = this.getControlsDto(controls);
         const errors = await validate(controlsDto);
         if (errors.length) {
             throw CustomValidationException.fromClassValidator(errors);
         }
+        return controls;
     }
 
-    setControls<T extends Record<string, unknown>>(controls: Record<string, unknown>): Promise<T | void | never> {
+    setControls<T extends DevicePayload>(controls: DevicePayload): Promise<T | void | never> {
         try {
             return this.setDeviceControls(this.getControlsDto<T>(controls));
         } catch (error) {
@@ -44,7 +51,7 @@ export abstract class DevicesControlService {
         return this.device.ip;
     }
 
-    private getControlsDto<T extends object>(controls: Record<string, unknown>): T {
+    private getControlsDto<T extends object>(controls: DevicePayload): T {
         return plainToInstance(this.getControlsDtoType<T>(), controls);
     }
 }

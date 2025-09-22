@@ -1,5 +1,5 @@
 import { CreateDeviceDto } from 'devices/dto';
-import { DeviceBrand, DeviceType } from 'devices/interfaces';
+import { DeviceBrand, DevicePayload, DeviceType } from 'devices/interfaces';
 import { MEASUREMENTS_DEFAULT_UPDATE_INTERVAL } from 'mqtt/mqtt.constants';
 
 export class PairRequestDto {
@@ -7,8 +7,8 @@ export class PairRequestDto {
     deviceName: string;
     deviceType: DeviceType;
     updateInterval?: number;
-    controls?: Record<string, unknown>;
-    measurements?: Record<string, unknown>;
+    controls?: DevicePayload;
+    measurements?: DevicePayload;
 
     toCreateDevice(): CreateDeviceDto {
         return new CreateDeviceDto({

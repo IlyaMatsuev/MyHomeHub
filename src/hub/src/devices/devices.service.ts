@@ -58,16 +58,16 @@ export class DevicesService {
         if (existingDevice) {
             throw new BadRequestException(`Device with the same name ('${deviceDto.name}') already exists`);
         }
-        return new this.deviceModel(deviceDto).save({ validateBeforeSave: true });
+        return this.assignDtoValues(new this.deviceModel(deviceDto), deviceDto);
     }
 
     async updateDevice(externalId: string, updateDeviceInfoDto: UpdateDeviceDto): Promise<Device> {
         const device = await this.getDeviceByExternalId(externalId);
-        const updatedDevice = await this.updateDtoValues(device, updateDeviceInfoDto);
+        const updatedDevice = await this.assignDtoValues(device, updateDeviceInfoDto);
         if (updateDeviceInfoDto.controlsUpdated) {
             this.eventEmitter.emit(
                 DeviceControlsUpdatedEvent.eventName,
-                new DeviceControlsUpdatedEvent(externalId, updateDeviceInfoDto.controls),
+                new DeviceControlsUpdatedEvent(externalId, updatedDevice.controls),
             );
         }
         if (updateDeviceInfoDto.measurementsUpdated) {
@@ -82,11 +82,11 @@ export class DevicesService {
         return device;
     }
 
-    private async updateDtoValues(device: Device, updatedDevice: UpdateDeviceDto): Promise<Device> {
+    private async assignDtoValues(device: Device, updatedDevice: CreateDeviceDto | UpdateDeviceDto): Promise<Device> {
+        const controlService = this.getControlService(device);
         for (const field of Object.keys(updatedDevice)) {
             if (field === 'controls') {
-                await this.getControlService(device).validateControls(updatedDevice.controls);
-                device.controls = { ...(device.controls || {}), ...updatedDevice.controls };
+                device.controls = await controlService.mergeValidateControls(updatedDevice.controls, device.controls);
             } else {
                 device[field] = updatedDevice[field];
             }

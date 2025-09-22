@@ -1,8 +1,10 @@
+import { DevicePayload } from 'devices/interfaces';
+
 export class PairAcceptDto {
     accepted: boolean;
     deviceId?: string;
     updateInterval?: number;
-    controls: Record<string, unknown>;
+    controls: DevicePayload;
     message?: string;
 
     constructor(dto?: Partial<PairAcceptDto>) {
@@ -11,7 +13,7 @@ export class PairAcceptDto {
         }
     }
 
-    static accept(deviceId: string, controls: Record<string, unknown>, updateInterval: number): PairAcceptDto {
+    static accept(deviceId: string, controls: DevicePayload, updateInterval: number): PairAcceptDto {
         return new PairAcceptDto({ accepted: true, deviceId, controls, updateInterval });
     }
 

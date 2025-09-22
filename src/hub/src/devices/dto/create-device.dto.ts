@@ -7,9 +7,9 @@ import {
     IsInt,
     Min,
     IsIP,
-    IsObject,
     IsNotEmptyObject,
     ValidateIf,
+    ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { DeviceBrand, DeviceType, Room } from 'devices/interfaces';
@@ -19,6 +19,7 @@ import {
     DEVICE_NAME_MAX_LENGTH,
     DEVICE_NAME_MIN_LENGTH,
 } from 'devices/devices.constants';
+import { DevicePayloadDto } from 'devices/dto';
 
 @ApiSchema({ name: 'CreateDeviceRequest', description: 'DTO used to add a new device to the hub control' })
 export class CreateDeviceDto {
@@ -100,23 +101,23 @@ export class CreateDeviceDto {
 
     @IsOptional()
     @IsNotEmptyObject()
-    @IsObject()
+    @ValidateNested()
     @ApiProperty({
         required: true,
         description: 'Set of controls available to set for the device. Can be different for each device',
         default: {},
     })
-    controls?: Record<string, unknown>;
+    controls?: DevicePayloadDto;
 
     @IsOptional()
     @IsNotEmptyObject()
-    @IsObject()
+    @ValidateNested()
     @ApiProperty({
         required: true,
         description: 'Set of measurements available to read for the device. Can be different for each device',
         default: {},
     })
-    measurements?: Record<string, unknown>;
+    measurements?: DevicePayloadDto;
 
     constructor(device?: Partial<CreateDeviceDto>) {
         if (device) {

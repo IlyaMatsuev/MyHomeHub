@@ -10,7 +10,7 @@ import {
 } from 'mqtt/mqtt.constants';
 import { DevicesService } from 'devices/devices.service';
 import { PairRequestDto } from 'mqtt/dto';
-import { UpdateDeviceDto } from 'devices/dto';
+import { DevicePayloadDto, UpdateDeviceDto } from 'devices/dto';
 import { plainToInstance } from 'class-transformer';
 
 @Controller()
@@ -54,7 +54,7 @@ export class MqttController {
     }
 
     @MessagePattern(CONTROLS_SYNC_TOPIC_NAME)
-    async onHomeControlsSync(@Ctx() context: MqttContext, @Payload('controls') controls: Record<string, unknown>): Promise<void> {
+    async onHomeControlsSync(@Ctx() context: MqttContext, @Payload('controls') controls: DevicePayloadDto): Promise<void> {
         const [deviceId] = this.extractTopicWildcards(CONTROLS_SYNC_TOPIC_NAME, context.getTopic());
         try {
             this.logger.debug(`Syncing controls for a device with id "${deviceId}": ${JSON.stringify(controls)}`);
@@ -66,10 +66,7 @@ export class MqttController {
     }
 
     @MessagePattern(MEASUREMENTS_UPDATE_TOPIC_NAME)
-    async onHomeMeasurementsUpdate(
-        @Ctx() context: MqttContext,
-        @Payload('measurements') measurements: Record<string, unknown>,
-    ): Promise<void> {
+    async onHomeMeasurementsUpdate(@Ctx() context: MqttContext, @Payload('measurements') measurements: DevicePayloadDto): Promise<void> {
         const [deviceId] = this.extractTopicWildcards(MEASUREMENTS_UPDATE_TOPIC_NAME, context.getTopic());
         try {
             this.logger.debug(`Updating measurements for a device with id "${deviceId}": ${JSON.stringify(measurements)}`);
