@@ -31,6 +31,7 @@ void PsFansControls::onUpdate(JsonObject& payload) {
 
         if (speedLevels["reset"].as<bool>()) {
             this->fanSpeedLevels = this->getDefaultFanSpeedLevels();
+            this->toggleControlsSync();
         } else {
             for (JsonPair kv : speedLevels) {
                 if (strcmp(kv.key().c_str(), "reset") == 0) {
@@ -99,8 +100,8 @@ std::vector<FanSpeedLevel> PsFansControls::getDefaultFanSpeedLevels() {
     return {
         FanSpeedLevel(0, 0, 0),
         FanSpeedLevel(0.25, 28, 25),
-        FanSpeedLevel(0.5, 32, 29),
-        FanSpeedLevel(1, 35, 33)
+        FanSpeedLevel(0.5, 36, 33),
+        FanSpeedLevel(1, 40, 37)
         // Values to test in room temperature:
         // FanSpeedLevel(0.25, 25, 23),
         // FanSpeedLevel(0.5, 30, 28),
