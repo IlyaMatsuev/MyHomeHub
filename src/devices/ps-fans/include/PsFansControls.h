@@ -10,11 +10,11 @@ struct FanSpeedLevel {
     float speedPercentage;
     uint8_t duty;
     // When temperature rises above this value, the duty of this level is used
-    float higherTemperatureThreshold;
+    float highTemp;
     // When temperature drops below this value, the duty of the below level is used
-    float lowerTemperatureThreshold;
+    float lowTemp;
 
-    FanSpeedLevel(float speedPercentage, float higherTemperatureThreshold, float lowerTemperatureThreshold);
+    FanSpeedLevel(float speedPercentage, float highTemp, float lowTemp);
 };
 
 class PsFansControls : public ControlsProvider {

@@ -2,11 +2,11 @@
 #include "PsFansControls.h"
 
 
-FanSpeedLevel::FanSpeedLevel(float speedPercentage, float higherTemperatureThreshold, float lowerTemperatureThreshold):
+FanSpeedLevel::FanSpeedLevel(float speedPercentage, float highTemp, float lowTemp):
     speedPercentage(speedPercentage),
     duty(static_cast<uint8_t>(std::ceil(speedPercentage * FAN_MAX_DUTY))),
-    higherTemperatureThreshold(higherTemperatureThreshold),
-    lowerTemperatureThreshold(lowerTemperatureThreshold) {}
+    highTemp(highTemp),
+    lowTemp(lowTemp) {}
 
 PsFansControls::PsFansControls() {
     this->on = true;
@@ -18,8 +18,9 @@ PsFansControls::PsFansControls() {
   "on": true,
   "speedLevels": {
     "reset": false,
-    "0.25": { "higherTemperatureThreshold": 25, "lowerTemperatureThreshold": 23 },
-    "0.5": { "higherTemperatureThreshold": 30, "lowerTemperatureThreshold": 28 },
+    "0.25": { "highTemp": 25, "lowTemp": 23 },
+    "0.5": { "highTemp": 30, "lowTemp": 28 },
+    "1": { "highTemp": 35, "lowTemp": 33 },
   }
 }
  */
@@ -42,8 +43,8 @@ void PsFansControls::onUpdate(JsonObject& payload) {
                     // Because float value internally could be 0.25000001
                     if (fabs(level.speedPercentage - speedPercentage) < 0.001) {
                         JsonObject speedLevelConfig = kv.value().as<JsonObject>();
-                        level.higherTemperatureThreshold = speedLevelConfig["higherTemperatureThreshold"];
-                        level.lowerTemperatureThreshold = speedLevelConfig["lowerTemperatureThreshold"];
+                        level.highTemp = speedLevelConfig["highTemp"];
+                        level.lowTemp = speedLevelConfig["lowTemp"];
                     }
                 }
             }
@@ -58,14 +59,14 @@ void PsFansControls::build(JsonObject& controls) {
     speedLevels["reset"] = false;
     
     JsonObject speedLevel25 = speedLevels["0.25"].to<JsonObject>();
-    speedLevel25["higherTemperatureThreshold"] = this->fanSpeedLevels[1].higherTemperatureThreshold;
-    speedLevel25["lowerTemperatureThreshold"] = this->fanSpeedLevels[1].lowerTemperatureThreshold;
+    speedLevel25["highTemp"] = this->fanSpeedLevels[1].highTemp;
+    speedLevel25["lowTemp"] = this->fanSpeedLevels[1].lowTemp;
     JsonObject speedLevel50 = speedLevels["0.5"].to<JsonObject>();
-    speedLevel50["higherTemperatureThreshold"] = this->fanSpeedLevels[2].higherTemperatureThreshold;
-    speedLevel50["lowerTemperatureThreshold"] = this->fanSpeedLevels[2].lowerTemperatureThreshold;
+    speedLevel50["highTemp"] = this->fanSpeedLevels[2].highTemp;
+    speedLevel50["lowTemp"] = this->fanSpeedLevels[2].lowTemp;
     JsonObject speedLevel100 = speedLevels["1"].to<JsonObject>();
-    speedLevel100["higherTemperatureThreshold"] = this->fanSpeedLevels[3].higherTemperatureThreshold;
-    speedLevel100["lowerTemperatureThreshold"] = this->fanSpeedLevels[3].lowerTemperatureThreshold;
+    speedLevel100["highTemp"] = this->fanSpeedLevels[3].highTemp;
+    speedLevel100["lowTemp"] = this->fanSpeedLevels[3].lowTemp;
 
     controls["speedLevels"] = speedLevels;
 }
@@ -81,13 +82,13 @@ FanSpeedLevel PsFansControls::getFanSpeedLevel(float temperature) {
 
     if (notLastLevel) {
         FanSpeedLevel nextLevel = this->fanSpeedLevels[this->currentSpeedLevelIndex + 1];
-        if (temperature >= nextLevel.higherTemperatureThreshold) {
+        if (temperature >= nextLevel.highTemp) {
             this->currentSpeedLevelIndex++;
         }
     }
     if (notFirstLevel) {
         FanSpeedLevel currentLevel = this->fanSpeedLevels[this->currentSpeedLevelIndex];
-        if (temperature <= currentLevel.lowerTemperatureThreshold) {
+        if (temperature <= currentLevel.lowTemp) {
             this->currentSpeedLevelIndex--;
         }
     }
