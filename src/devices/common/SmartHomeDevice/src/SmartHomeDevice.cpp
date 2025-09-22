@@ -10,8 +10,8 @@ const char* SYNC_CONTROLS_TOPIC = "home/devices/%s/controls/sync";
 const char* UPDATE_MEASUREMENTS_TOPIC = "home/devices/%s/measurements/update";
 
 
-JsonDocument& PayloadProvider::getPayload() {
-    JsonDocument values;
+JsonObject& PayloadProvider::getPayload() {
+    JsonObject values;
     build(values);
     payload[payloadField] = values;
     return payload;
@@ -48,7 +48,7 @@ void SmartHomeDevice::setup(const NetworkSettings& networkSettings, const MqttSe
         if (error) {
             Serial.printf("Failed to deserialize JSON: %s\n", error.c_str());
         } else {
-            this->onMqttMessage(String(topic), data["data"]);
+            this->onMqttMessage(String(topic), data["data"].as<JsonObject>());
         }
     });
     connectMqtt(this->mqttSettings.username, this->mqttSettings.password);
@@ -105,12 +105,16 @@ void SmartHomeDevice::connectMqtt(const char* username, const char* password) {
     }
 }
 
-void SmartHomeDevice::onMqttMessage(String topic, JsonDocument data) {
+void SmartHomeDevice::onMqttMessage(String topic, JsonObject data) {
     if (topic == PAIR_REQUEST_REPLY_TOPIC) {
         // { "accepted": true, "deviceId": "xxx", "updateInterval": 10000, "message": "example" }
         if (data["accepted"]) {
             deviceId = data["deviceId"].as<String>();
             updateIntervalMs = data["updateInterval"];
+
+            JsonObject deviceControls = data["controls"].as<JsonObject>();
+            this->controlsProvider->onUpdate(deviceControls);
+
             Serial.printf("Received pairing acceptance (%s), with update interval: %d\n", deviceId.c_str(), updateIntervalMs);
 
             mqttClient.subscribe(getUpdateControlsTopic().c_str());
@@ -123,8 +127,6 @@ void SmartHomeDevice::onMqttMessage(String topic, JsonDocument data) {
         // { ...controls } - Can contain any kind of controls
         Serial.println("Received controls update request");
         this->controlsProvider->onUpdate(data);
-        // Toggle to sync all controls back to the hub
-        this->controlsProvider->toggleControlsSync();
     }
 }
 

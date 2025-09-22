@@ -18,7 +18,7 @@ void PsFansMeasurements::setFanSpeedLevel(float speedPercentage) {
     this->speedPercentage = speedPercentage;
 }
 
-void PsFansMeasurements::build(JsonDocument& measurements) {
+void PsFansMeasurements::build(JsonObject& measurements) {
     measurements["temperature"] = this->temperature;
     measurements["speedPercentage"] = this->speedPercentage;
 }

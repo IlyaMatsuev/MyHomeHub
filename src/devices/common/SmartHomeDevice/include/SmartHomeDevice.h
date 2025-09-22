@@ -10,13 +10,13 @@ const unsigned int DEFAULT_UPDATE_INTERVAL = 5000;
 
 class PayloadProvider {
 public:
-    JsonDocument& getPayload();
+    JsonObject& getPayload();
 protected:
     PayloadProvider(const char* fieldName) : payloadField(fieldName) {}
 
-    virtual void build(JsonDocument& payload) = 0;
+    virtual void build(JsonObject& payload) = 0;
 private:
-    JsonDocument payload;
+    JsonObject payload;
     const char* payloadField;
 };
 
@@ -24,7 +24,7 @@ class ControlsProvider : public PayloadProvider {
 public:
     ControlsProvider() : PayloadProvider("controls") {}
 
-    virtual void onUpdate(JsonDocument& payload) = 0;
+    virtual void onUpdate(JsonObject& payload) = 0;
     void toggleControlsSync(bool sync = true);
     bool controlsUpdated();
 private:
@@ -108,7 +108,7 @@ private:
 
     void connectWiFi(const char* ssid, const char* password);
     void connectMqtt(const char* username, const char* password);
-    void onMqttMessage(String topic, JsonDocument data);
+    void onMqttMessage(String topic, JsonObject data);
     void sendPairRequest();
     void sendMeasurementsUpdate();
     void sendControlsSync();

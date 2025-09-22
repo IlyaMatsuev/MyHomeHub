@@ -9,7 +9,7 @@ public:
     float setTemperature(float temperature);
     void setFanSpeedLevel(float speedPercentage);
 protected:
-    void build(JsonDocument& measurements) override;
+    void build(JsonObject& measurements) override;
 private:
     float temperature;
     float speedPercentage;

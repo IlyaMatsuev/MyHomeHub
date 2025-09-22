@@ -23,7 +23,7 @@ PsFansControls::PsFansControls() {
   }
 }
  */
-void PsFansControls::onUpdate(JsonDocument& payload) {
+void PsFansControls::onUpdate(JsonObject& payload) {
     this->on = payload["on"];
     if (payload["speedLevels"].is<JsonObject>()) {
         JsonObject speedLevels = payload["speedLevels"];
@@ -51,12 +51,12 @@ void PsFansControls::onUpdate(JsonDocument& payload) {
     }
 }
 
-void PsFansControls::build(JsonDocument& controls) {
+void PsFansControls::build(JsonObject& controls) {
     controls["on"] = this->on;
 
-    JsonObject speedLevels = controls["speedLevels"].to<JsonObject>();
+    JsonObject speedLevels;
     speedLevels["reset"] = false;
-
+    
     JsonObject speedLevel25 = speedLevels["0.25"].to<JsonObject>();
     speedLevel25["higherTemperatureThreshold"] = this->fanSpeedLevels[1].higherTemperatureThreshold;
     speedLevel25["lowerTemperatureThreshold"] = this->fanSpeedLevels[1].lowerTemperatureThreshold;
@@ -66,6 +66,8 @@ void PsFansControls::build(JsonDocument& controls) {
     JsonObject speedLevel100 = speedLevels["1"].to<JsonObject>();
     speedLevel100["higherTemperatureThreshold"] = this->fanSpeedLevels[3].higherTemperatureThreshold;
     speedLevel100["lowerTemperatureThreshold"] = this->fanSpeedLevels[3].lowerTemperatureThreshold;
+
+    controls["speedLevels"] = speedLevels;
 }
 
 FanSpeedLevel PsFansControls::getFanSpeedLevel(float temperature) {

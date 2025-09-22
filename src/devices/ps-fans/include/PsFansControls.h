@@ -21,10 +21,10 @@ class PsFansControls : public ControlsProvider {
 public:
     PsFansControls();
 
-    void onUpdate(JsonDocument& payload) override;
+    void onUpdate(JsonObject& payload) override;
     FanSpeedLevel getFanSpeedLevel(float temperature);
 protected:
-    void build(JsonDocument& controls) override;
+    void build(JsonObject& controls) override;
 private:
     bool on;
 
