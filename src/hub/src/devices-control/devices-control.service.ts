@@ -23,7 +23,7 @@ export abstract class DevicesControlService {
 
     mergeValidateControls(controls: DevicePayload, oldControls?: DevicePayload): Promise<DevicePayload | never> {
         const { $override, ...otherControls } = controls;
-        const mergedControls: DevicePayload = $override ? { otherControls } : { ...oldControls, ...otherControls };
+        const mergedControls: DevicePayload = $override ? { ...otherControls } : { ...oldControls, ...otherControls };
         return this.validateControls(mergedControls);
     }
 

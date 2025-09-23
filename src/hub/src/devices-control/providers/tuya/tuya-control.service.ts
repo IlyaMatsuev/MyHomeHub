@@ -67,8 +67,9 @@ export class TuyaControlService extends DevicesControlService {
             tuyaControls[TuyaControlsDps.On] = !!controls.on;
         }
         if (controls.changedColor() || controls.changedBrightness()) {
-            const color = `${controls.color ?? this.device.controls?.color ?? DEFAULT_COLOR}`;
-            let brightness = +(controls.brightness ?? this.device.controls?.brightness ?? DEFAULT_COLOR_BRIGHTNESS);
+            const currentControls: TuyaControlsDto = this.device.controls as TuyaControlsDto;
+            const color = `${controls.color ?? currentControls?.color ?? DEFAULT_COLOR}`;
+            let brightness = +(controls.brightness ?? currentControls?.brightness ?? DEFAULT_COLOR_BRIGHTNESS);
             if (brightness < 1 || brightness > 100) {
                 brightness = DEFAULT_COLOR_BRIGHTNESS;
             }

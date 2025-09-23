@@ -53,7 +53,7 @@ export class UpdateScenarioDto {
     repeatTimes?: number;
 
     @IsOptional()
-    @ValidateNested({ each: true })
+    @ValidateNested()
     @ApiProperty({
         required: false,
         description: 'The new trigger setup for the scenario',
