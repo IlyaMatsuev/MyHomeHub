@@ -1,6 +1,11 @@
 services:
   smarthome-hub-server:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+        - linux/arm64/v8
     image: ilyamatsuev/smarthome-hub-server
     container_name: smarthome-hub-server
     env_file: .env.local

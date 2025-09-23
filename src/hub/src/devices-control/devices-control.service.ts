@@ -22,7 +22,8 @@ export abstract class DevicesControlService {
     protected abstract setDeviceControls<T extends DevicePayload, V>(controls: T): Promise<V | void | never>;
 
     mergeValidateControls(controls: DevicePayload, oldControls?: DevicePayload): Promise<DevicePayload | never> {
-        const { $override, ...otherControls } = controls;
+        this.logger.debug(`Controls to merge: ${JSON.stringify(controls)}`);
+        const { $override, ...otherControls } = controls ?? {};
         const mergedControls: DevicePayload = $override ? { ...otherControls } : { ...oldControls, ...otherControls };
         return this.validateControls(mergedControls);
     }

@@ -17,8 +17,8 @@ export class PairRequestDto {
             brand: DeviceBrand.ESP32,
             updateInterval: this.updateInterval ?? MEASUREMENTS_DEFAULT_UPDATE_INTERVAL,
             ip: this.deviceIp,
-            controls: this.controls,
-            measurements: this.measurements,
+            controls: this.controls ?? {},
+            measurements: this.measurements ?? {},
         });
     }
 }
