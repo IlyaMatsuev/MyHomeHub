@@ -10,10 +10,16 @@ const char* SYNC_CONTROLS_TOPIC = "home/devices/%s/controls/sync";
 const char* UPDATE_MEASUREMENTS_TOPIC = "home/devices/%s/measurements/update";
 
 
-JsonObject& PayloadProvider::getPayload() {
-    JsonObject values;
-    build(values);
-    payload[payloadField] = values;
+JsonDocument& PayloadProvider::getPayload(bool wrap) {
+    payload.clear();
+
+    JsonObject root = payload.to<JsonObject>();
+    if (wrap) {
+        JsonObject values = root[payloadField].to<JsonObject>();
+        build(values);
+    } else {
+        build(root);
+    }
     return payload;
 }
 
@@ -140,8 +146,9 @@ void SmartHomeDevice::sendPairRequest() {
     request["deviceName"] = deviceName;
     request["deviceType"] = deviceType;
     request["updateInterval"] = updateIntervalMs;
-    request["controls"] = controlsProvider->getPayload();
-    request["measurements"] = measurementsProvider->getPayload();
+    // TODO: getPayload() always returns null
+    request["controls"] = controlsProvider->getPayload(false);
+    request["measurements"] = measurementsProvider->getPayload(false);
 
     char requestJson[MAX_MQTT_PACKET_SIZE];
     serializeJson(request, requestJson);

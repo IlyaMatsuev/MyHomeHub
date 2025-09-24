@@ -10,13 +10,13 @@ const unsigned int DEFAULT_UPDATE_INTERVAL = 5000;
 
 class PayloadProvider {
 public:
-    JsonObject& getPayload();
+    JsonDocument& getPayload(bool wrap = true);
 protected:
     PayloadProvider(const char* fieldName) : payloadField(fieldName) {}
 
     virtual void build(JsonObject& payload) = 0;
 private:
-    JsonObject payload;
+    JsonDocument payload;
     const char* payloadField;
 };
 
@@ -24,6 +24,7 @@ class ControlsProvider : public PayloadProvider {
 public:
     ControlsProvider() : PayloadProvider("controls") {}
 
+    // TODO: Try to create a way to provide a type for this payload parameter
     virtual void onUpdate(JsonObject& payload) = 0;
     void toggleControlsSync(bool sync = true);
     bool controlsUpdated();

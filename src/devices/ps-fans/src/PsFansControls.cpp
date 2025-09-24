@@ -54,6 +54,7 @@ void PsFansControls::onUpdate(JsonObject& payload) {
 }
 
 void PsFansControls::build(JsonObject& controls) {
+    controls["$override"] = true;
     controls["on"] = this->on;
 
     JsonObject speedLevels;
