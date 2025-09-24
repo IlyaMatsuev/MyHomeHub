@@ -26,8 +26,9 @@ export class MqttController {
     async onHomeDevicePairRequest(@Ctx() context: MqttContext, @Payload() pairRequest: PairRequestDto): Promise<void> {
         try {
             pairRequest = plainToInstance(PairRequestDto, pairRequest);
-            this.logger.debug(`pairRequest: ${JSON.stringify(pairRequest)}`);
             this.logger.log(`Received a device (${pairRequest?.deviceName}) pairing request with IP "${pairRequest?.deviceIp}"`);
+            this.logger.debug(`Pair request: ${JSON.stringify(pairRequest)}`);
+
             if (!pairRequest?.deviceIp || !pairRequest?.deviceName) {
                 this.logger.debug(`No device ip and name provided: ${JSON.stringify(context.getPacket())}`);
                 return;
