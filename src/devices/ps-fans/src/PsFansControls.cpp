@@ -57,7 +57,7 @@ void PsFansControls::build(JsonObject& controls) {
     controls["$override"] = true;
     controls["on"] = this->on;
 
-    JsonObject speedLevels;
+    JsonObject speedLevels = controls["speedLevels"].to<JsonObject>();
     speedLevels["reset"] = false;
     
     JsonObject speedLevel25 = speedLevels["0.25"].to<JsonObject>();
@@ -69,8 +69,6 @@ void PsFansControls::build(JsonObject& controls) {
     JsonObject speedLevel100 = speedLevels["1"].to<JsonObject>();
     speedLevel100["highTemp"] = this->fanSpeedLevels[3].highTemp;
     speedLevel100["lowTemp"] = this->fanSpeedLevels[3].lowTemp;
-
-    controls["speedLevels"] = speedLevels;
 }
 
 FanSpeedLevel PsFansControls::getFanSpeedLevel(float temperature) {
