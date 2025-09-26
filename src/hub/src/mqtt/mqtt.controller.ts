@@ -10,7 +10,7 @@ import {
 } from 'mqtt/mqtt.constants';
 import { DevicesService } from 'devices/devices.service';
 import { PairRequestDto } from 'mqtt/dto';
-import { DevicePayloadDto, UpdateDeviceDto } from 'devices/dto';
+import { DeviceControlsDto, DevicePayloadDto, UpdateDeviceDto } from 'devices/dto';
 import { plainToInstance } from 'class-transformer';
 
 @Controller()
@@ -25,6 +25,8 @@ export class MqttController {
     @MessagePattern(DEVICE_PAIR_REQUEST_TOPIC_NAME)
     async onHomeDevicePairRequest(@Ctx() context: MqttContext, @Payload() pairRequest: PairRequestDto): Promise<void> {
         try {
+            // TODO: Delete this log
+            this.logger.debug(`request casted: ${pairRequest instanceof PairRequestDto}`);
             pairRequest = plainToInstance(PairRequestDto, pairRequest);
             this.logger.log(`Received a device (${pairRequest?.deviceName}) pairing request with IP "${pairRequest?.deviceIp}"`);
             this.logger.debug(`Pair request: ${JSON.stringify(pairRequest)}`);
@@ -56,7 +58,9 @@ export class MqttController {
     }
 
     @MessagePattern(CONTROLS_SYNC_TOPIC_NAME)
-    async onHomeControlsSync(@Ctx() context: MqttContext, @Payload('controls') controls: DevicePayloadDto): Promise<void> {
+    async onHomeControlsSync(@Ctx() context: MqttContext, @Payload('controls') controls: DeviceControlsDto): Promise<void> {
+        // TODO: Delete this log
+        this.logger.debug(`controls casted: ${controls instanceof DeviceControlsDto}`);
         const [deviceId] = this.extractTopicWildcards(CONTROLS_SYNC_TOPIC_NAME, context.getTopic());
         try {
             this.logger.debug(`Syncing controls for a device with id "${deviceId}": ${JSON.stringify(controls)}`);
@@ -69,6 +73,8 @@ export class MqttController {
 
     @MessagePattern(MEASUREMENTS_UPDATE_TOPIC_NAME)
     async onHomeMeasurementsUpdate(@Ctx() context: MqttContext, @Payload('measurements') measurements: DevicePayloadDto): Promise<void> {
+        // TODO: Delete this log
+        this.logger.debug(`controls casted: ${measurements instanceof DevicePayloadDto}`);
         const [deviceId] = this.extractTopicWildcards(MEASUREMENTS_UPDATE_TOPIC_NAME, context.getTopic());
         try {
             this.logger.debug(`Updating measurements for a device with id "${deviceId}": ${JSON.stringify(measurements)}`);

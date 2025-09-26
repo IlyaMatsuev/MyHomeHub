@@ -1,7 +1,7 @@
 import { IsOptional, IsString } from 'class-validator';
-import { DevicePayloadDto } from 'devices/dto';
+import { DeviceControlsDto } from 'devices/dto';
 
-export class GoogleSpeakerControlsDto extends DevicePayloadDto {
+export class GoogleSpeakerControlsDto extends DeviceControlsDto {
     @IsOptional()
     @IsString()
     text?: string;

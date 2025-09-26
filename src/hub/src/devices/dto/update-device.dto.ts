@@ -7,7 +7,7 @@ import {
     DEVICE_NAME_MAX_LENGTH,
     DEVICE_NAME_MIN_LENGTH,
 } from 'devices/devices.constants';
-import { DevicePayloadDto } from 'devices/dto';
+import { DeviceControlsDto, DevicePayloadDto } from 'devices/dto';
 
 @ApiSchema({
     name: 'UpdateDeviceRequest',
@@ -94,7 +94,7 @@ export class UpdateDeviceDto {
         description: 'Updated set of controls for the device',
         default: {},
     })
-    controls?: DevicePayloadDto;
+    controls?: DeviceControlsDto;
 
     @IsOptional()
     @IsNotEmptyObject()

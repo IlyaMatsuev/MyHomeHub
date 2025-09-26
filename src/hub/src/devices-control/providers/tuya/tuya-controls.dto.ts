@@ -1,12 +1,8 @@
-import { IsBoolean, IsHexColor, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsHexColor, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { TUYA_DEVICE_MAX_BRIGHTNESS, TUYA_DEVICE_MIN_BRIGHTNESS } from 'devices-control/devices-control.constants';
-import { DevicePayloadDto } from 'devices/dto';
+import { DeviceControlsDto } from 'devices/dto';
 
-export class TuyaControlsDto extends DevicePayloadDto {
-    @IsOptional()
-    @IsBoolean()
-    on?: boolean;
-
+export class TuyaControlsDto extends DeviceControlsDto {
     @IsOptional()
     @IsHexColor()
     color?: string;

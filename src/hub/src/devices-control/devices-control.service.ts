@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Device, DevicePayload } from 'devices/interfaces';
+import { Device, DeviceControls } from 'devices/interfaces';
 import { ConfigService } from '@nestjs/config';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { plainToInstance } from 'class-transformer';
@@ -19,15 +19,16 @@ export abstract class DevicesControlService {
 
     protected abstract getServiceName(): string;
     protected abstract getControlsDtoType<T extends object>(): ClassConstructor<T>;
-    protected abstract setDeviceControls<T extends DevicePayload, V>(controls: T): Promise<V | void | never>;
+    protected abstract setDeviceControls<T extends DeviceControls, V>(controls: T): Promise<V | void | never>;
 
-    mergeValidateControls(controls: DevicePayload, oldControls?: DevicePayload): Promise<DevicePayload | never> {
+    // TODO: Need to implement "$onSwitchDelay" option
+    mergeValidateControls(controls: DeviceControls, oldControls?: DeviceControls): Promise<DeviceControls | never> {
         const { $override, ...otherControls } = controls ?? {};
-        const mergedControls: DevicePayload = $override ? { ...otherControls } : { ...oldControls, ...otherControls };
+        const mergedControls: DeviceControls = $override ? { ...otherControls } : { ...oldControls, ...otherControls };
         return this.validateControls(mergedControls);
     }
 
-    async validateControls(controls: DevicePayload): Promise<DevicePayload | never> {
+    async validateControls(controls: DeviceControls): Promise<DeviceControls | never> {
         const controlsDto = this.getControlsDto(controls);
         const errors = await validate(controlsDto);
         if (errors.length) {
@@ -36,7 +37,7 @@ export abstract class DevicesControlService {
         return controls;
     }
 
-    setControls<T extends DevicePayload>(controls: DevicePayload): Promise<T | void | never> {
+    setControls<T extends DeviceControls>(controls: DeviceControls): Promise<T | void | never> {
         try {
             return this.setDeviceControls(this.getControlsDto<T>(controls));
         } catch (error) {
@@ -51,7 +52,7 @@ export abstract class DevicesControlService {
         return this.device.ip;
     }
 
-    private getControlsDto<T extends object>(controls: DevicePayload): T {
+    private getControlsDto<T extends object>(controls: DeviceControls): T {
         return plainToInstance(this.getControlsDtoType<T>(), controls);
     }
 }

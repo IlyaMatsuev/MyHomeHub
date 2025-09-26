@@ -19,7 +19,7 @@ import {
     DEVICE_NAME_MAX_LENGTH,
     DEVICE_NAME_MIN_LENGTH,
 } from 'devices/devices.constants';
-import { DevicePayloadDto } from 'devices/dto';
+import { DeviceControlsDto, DevicePayloadDto } from 'devices/dto';
 
 @ApiSchema({ name: 'CreateDeviceRequest', description: 'DTO used to add a new device to the hub control' })
 export class CreateDeviceDto {
@@ -107,7 +107,7 @@ export class CreateDeviceDto {
         description: 'Set of controls available to set for the device. Can be different for each device',
         default: {},
     })
-    controls?: DevicePayloadDto;
+    controls?: DeviceControlsDto;
 
     @IsOptional()
     @IsNotEmptyObject()
