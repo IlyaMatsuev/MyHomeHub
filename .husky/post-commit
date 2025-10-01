@@ -1,5 +1,0 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-# your command here
-npm run build:image -- --push
