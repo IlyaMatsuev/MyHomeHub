@@ -4,12 +4,12 @@ services:
     container_name: smarthome-hub-server-prod
     env_file: .env.prod
     restart: always
-    ports:
-      - "3020:3020"
     volumes:
       - ./.env.prod:/usr/src/app/.env.prod
     expose:
       - "3020"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     network_mode: host
 
   mongodb-prod:
@@ -38,28 +38,30 @@ services:
     networks:
       - smarthome-network
 
-  smarthome-hub-server-image-watcher:
+  smarthome-image-watcher:
     image: containrrr/watchtower:latest
-    container_name: smarthome-hub-server-image-watcher
+    container_name: smarthome-image-watcher
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.docker/config.json:/config.json
     environment:
       - TZ=Europe/Amsterdam
+      - WATCHTOWER_LABEL_ENABLE=true
       - WATCHTOWER_SCHEDULE=0 0 * * * *
       - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_DISABLE_CONTAINERS=mongodb-prod,mongodb
 
-  smarthome-hub-server-image-watcher-once:
+  smarthome-image-watcher-once:
     image: containrrr/watchtower:latest
-    container_name: smarthome-hub-server-image-watcher-once
+    container_name: smarthome-image-watcher-once
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.docker/config.json:/config.json
     environment:
       - TZ=Europe/Amsterdam
+      - WATCHTOWER_LABEL_ENABLE=true
       - WATCHTOWER_RUN_ONCE=true
       - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_DISABLE_CONTAINERS=mongodb-prod,mongodb,mqtt-broker,mqtt-broker-prod
 
 networks:
   smarthome-network:
