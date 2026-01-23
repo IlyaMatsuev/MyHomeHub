@@ -1,7 +1,7 @@
-import { Document } from 'mongoose';
+import { Document } from 'mongodb';
 import { DeviceBrand, DevicePayload, DeviceType, Room } from 'devices/interfaces';
 
-export interface Device extends Document<string> {
+export interface Device extends Document {
     externalId: string;
     name: string;
     type: DeviceType;
@@ -19,7 +19,7 @@ export interface Device extends Document<string> {
     updatedAt: Date;
 }
 
-export type DeviceFilter = Partial<Omit<Device, keyof Document> & { _id: string }>;
+export type DeviceFilter = Partial<Device & { _id: string }>;
 
 export interface GetDeviceOptions {
     strict: boolean;

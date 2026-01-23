@@ -1,5 +1,4 @@
-import { Document } from 'mongoose';
-import { ObjectId } from 'mongodb';
+import { Document } from 'mongodb';
 import { ScenarioCronTimeAdjustOption, ScenarioTriggerSourceType } from 'scenarios/interfaces';
 
 export interface ScenarioTriggerSource {
@@ -38,7 +37,7 @@ export interface ScenarioDevice {
     };
 }
 
-export interface Scenario extends Document<ObjectId> {
+export interface Scenario extends Document {
     externalId: string;
     name: string;
     description?: string;
@@ -48,7 +47,7 @@ export interface Scenario extends Document<ObjectId> {
     devices: Array<ScenarioDevice>;
 }
 
-export type ScenarioFilter = Partial<Omit<Scenario, keyof Document> & { _id: ObjectId }>;
+export type ScenarioFilter = Partial<Scenario & { _id: string }>;
 
 export interface GetScenarioOptions {
     strict: boolean;
