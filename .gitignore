@@ -25,7 +25,7 @@
 /.nyc_output
 
 # Data
-/src/hub/data/**
+/data/**
 
 # Secrets
 **/secrets.cpp

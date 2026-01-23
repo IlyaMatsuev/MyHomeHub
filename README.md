@@ -1,59 +1,22 @@
-# Project Name
+# SmartHome Hub
 
-Badges.
+TODO
 
 Project description and idea.
 
-- ✅ Advantage
-- ✅ Another advantage
-- ❌ Disadvantage
+## 🚀 Build & Run
 
-## 🔍 Overview
-
-Some basic usage example:
-
-```java
-System.debug('Hello World!');
-```
-
-For more examples, please refer to the [examples page](docs/examples).
-
-Project notes.
-
-## 🚀 Installation
-
-### From Unmanaged Package
-
-You can just install the package by the link on a [sandbox](https://test.salesforce.com/packaging/installPackage.apexp?p0=<package-id>) or [dev org](https://login.salesforce.com/packaging/installPackage.apexp?p0=<package-id>).
-
-If you prefer using salesforce CLI you can run:
-
-```
-sfdx force:package:install -p <package-id> -w 10 -b 10 -u <username>
-```
-
-### From Source
-
-You can also install the package with the automated scripts: [`pkg-deploy.sh`](scripts/pkg-deploy.sh) and [`pkg-from-scratch.sh`](scripts/pkg-from-scratch.sh).  
-First is for deploying changes to the existing org.
-
-```
-./scripts/pkg-deploy.sh <username-or-alias>
-```
-
-Second is for creating a new configured scratch org.
-
-```
-./scripts/pkg-from-scratch.sh <devhub-username-or-alias> <new-scratch-org-alias>
-```
+TODO
 
 ## 🛠️ Configuration
 
-Custom settings, custom metadata or any other configuration example.
+TODO
 
 ## 📝 Documentation
 
-For more detailed information about the content of the repository and the sfdx package, please visit the [docs folder](docs).
+- [General project documentation](docs)
+- [Postman API collection](api)
+- Swagger documentation (located at http://localhost:3000/api when the project is started)
 
 ## ❓ Questions
 

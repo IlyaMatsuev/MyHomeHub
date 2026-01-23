@@ -8,8 +8,8 @@ on:
     branches:
       - main
     paths:
-      - "src/hub/src/**"
-      - "src/hub/Dockerfile"
+      - "src/**"
+      - "Dockerfile"
 
 env:
   DOCKER_USERNAME: ilyamatsuev
@@ -37,5 +37,5 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64/v8
           push: true
-          context: src/hub
+          context: .
           tags: "${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}"
