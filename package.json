@@ -25,7 +25,10 @@
     "mqtt:start:prod": "docker compose -f docker-compose.prod.yaml up -d mqtt-broker-prod",
     "watcher:start": "docker compose -f docker-compose.prod.yaml up -d smarthome-image-watcher",
     "watcher:restart": "docker compose -f docker-compose.prod.yaml up -d smarthome-image-watcher --force-recreate",
-    "watcher:start:once": "docker compose -f docker-compose.prod.yaml up smarthome-image-watcher-once && docker compose -f docker-compose.prod.yaml rm smarthome-image-watcher-once -fsv"
+    "watcher:start:once": "docker compose -f docker-compose.prod.yaml up smarthome-image-watcher-once && docker compose -f docker-compose.prod.yaml rm smarthome-image-watcher-once -fsv",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "author": {
     "name": "Ilya Matsuev",

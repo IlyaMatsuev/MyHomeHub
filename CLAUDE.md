@@ -39,7 +39,7 @@ npm test
 npm run test:watch
 
 # Run tests with coverage
-npm run test:cov
+npm run test:coverage
 ```
 
 ### Infrastructure Commands
@@ -127,7 +127,6 @@ Key variables:
 - `USER_PASSWORD_SECRET`, `USER_PASSWORD_SALT` - Argon2 hashing
 - `LOCAL_NETWORK_AUTH_BYPASS` - Allow unauthenticated local network requests
 - `LOCAL_NETWORK_PATTERN` - Regex pattern for trusted IPs (default: RFC 1918 ranges)
-- `TRUSTED_PROXIES` - Comma-separated proxy IPs for X-Forwarded-For
 - `MONGO_*` - MongoDB connection
 - `MQTT_*` - MQTT broker connection
 - `DEVICE_ACCESS_KEY` - Device authentication

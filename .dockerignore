@@ -16,6 +16,7 @@
 # Build
 **/build/
 **/dist/
+coverage/
 
 # System Files
 .DS_Store
