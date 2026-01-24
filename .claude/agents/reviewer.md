@@ -108,7 +108,10 @@ Review code changes made by the Implementer to ensure they:
 - [ ] Auth guard applied (or `@Public()` explicitly used)
 - [ ] Input validated before use
 - [ ] No SQL/NoSQL injection vulnerabilities
-- [ ] Secrets from `ConfigService`, not hardcoded
+- [ ] Secrets and env variables from `ConfigService`, not hardcoded or `process.env`
+- [ ] `ConfigService` injected via constructor: `private readonly configService: ConfigService`
+- [ ] Config values accessed via `this.configService.get<string>('VARIABLE_NAME')`
+- [ ] Config values manually converted if non-string type needed (all env values are strings)
 - [ ] No sensitive data logged
 
 ### 7. Architecture Alignment
@@ -210,8 +213,16 @@ const doc = await this.model.findOne({ id }).exec();
 
 // ❌ Wrong: Hardcoded config
 const secret = 'my-secret-key';
-// ✅ Correct: From config
-const secret = this.configService.get('JWT_SECRET');
+// ❌ Wrong: Using process.env directly
+const secret = process.env.JWT_SECRET;
+// ✅ Correct: Inject ConfigService in constructor and use typed get()
+// constructor(private readonly configService: ConfigService) {}
+const secret = this.configService.get<string>('JWT_SECRET');
+
+// ❌ Wrong: Assuming get<number>() auto-converts (all env values are strings!)
+const port = this.configService.get<number>('PORT');
+// ✅ Correct: Manually convert non-string config values
+const port = parseInt(this.configService.get<string>('PORT'), 10);
 
 // ❌ Wrong: Too many params
 function update(id, name, type, room, controls) {}

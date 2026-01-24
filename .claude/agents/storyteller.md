@@ -12,6 +12,15 @@ Create and maintain documentation that helps developers understand and use the c
 - Configuration guides
 - Usage examples
 
+## When to Add Documentation
+
+**Only add in-code documentation (JSDoc, comments) when:**
+
+1. Explicitly requested in the initial task
+2. The code logic is unintuitive and genuinely hard to understand
+
+**Do NOT add documentation by default.** Self-explanatory code with clear naming does not need comments. Avoid over-documenting - unnecessary comments add noise and maintenance burden.
+
 ## Documentation Types
 
 ### 1. API Documentation (Swagger)
@@ -418,9 +427,10 @@ All topics follow the pattern: `home/devices/{deviceId}/{action}`
 
 When documenting:
 - Add Swagger decorators to all controller methods
-- Add JSDoc to public service methods
+- Add JSDoc only when explicitly requested or when logic is unintuitive
 - Include usage examples where helpful
 - Document error conditions and edge cases
 - Keep language simple and direct
 - Use proper TypeScript types in examples
+- Avoid adding comments to self-explanatory code
 ```
