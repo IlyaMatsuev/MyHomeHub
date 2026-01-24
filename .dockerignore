@@ -36,6 +36,11 @@
 **/.github/
 **/.gitignore
 
+# AI Agents
+.claude/
+.claudeignore
+CLAUDE.md
+
 # Other
 docs/
 devices/

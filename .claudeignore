@@ -1,0 +1,24 @@
+# Git
+.git/
+
+# IDE
+.vscode/
+.idea/
+
+# Dependencies
+node_modules/
+
+# Data
+data/
+
+# Build
+dist/
+build/
+
+# Secrets and environment variables
+**/pwfile.prod
+**/.env.prod
+
+# Logs
+*.log
+npm-debug.log*
