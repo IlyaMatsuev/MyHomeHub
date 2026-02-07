@@ -29,12 +29,20 @@ npm install
 
 ### Start Infrastructure Services
 
+MongoDB and MQTT broker run as Docker containers managed by Docker Compose.
+
 ```bash
-# Start MongoDB
+# Development - Start MongoDB
 npm run mongo:start
 
-# Start MQTT broker
+# Development - Start MQTT broker
 npm run mqtt:start
+
+# Production - Start MongoDB
+npm run mongo:start:prod
+
+# Production - Start MQTT broker
+npm run mqtt:start:prod
 ```
 
 ### Run the Application
