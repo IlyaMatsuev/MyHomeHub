@@ -5,7 +5,7 @@ A NestJS-based SmartHome Hub that controls, stores, and provides information abo
 ## Features
 
 - **Multi-Protocol Device Support** - Control devices via MQTT, Tuya local API, HTTP, and Google Cast
-- **Device Brands** - ESP32 (custom MQTT devices), Tuya, Shelly, Google Speakers
+- **Device Brands** - ESP32 (custom MQTT devices using [SmartHomeDevices](https://github.com/IlyaMatsuev/SmartHomeDevices) library), Tuya, Shelly, Google Speakers
 - **Automation Scenarios** - Create automation rules with cron schedules and device state triggers
 - **Real-time Updates** - WebSocket gateway for live device state changes
 - **Secure Authentication** - JWT-based authentication with TOTP for user registration
@@ -19,7 +19,7 @@ A NestJS-based SmartHome Hub that controls, stores, and provides information abo
 - MongoDB 7.0+
 - MQTT Broker (Eclipse Mosquitto)
 
-## Build & Run
+## 🚀 Build & Run
 
 ### Install Dependencies
 
@@ -56,13 +56,9 @@ npm run start:prod
 npm run build:image
 ```
 
-## Configuration
+## 🛠️ Configuration
 
-Configuration is managed through environment files. Copy the example file and adjust values:
-
-```bash
-cp .env.local .env.local  # For development
-```
+Configuration is managed through environment files.
 
 ### Environment Variables
 
@@ -82,23 +78,23 @@ cp .env.local .env.local  # For development
 | `MONGO_*`                     | MongoDB connection settings          |
 | `MQTT_*`                      | MQTT broker connection settings      |
 
-## Documentation
+## 📝 Documentation
 
 - [General project documentation](docs)
 - [Postman API collection](api)
 - Swagger API documentation available at `/api` endpoint when the server is running
 
-## Questions
+## ❓ Questions
 
 If you have any questions you can start a discussion.
 If you think something works not as expected or you want to request a new feature, you can create an issue with the appropriate template selected.
 
-## Contributing
+## 🤝 Contributing
 
 Pull requests are welcome.
 For major changes, please open an issue first to discuss what you would like to change.
 Please make sure to update tests as appropriate.
 
-## License
+## 🎫 License
 
 [MIT](LICENSE)

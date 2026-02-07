@@ -74,7 +74,7 @@ The hub supports the following device types:
 
 | Brand      | Protocol  | Description                                       |
 | ---------- | --------- | ------------------------------------------------- |
-| **ESP32**  | MQTT      | Custom ESP32-based devices communicating via MQTT |
+| **ESP32**  | MQTT      | Custom ESP32-based devices communicating via MQTT. See [SmartHomeDevices](https://github.com/IlyaMatsuev/SmartHomeDevices) library for implementing the communication interface on the microcontroller. |
 | **Tuya**   | Local API | Tuya smart devices via local network API          |
 | **Shelly** | HTTP      | Shelly devices via REST API                       |
 | **Google** | Cast      | Google Cast speakers for TTS announcements        |
