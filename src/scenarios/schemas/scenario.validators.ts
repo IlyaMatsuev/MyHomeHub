@@ -8,11 +8,18 @@ import {
 } from 'scenarios/interfaces';
 import { MAX_CRON_TRIGGER_SOURCES_PER_SCENARIO } from 'scenarios/scenarios.constants';
 
-export const objectIsEmpty = (obj?: Record<string, object>): boolean => {
-    return !Object.keys(obj || {}).length;
+export const TRIGGER_SOURCE_TYPE_VALIDATORS: {
+    [key in ScenarioTriggerSourceType]: (triggerSource: ScenarioTriggerSource) => boolean | never;
+} = {
+    [ScenarioTriggerSourceType.Cron]: validateCronTriggerSource,
+    [ScenarioTriggerSourceType.Device]: validateDeviceTriggerSource,
 };
 
-const validateCronTriggerSource = (triggerSource: ScenarioCronTriggerSource): boolean | never => {
+export function objectIsEmpty(obj?: Record<string, object>): boolean {
+    return !Object.keys(obj || {}).length;
+}
+
+function validateCronTriggerSource(triggerSource: ScenarioCronTriggerSource): boolean | never {
     const plainTriggerSource = triggerSource['toObject']({ getters: true });
     const scenario: Scenario = triggerSource['parent']();
     if (scenario.trigger.sources.filter(s => s.type === ScenarioTriggerSourceType.Cron).length > MAX_CRON_TRIGGER_SOURCES_PER_SCENARIO) {
@@ -23,9 +30,9 @@ const validateCronTriggerSource = (triggerSource: ScenarioCronTriggerSource): bo
         throw new Error(`The "device" field is only valid for the "${ScenarioTriggerSourceType.Device}" trigger source type`);
     }
     return true;
-};
+}
 
-const validateDeviceTriggerSource = (triggerSource: ScenarioDeviceTriggerSource): boolean | never => {
+function validateDeviceTriggerSource(triggerSource: ScenarioDeviceTriggerSource): boolean | never {
     const plainTriggerSource = triggerSource['toObject']({ getters: true });
     if ('cron' in plainTriggerSource) {
         throw new Error(`The "cron" field is only valid for the "${ScenarioTriggerSourceType.Cron}" trigger source type`);
@@ -34,18 +41,11 @@ const validateDeviceTriggerSource = (triggerSource: ScenarioDeviceTriggerSource)
         throw new Error(`The "adjustTo" field is only valid for the "${ScenarioTriggerSourceType.Cron}" trigger source type`);
     }
     return true;
-};
+}
 
-export const TRIGGER_SOURCE_TYPE_VALIDATORS: {
-    [key in ScenarioTriggerSourceType]: (triggerSource: ScenarioTriggerSource) => boolean | never;
-} = {
-    [ScenarioTriggerSourceType.Cron]: validateCronTriggerSource,
-    [ScenarioTriggerSourceType.Device]: validateDeviceTriggerSource,
-};
-
-export const validateCronExpression = (value: string): boolean | never => {
+export function validateCronExpression(value: string): boolean | never {
     return isValidCron(value);
-};
+}
 
 export function validateDeviceExternalId(): boolean | never {
     const device = this.device;
@@ -64,6 +64,6 @@ export function validateTriggerLogic(value: string): boolean | never {
     return true;
 }
 
-export function validateScenarioDeviceExternalId(): boolean | never {
+export function validateScenarioDeviceAction(): boolean | never {
     return !this.set || !objectIsEmpty(this.set.controls) || !objectIsEmpty(this.set.measurements);
 }

@@ -1,11 +1,11 @@
-import { validateScenarioDeviceExternalId } from './scenario.validators';
+import { validateScenarioDeviceAction } from './scenario.validators';
 
-export const ScenarioDeviceSchema = {
+export const ScenarioDeviceActionSchema = {
     externalId: {
         type: String,
         required: true,
         validate: {
-            validator: validateScenarioDeviceExternalId,
+            validator: validateScenarioDeviceAction,
             message: 'Either one of "controls" or "measurements" setters needs to be set',
         },
     },

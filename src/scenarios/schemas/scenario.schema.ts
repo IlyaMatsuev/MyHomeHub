@@ -8,7 +8,7 @@ import {
     SCENARIO_NAME_MIN_LENGTH,
 } from 'scenarios/scenarios.constants';
 import { TriggerSchema } from './trigger.schema';
-import { ScenarioDeviceSchema } from './scenario-device.schema';
+import { ScenarioDeviceActionSchema } from './scenario-device-action.schema';
 
 export const ScenarioSchema = new Schema(
     {
@@ -45,7 +45,7 @@ export const ScenarioSchema = new Schema(
             minLength: SCENARIO_MINIMUM_REPEAT_TIMES,
         },
         trigger: TriggerSchema,
-        devices: [ScenarioDeviceSchema],
+        devices: [ScenarioDeviceActionSchema],
     },
     { timestamps: true },
 );
