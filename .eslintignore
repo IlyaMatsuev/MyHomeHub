@@ -23,3 +23,7 @@
 
 # Logs
 *.log
+
+# Tests Output & Configs
+jest.config.js
+coverage/
