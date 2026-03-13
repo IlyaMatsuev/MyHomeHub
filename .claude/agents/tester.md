@@ -428,7 +428,7 @@ Aim for:
 npm test
 
 # Run with coverage
-npm run test:cov
+npm run test:coverage
 
 # Run specific file
 npm test -- devices.service.spec.ts
@@ -436,3 +436,82 @@ npm test -- devices.service.spec.ts
 # Run in watch mode
 npm run test:watch
 ```
+
+## Coverage Exclusions
+
+The following file types are excluded from coverage calculation (configured in `jest.config.js`):
+
+- `main.ts` - Application bootstrap
+- `*.module.ts` - NestJS module definitions
+- `*.providers.ts` - Dependency injection providers
+- `schemas/**` - Mongoose schema definitions
+- `interfaces/**` - TypeScript interfaces
+- `index.ts` - Barrel exports
+
+## Testing Guards
+
+```typescript
+import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
+import { AuthGuard } from './auth.guard';
+
+describe('AuthGuard', () => {
+    let guard: AuthGuard;
+    let mockReflector: { getAllAndOverride: jest.Mock };
+    let mockJwtService: { verifyAsync: jest.Mock };
+
+    beforeEach(() => {
+        mockReflector = { getAllAndOverride: jest.fn() };
+        mockJwtService = { verifyAsync: jest.fn() };
+        guard = new AuthGuard(mockJwtService as unknown as JwtService, mockReflector as unknown as Reflector);
+    });
+
+    it('should allow access for public endpoints', async () => {
+        mockReflector.getAllAndOverride.mockReturnValue(true);
+        const context = createMockContext();
+
+        const result = await guard.canActivate(context);
+
+        expect(result).toBe(true);
+    });
+});
+```
+
+## Testing Filters and Interceptors
+
+```typescript
+import { ArgumentsHost, HttpException } from '@nestjs/common';
+import { HttpExceptionFilter } from './http-exception.filter';
+
+describe('HttpExceptionFilter', () => {
+    let filter: HttpExceptionFilter;
+    let mockResponse: { status: jest.Mock; json: jest.Mock };
+    let mockHost: ArgumentsHost;
+
+    beforeEach(() => {
+        filter = new HttpExceptionFilter();
+        mockResponse = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn(),
+        };
+        mockHost = {
+            switchToHttp: jest.fn().mockReturnValue({
+                getResponse: jest.fn().mockReturnValue(mockResponse),
+            }),
+        } as unknown as ArgumentsHost;
+    });
+
+    it('should format exception response', () => {
+        const exception = new HttpException('Test error', 400);
+        filter.catch(exception, mockHost);
+        expect(mockResponse.status).toHaveBeenCalledWith(400);
+    });
+});
+```
+
+## Known Limitations
+
+- **ESM Modules**: Some device control providers (Tuya, Shelly) use ESM-only dependencies (`color`, `tuyapi`) that cannot be tested directly with Jest's CommonJS transform. Mock the factories instead.
+- **WebSocket Testing**: Use mock WebSocket clients when testing gateways
+- **Cron Jobs**: Use `jest.useFakeTimers()` for testing scheduled tasks
