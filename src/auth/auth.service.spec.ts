@@ -58,7 +58,6 @@ describe('AuthService', () => {
         service = module.get<AuthService>(AuthService);
         usersService = module.get(UsersService);
         jwtService = module.get(JwtService);
-        configService = module.get(ConfigService);
     });
 
     afterEach(() => {
