@@ -5,18 +5,15 @@ on:
   push:
     branches:
       - main
-      - dev
     paths:
       - "src/**"
+      - "Dockerfile"
   pull_request:
     branches:
       - main
-      - dev
     paths:
       - "src/**"
-
-# Required secrets:
-# 1.
+      - "Dockerfile"
 
 jobs:
   linting:
@@ -45,3 +42,28 @@ jobs:
 
       - name: "Verify linting"
         run: npm run eslint:verify ./
+
+  testing:
+    name: "Run unit tests"
+    runs-on: ubuntu-24.04
+    needs: linting
+    steps:
+      - name: "Checkout source code"
+        uses: actions/checkout@v3
+
+      - name: "Restore node_modules cache"
+        id: cache-npm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-${{ env.cache-name }}-
+            npm-
+
+      - name: "Install npm dependencies"
+        if: steps.cache-npm.outputs.cache-hit != 'true'
+        run: npm i
+
+      - name: "Run tests"
+        run: npm test -- --forceExit
