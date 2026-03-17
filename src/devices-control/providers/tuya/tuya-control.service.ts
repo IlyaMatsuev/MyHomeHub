@@ -52,11 +52,21 @@ export class TuyaControlService extends DevicesControlService {
         const tuyaControls = this.mapTuyaControls(controlsDto);
 
         try {
-            await tuyaDevice.connect();
+            await this.connectTuyaDevice(tuyaDevice);
             await tuyaDevice.set({ multiple: true, data: tuyaControls });
         } finally {
             tuyaDevice.disconnect();
         }
+    }
+
+    private connectTuyaDevice(tuyaDevice: TuyaDevice): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            tuyaDevice.on('error', reject);
+            tuyaDevice
+                .connect()
+                .then(() => resolve())
+                .catch(reject);
+        });
     }
 
     private mapTuyaControls(controls: TuyaControlsDto): TuyaDeviceControls {
