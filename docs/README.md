@@ -55,8 +55,6 @@ See the [MQTT configuration guide](../configs/mqtt/README.md) for MQTT broker se
 | **Auth**     | `USER_PASSWORD_SECRET`        | Argon2 hashing secret                    |
 | **Auth**     | `USER_PASSWORD_SALT`          | Argon2 hashing salt                      |
 | **Auth**     | `DEVICE_ACCESS_KEY`           | Device authentication key                |
-| **Auth**     | `LOCAL_NETWORK_AUTH_BYPASS`   | Skip auth for local IPs                  |
-| **Auth**     | `LOCAL_NETWORK_PATTERN`       | Trusted IP regex pattern                 |
 | **Database** | `MONGO_DOMAIN`                | MongoDB hostname                         |
 | **Database** | `MONGO_PORT`                  | MongoDB port                             |
 | **Database** | `MONGO_INITDB_DATABASE`       | Database name                            |

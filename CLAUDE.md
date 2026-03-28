@@ -125,8 +125,6 @@ Key variables:
 - `JWT_SECRET`, `JWT_EXPIRATION_TIMEOUT` - Auth tokens
 - `REGISTRATION_TOTP_SECRET` - Admin TOTP for user registration
 - `USER_PASSWORD_SECRET`, `USER_PASSWORD_SALT` - Argon2 hashing
-- `LOCAL_NETWORK_AUTH_BYPASS` - Allow unauthenticated local network requests
-- `LOCAL_NETWORK_PATTERN` - Regex pattern for trusted IPs (default: RFC 1918 ranges)
 - `MONGO_*` - MongoDB connection
 - `MQTT_*` - MQTT broker connection
 - `DEVICE_ACCESS_KEY` - Device authentication

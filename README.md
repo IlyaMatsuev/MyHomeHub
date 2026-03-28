@@ -70,21 +70,19 @@ Configuration is managed through environment files.
 
 ### Environment Variables
 
-| Variable                      | Description                          |
-| ----------------------------- | ------------------------------------ |
-| `PORT`                        | Server port (default: 3000)          |
-| `NODE_ENV`                    | Environment name (`local`, `prod`)   |
-| `TZ_LATITUDE`, `TZ_LONGITUDE` | Location for sun calculations        |
-| `JWT_SECRET`                  | Secret for JWT token signing         |
-| `JWT_EXPIRATION_TIMEOUT`      | Token expiration in seconds          |
-| `REGISTRATION_TOTP_SECRET`    | TOTP secret for admin registration   |
-| `USER_PASSWORD_SECRET`        | Argon2 password hashing secret       |
-| `USER_PASSWORD_SALT`          | Argon2 password hashing salt         |
-| `DEVICE_ACCESS_KEY`           | Key for device authentication        |
-| `LOCAL_NETWORK_AUTH_BYPASS`   | Allow unauthenticated local requests |
-| `LOCAL_NETWORK_PATTERN`       | Regex for trusted IP ranges          |
-| `MONGO_*`                     | MongoDB connection settings          |
-| `MQTT_*`                      | MQTT broker connection settings      |
+| Variable                      | Description                        |
+| ----------------------------- | ---------------------------------- |
+| `PORT`                        | Server port (default: 3000)        |
+| `NODE_ENV`                    | Environment name (`local`, `prod`) |
+| `TZ_LATITUDE`, `TZ_LONGITUDE` | Location for sun calculations      |
+| `JWT_SECRET`                  | Secret for JWT token signing       |
+| `JWT_EXPIRATION_TIMEOUT`      | Token expiration in seconds        |
+| `REGISTRATION_TOTP_SECRET`    | TOTP secret for admin registration |
+| `USER_PASSWORD_SECRET`        | Argon2 password hashing secret     |
+| `USER_PASSWORD_SALT`          | Argon2 password hashing salt       |
+| `DEVICE_ACCESS_KEY`           | Key for device authentication      |
+| `MONGO_*`                     | MongoDB connection settings        |
+| `MQTT_*`                      | MQTT broker connection settings    |
 
 ## 📝 Documentation
 
