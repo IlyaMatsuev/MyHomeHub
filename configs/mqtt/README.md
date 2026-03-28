@@ -19,7 +19,7 @@ npm run mqtt:start:prod
 If the container is new, user credentials have to be configured. For that you need to interact with the running container...:
 
 ```shell
-# `mqtt-broker` is the name of the running container. Use `mqtt-broker-prod` for prod environment
+# `mqtt-broker` is the name of the running container
 docker exec -it mqtt-broker sh
 ```
 

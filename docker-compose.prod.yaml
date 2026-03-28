@@ -1,7 +1,7 @@
 services:
-  smarthome-hub-server-prod:
+  smarthome-hub-server:
     image: ilyamatsuev/smarthome-hub-server
-    container_name: smarthome-hub-server-prod
+    container_name: smarthome-hub-server
     env_file: .env.prod
     restart: always
     volumes:
@@ -12,21 +12,21 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
     network_mode: host
 
-  mongodb-prod:
+  mongodb:
     image: mongo:7.0.16-jammy
-    container_name: mongodb-prod
+    container_name: mongodb
     env_file: .env.prod
     restart: always
     ports:
-      - "27019:27017"
+      - "27019:27019"
     volumes:
       - ./data/prod/:/data/db
     networks:
       - smarthome-network
 
-  mqtt-broker-prod:
+  mqtt-broker:
     image: eclipse-mosquitto
-    container_name: mqtt-broker-prod
+    container_name: mqtt-broker
     env_file: .env.prod
     restart: always
     tty: true
@@ -39,7 +39,7 @@ services:
       - smarthome-network
 
   smarthome-image-watcher:
-    image: containrrr/watchtower:latest
+    image: ghcr.io/nicholas-fedor/watchtower:latest
     container_name: smarthome-image-watcher
     restart: always
     volumes:
@@ -52,7 +52,7 @@ services:
       - WATCHTOWER_CLEANUP=true
 
   smarthome-image-watcher-once:
-    image: containrrr/watchtower:latest
+    image: ghcr.io/nicholas-fedor/watchtower:latest
     container_name: smarthome-image-watcher-once
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
