@@ -44,7 +44,7 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ~/.docker/config.json:/config.json
+      - $HOME/.docker/config.json:/config.json
     environment:
       - TZ=Europe/Amsterdam
       - WATCHTOWER_LABEL_ENABLE=true
@@ -56,7 +56,7 @@ services:
     container_name: smarthome-image-watcher-once
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ~/.docker/config.json:/config.json
+      - $HOME/.docker/config.json:/config.json
     environment:
       - TZ=Europe/Amsterdam
       - WATCHTOWER_LABEL_ENABLE=true
