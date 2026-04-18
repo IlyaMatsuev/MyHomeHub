@@ -63,9 +63,6 @@ describe('SchedulerService', () => {
         }).compile();
 
         service = module.get<SchedulerService>(SchedulerService);
-
-        // Reset static state between tests
-        (SchedulerService as unknown as { adjustableDayTimes: undefined }).adjustableDayTimes = undefined;
     });
 
     afterEach(() => {

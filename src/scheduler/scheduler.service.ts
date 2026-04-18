@@ -13,10 +13,11 @@ import {
 } from 'scenarios/interfaces';
 import { ConfigService } from '@nestjs/config';
 
+type DayTimePoints = { [key in ScenarioCronTimeAdjustOption]: Date };
+
 @Injectable()
 export class SchedulerService {
     private readonly logger = new Logger(SchedulerService.name);
-    private static adjustableDayTimes: { [key in ScenarioCronTimeAdjustOption]: Date };
 
     constructor(
         @Inject(forwardRef(() => ScenariosService))
@@ -37,7 +38,7 @@ export class SchedulerService {
     }
 
     adjustScenarioDayTimeCron(source: ScenarioCronTriggerSource): string {
-        return this.updateCronTime(source.cron, source.adjustTo);
+        return this.updateCronTime(source.cron, source.adjustTo, this.getDayTimePoints());
     }
 
     @Cron(DAY_TIME_ADJUSTMENT_JOB_CRON)
@@ -45,13 +46,16 @@ export class SchedulerService {
         this.logger.log('Recalculating scenarios day-time adjustments');
         try {
             const scenariosWithDayTimeAdjustments = await this.scenariosService.getScenariosWithAdjustableTime();
-
             this.logger.debug(`Scenarios to be adjusted: ${scenariosWithDayTimeAdjustments.length}`);
+
+            const timePoints = this.getDayTimePoints();
+            this.logger.debug(`Sunrise time: ${timePoints.sunrise}`);
+            this.logger.debug(`Sunset time: ${timePoints.sunset}`);
 
             for (const scenario of scenariosWithDayTimeAdjustments) {
                 const trigger = {
                     ...scenario.trigger,
-                    sources: scenario.trigger.sources.map(source => this.adjustScenarioSource(source)),
+                    sources: scenario.trigger.sources.map(source => this.adjustScenarioSource(source, timePoints)),
                 };
                 await this.scenariosService.updateScenario(scenario.externalId, { trigger });
             }
@@ -60,18 +64,17 @@ export class SchedulerService {
         }
     }
 
-    private adjustScenarioSource(source: ScenarioTriggerSource): ScenarioTriggerSource {
+    private adjustScenarioSource(source: ScenarioTriggerSource, timePoints: DayTimePoints): ScenarioTriggerSource {
         if (source.type === ScenarioTriggerSourceType.Cron) {
             const cronSource = source as ScenarioCronTriggerSource;
-            cronSource.cron = this.updateCronTime(cronSource.cron, cronSource.adjustTo);
+            cronSource.cron = this.updateCronTime(cronSource.cron, cronSource.adjustTo, timePoints);
         }
         return source;
     }
 
-    private updateCronTime(cron: string, adjustTo: ScenarioCronTimeAdjustOption): string {
-        const dayTimes = this.getDayTimes();
-        const hours = dayTimes[adjustTo].getHours().toString();
-        const minutes = dayTimes[adjustTo].getMinutes().toString();
+    private updateCronTime(cron: string, adjustTo: ScenarioCronTimeAdjustOption, timePoints: DayTimePoints): string {
+        const hours = timePoints[adjustTo].getHours().toString();
+        const minutes = timePoints[adjustTo].getMinutes().toString();
 
         const cronParts = cron.split(' ');
         if (cronParts.length === CRON_WITH_SECONDS_LENGTH) {
@@ -82,15 +85,10 @@ export class SchedulerService {
         return [minutes, hours, ...cronParts].join(' ');
     }
 
-    private getDayTimes(): { [key in ScenarioCronTimeAdjustOption]: Date } {
-        if (!SchedulerService.adjustableDayTimes) {
-            const latitude = this.configService.get<number>('TZ_LATITUDE');
-            const longitude = this.configService.get<number>('TZ_LONGITUDE');
-            const { sunrise, sunset } = getTimes(new Date(), latitude, longitude);
-            this.logger.debug(`Sunrise time: ${sunrise}`);
-            this.logger.debug(`Sunset time: ${sunset}`);
-            SchedulerService.adjustableDayTimes = { sunrise, sunset };
-        }
-        return SchedulerService.adjustableDayTimes;
+    private getDayTimePoints(): DayTimePoints {
+        const latitude = this.configService.get<number>('TZ_LATITUDE');
+        const longitude = this.configService.get<number>('TZ_LONGITUDE');
+        const { sunrise, sunset } = getTimes(new Date(), latitude, longitude);
+        return { sunrise, sunset };
     }
 }
