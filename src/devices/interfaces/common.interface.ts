@@ -11,6 +11,7 @@ export enum DeviceType {
     Plug = 'plug',
     LED = 'led',
     Fans = 'fans',
+    MotionSensor = 'motion-sensor',
 }
 
 export enum DeviceBrand {
