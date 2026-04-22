@@ -513,5 +513,4 @@ describe('HttpExceptionFilter', () => {
 ## Known Limitations
 
 - **ESM Modules**: Some device control providers (Tuya, Shelly) use ESM-only dependencies (`color`, `tuyapi`) that cannot be tested directly with Jest's CommonJS transform. Mock the factories instead.
-- **WebSocket Testing**: Use mock WebSocket clients when testing gateways
 - **Cron Jobs**: Use `jest.useFakeTimers()` for testing scheduled tasks

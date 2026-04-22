@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ConsoleLogger, INestApplication, LogLevel, LoggerService, ValidationPipe, LOG_LEVELS } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { WsAdapter } from '@nestjs/platform-ws';
 import { SwaggerCustomOptions } from '@nestjs/swagger/dist/interfaces/swagger-custom-options.interface';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerDocumentOptions, SwaggerModule } from '@nestjs/swagger';
@@ -28,7 +27,6 @@ async function bootstrap() {
         },
     });
     app.enableCors();
-    app.useWebSocketAdapter(new WsAdapter(app));
     app.useGlobalPipes(
         new ValidationPipe({
             transform: true,

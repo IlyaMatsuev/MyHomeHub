@@ -1,5 +1,4 @@
 import { BadRequestException, ExecutionContext } from '@nestjs/common';
-import { WsException } from '@nestjs/websockets';
 import { CustomValidationExceptionHandler } from './custom-validation.exception.handler';
 import { CustomValidationException } from 'common/exceptions';
 
@@ -24,15 +23,6 @@ describe('CustomValidationExceptionHandler', () => {
             const exception = new CustomValidationException({ path: 'field', message: 'Invalid field', value: 'bad' });
 
             expect(() => handler.handleException(exception, mockContext)).toThrow(BadRequestException);
-        });
-
-        it('should throw WsException for ws context', () => {
-            const mockContext = {
-                getType: jest.fn().mockReturnValue('ws'),
-            } as unknown as ExecutionContext;
-            const exception = new CustomValidationException({ path: 'field', message: 'Invalid field', value: 'bad' });
-
-            expect(() => handler.handleException(exception, mockContext)).toThrow(WsException);
         });
 
         it('should not throw for other context types', () => {

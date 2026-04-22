@@ -1,4 +1,3 @@
-import { WsException } from '@nestjs/websockets';
 import { BadRequestException, ExecutionContext } from '@nestjs/common';
 import { ExceptionHandler } from 'common/interfaces';
 import { CustomValidationException } from 'common/exceptions';
@@ -17,9 +16,6 @@ export class CustomValidationExceptionHandler implements ExceptionHandler<Custom
                         errors: exception.getErrors(),
                     },
                 });
-            }
-            if (context.getType() === 'ws') {
-                throw new WsException(exception.message);
             }
         }
     }

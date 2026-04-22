@@ -3,14 +3,13 @@
 [![Validation](https://github.com/IlyaMatsuev/MySmartHome/actions/workflows/validation.yaml/badge.svg)](https://github.com/IlyaMatsuev/MySmartHome/actions/workflows/validation.yaml)
 [![Publish Package](https://github.com/IlyaMatsuev/MySmartHome/actions/workflows/publish.yaml/badge.svg)](https://github.com/IlyaMatsuev/MySmartHome/actions/workflows/publish.yaml)
 
-A NestJS-based SmartHome Hub that controls, stores, and provides information about IoT devices. The hub communicates with devices via multiple protocols (MQTT, Tuya API, HTTP) and provides REST/WebSocket APIs for control and monitoring.
+A NestJS-based SmartHome Hub that controls, stores, and provides information about IoT devices. The hub communicates with devices via multiple protocols (MQTT, Tuya API, HTTP) and provides a REST API for control and monitoring.
 
 ## Features
 
 - **Multi-Protocol Device Support** - Control devices via MQTT, Tuya local API, HTTP, and Google Cast
 - **Device Brands** - ESP32 (custom MQTT devices using [SmartHomeDevices](https://github.com/IlyaMatsuev/SmartHomeDevices) library), Tuya, Shelly, Google Speakers
 - **Automation Scenarios** - Create automation rules with cron schedules and device state triggers
-- **Real-time Updates** - WebSocket gateway for live device state changes
 - **Secure Authentication** - JWT-based authentication with TOTP for user registration
 - **REST API** - Full device management through REST endpoints with Swagger documentation
 

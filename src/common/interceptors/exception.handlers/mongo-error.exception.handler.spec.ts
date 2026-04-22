@@ -1,5 +1,4 @@
 import { BadRequestException, ExecutionContext } from '@nestjs/common';
-import { WsException } from '@nestjs/websockets';
 import { Error as MongooseError } from 'mongoose';
 import { MongoErrorExceptionHandler } from './mongo-error.exception.handler';
 
@@ -40,15 +39,6 @@ describe('MongoErrorExceptionHandler', () => {
             const exception = createValidationError();
 
             expect(() => handler.handleException(exception, mockContext)).toThrow(BadRequestException);
-        });
-
-        it('should throw WsException for ws context with ValidationError', () => {
-            const mockContext = {
-                getType: jest.fn().mockReturnValue('ws'),
-            } as unknown as ExecutionContext;
-            const exception = createValidationError();
-
-            expect(() => handler.handleException(exception, mockContext)).toThrow(WsException);
         });
 
         it('should not throw for other context types', () => {

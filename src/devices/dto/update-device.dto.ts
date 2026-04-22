@@ -120,8 +120,3 @@ export class UpdateDeviceDto {
         }
     }
 }
-
-export class UpdateDeviceStateDto {
-    controls: Record<string, object>;
-    measurements?: Record<string, object>;
-}

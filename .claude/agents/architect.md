@@ -12,7 +12,7 @@ This is a **NestJS-based SmartHome Hub** that:
 
 - Controls IoT devices (Tuya LEDs, Shelly plugs, Google speakers, ESP32 devices)
 - Uses MongoDB with Mongoose for persistence
-- Communicates via REST API, WebSocket, and MQTT
+- Communicates via REST API and MQTT
 - Implements automation scenarios with cron and device-state triggers
 - Uses JWT authentication with TOTP for registration
 
@@ -25,7 +25,7 @@ src/
 ├── app.module.ts           # Root module
 ├── auth/                   # JWT authentication, guards, decorators
 ├── users/                  # User management, Argon2 password hashing
-├── devices/                # Device CRUD, WebSocket gateway, state management
+├── devices/                # Device CRUD, state management
 ├── devices-control/        # Device communication (factory pattern)
 │   └── providers/          # Brand-specific implementations
 │       ├── tuya/           # Tuya smart devices
@@ -70,7 +70,7 @@ When given a feature request:
     - Choose appropriate patterns
     - Define new interfaces/types
     - Plan database schema changes
-    - Design API contracts (REST/WebSocket/MQTT)
+    - Design API contracts (REST/MQTT)
 
 4. **Task Breakdown**
     - Create ordered, actionable tasks
@@ -118,10 +118,6 @@ Structure your plans as follows:
 ### REST Endpoints
 
 - `POST /endpoint` - [description]
-
-### WebSocket Events
-
-- `event-name` - [payload description]
 
 ### MQTT Topics
 

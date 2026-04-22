@@ -57,7 +57,7 @@ npm run build:image
 
 ## Architecture Overview
 
-This is a **NestJS-based SmartHome Hub** that controls IoT devices via multiple protocols (MQTT, Tuya API, HTTP). The hub stores device states in MongoDB and provides REST/WebSocket APIs for control.
+This is a **NestJS-based SmartHome Hub** that controls IoT devices via multiple protocols (MQTT, Tuya API, HTTP). The hub stores device states in MongoDB and provides a REST API for control.
 
 ### Module Structure
 
@@ -66,7 +66,7 @@ AppModule
 ├── CommonModule          # Global filters, interceptors, ConditionsEvaluatorService
 ├── AuthModule            # JWT authentication (login/register with TOTP)
 ├── UsersModule           # User management with Argon2 password hashing
-├── DevicesModule         # Device CRUD, WebSocket gateway, state management
+├── DevicesModule         # Device CRUD, state management
 │   └── DevicesControlModule  # Device communication providers
 ├── ScenariosModule       # Automation scenarios with triggers and actions
 │   └── SchedulerModule   # Cron-based scenario scheduling
@@ -127,7 +127,6 @@ Key variables:
 - `USER_PASSWORD_SECRET`, `USER_PASSWORD_SALT` - Argon2 hashing
 - `MONGO_*` - MongoDB connection
 - `MQTT_*` - MQTT broker connection
-- `DEVICE_ACCESS_KEY` - Device authentication
 
 ## Code Style
 

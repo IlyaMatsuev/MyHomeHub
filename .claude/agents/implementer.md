@@ -14,7 +14,7 @@ This is a **NestJS-based SmartHome Hub** using:
 - **Database**: MongoDB with Mongoose 8.x
 - **Validation**: class-validator, class-transformer
 - **Auth**: @nestjs/jwt, Argon2
-- **Real-time**: WebSocket (ws), MQTT
+- **Messaging**: MQTT
 - **Scheduling**: @nestjs/schedule with cron
 
 ## Code Style Requirements

@@ -54,7 +54,6 @@ See the [MQTT configuration guide](../configs/mqtt/README.md) for MQTT broker se
 | **Auth**     | `REGISTRATION_TOTP_SECRET`    | Admin TOTP secret for registration       |
 | **Auth**     | `USER_PASSWORD_SECRET`        | Argon2 hashing secret                    |
 | **Auth**     | `USER_PASSWORD_SALT`          | Argon2 hashing salt                      |
-| **Auth**     | `DEVICE_ACCESS_KEY`           | Device authentication key                |
 | **Database** | `MONGO_DOMAIN`                | MongoDB hostname                         |
 | **Database** | `MONGO_PORT`                  | MongoDB port                             |
 | **Database** | `MONGO_INITDB_DATABASE`       | Database name                            |
@@ -84,7 +83,7 @@ The hub supports the following device types:
 - **CommonModule** - Global filters, interceptors, condition evaluation
 - **AuthModule** - JWT authentication with TOTP registration
 - **UsersModule** - User management with Argon2 password hashing
-- **DevicesModule** - Device CRUD, WebSocket gateway, state management
+- **DevicesModule** - Device CRUD, state management
 - **DevicesControlModule** - Device communication providers (factory pattern)
 - **ScenariosModule** - Automation scenarios with triggers and actions
 - **SchedulerModule** - Cron-based scenario scheduling

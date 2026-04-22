@@ -1,6 +1,5 @@
 import { MongooseError, Error } from 'mongoose';
 import { BadRequestException, ExecutionContext } from '@nestjs/common';
-import { WsException } from '@nestjs/websockets';
 import { ExceptionHandler, ValidationError } from 'common/interfaces';
 
 export class MongoErrorExceptionHandler implements ExceptionHandler<MongooseError> {
@@ -18,9 +17,6 @@ export class MongoErrorExceptionHandler implements ExceptionHandler<MongooseErro
                         errors: allErrors,
                     },
                 });
-            }
-            if (context.getType() === 'ws') {
-                throw new WsException(allErrors[0].message);
             }
         }
     }

@@ -302,10 +302,6 @@ DevicesControlServiceFactory
 
 ## Configuration
 
-| Variable          | Description             | Example  |
-| ----------------- | ----------------------- | -------- |
-| DEVICE_ACCESS_KEY | API key for device auth | `abc123` |
-
 ````
 
 ### 6. Configuration Documentation
