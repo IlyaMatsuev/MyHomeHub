@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ConsoleLogger, INestApplication, ValidationPipe } from '@nestjs/common';
+import { ConsoleLogger, INestApplication, LogLevel, LoggerService, ValidationPipe, LOG_LEVELS } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { SwaggerCustomOptions } from '@nestjs/swagger/dist/interfaces/swagger-custom-options.interface';
@@ -13,21 +13,18 @@ import { CustomValidationException } from 'common/exceptions';
 bootstrap();
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule, {
-        logger: new ConsoleLogger({
-            prefix: 'SmartHome Hub',
-        }),
-    });
+    const app = await NestFactory.create(AppModule, { bufferLogs: true });
     const config = app.get<ConfigService>(ConfigService);
+    app.useLogger(setupLogger(config));
     app.connectMicroservice<MicroserviceOptions>({
         transport: Transport.MQTT,
         options: {
             protocol: 'mqtt',
             clientId: config.get<string>('MQTT_CLIENT_ID'),
             hostname: config.get<string>('MQTT_DOMAIN'),
-            port: config.get('MQTT_PORT'),
-            username: config.get('MQTT_USERNAME'),
-            password: config.get('MQTT_PASSWORD'),
+            port: +config.get<string>('MQTT_PORT'),
+            username: config.get<string>('MQTT_USERNAME'),
+            password: config.get<string>('MQTT_PASSWORD'),
         },
     });
     app.enableCors();
@@ -45,6 +42,15 @@ async function bootstrap() {
 
     await app.startAllMicroservices();
     await app.listen(process.env.PORT ?? 3000);
+}
+
+function setupLogger(config: ConfigService): LoggerService {
+    const defaultLevel: LogLevel = config.get<string>('NODE_ENV') === 'prod' ? 'log' : 'debug';
+    let logLevel = config.get<string>('LOG_LEVEL')?.toLowerCase() as LogLevel;
+    logLevel = LOG_LEVELS.includes(logLevel) ? logLevel : defaultLevel;
+
+    const logLevels = LOG_LEVELS.slice(LOG_LEVELS.indexOf(logLevel));
+    return new ConsoleLogger({ prefix: 'SmartHome Hub', logLevels });
 }
 
 function setupSwagger(app: INestApplication) {
