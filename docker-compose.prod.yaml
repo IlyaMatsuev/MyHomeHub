@@ -16,7 +16,7 @@ services:
     image: mongo:7.0.16-jammy
     container_name: mongodb
     env_file: .env.prod
-    restart: always
+    restart: unless-stopped
     ports:
       - "27019:27019"
     volumes:
@@ -28,7 +28,7 @@ services:
     image: eclipse-mosquitto
     container_name: mqtt-broker
     env_file: .env.prod
-    restart: always
+    restart: unless-stopped
     tty: true
     ports:
       - "1885:1885"
