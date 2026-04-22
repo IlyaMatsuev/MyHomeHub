@@ -137,3 +137,14 @@ Key variables:
 - No console.log (only console.warn/error)
 - Camelcase enforced
 - Curly braces required
+
+## Capturing Corrections
+
+When the user corrects the way you act — points out a mistake, rejects an approach, or teaches a rule they want followed from now on — after fixing the immediate problem, also update the instruction file that would have prevented the mistake, so the lesson sticks for future sessions. Do this without being asked.
+
+Pick the narrowest file that covers the rule:
+
+- Role-specific guidance (how the Tester writes tests, how the Architect plans, etc.) → the matching file under `.claude/agents/*.md`
+- Repo-wide guidance (conventions, commands, architecture, workflow rules) → this `CLAUDE.md`
+
+When writing the update, include **why** (the concrete mistake or reasoning) alongside the rule, so future-you can judge edge cases instead of following it blindly. Skip this step for one-off stylistic nits or purely local fixes that aren't generalizable — only capture corrections that would apply again.

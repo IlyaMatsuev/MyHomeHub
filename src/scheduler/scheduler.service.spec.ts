@@ -24,6 +24,7 @@ describe('SchedulerService', () => {
         deleteCronJob: jest.Mock;
     };
     let mockConfigService: { get: jest.Mock };
+    const startedJobs: Array<CronJob> = [];
 
     beforeEach(async () => {
         mockScenariosService = {
@@ -66,6 +67,9 @@ describe('SchedulerService', () => {
     });
 
     afterEach(() => {
+        while (startedJobs.length) {
+            startedJobs.pop().stop();
+        }
         jest.clearAllMocks();
     });
 
@@ -79,6 +83,7 @@ describe('SchedulerService', () => {
             };
 
             const result = service.scheduleJob(job);
+            startedJobs.push(result);
 
             expect(result).toBeInstanceOf(CronJob);
             expect(mockSchedulerRegistry.addCronJob).toHaveBeenCalledWith('test-job', expect.any(CronJob));
@@ -94,6 +99,7 @@ describe('SchedulerService', () => {
             };
 
             const cronJob = service.scheduleJob(job);
+            startedJobs.push(cronJob);
 
             // Manually trigger the job callback
             cronJob.fireOnTick();

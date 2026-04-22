@@ -411,6 +411,7 @@ export const createMockScenario = (overrides = {}) => ({
 6. **Mock external dependencies** - database, HTTP, MQTT
 7. **Test edge cases** - empty arrays, null values, boundaries
 8. **Test error conditions** - ensure proper exceptions thrown
+9. **Tear down anything that keeps the event loop alive** - if a test (or the code under test) creates a `CronJob`, `setInterval`, MQTT client, DB connection, or any other resource with an internal timer/handle, stop/close it in `afterEach` or `afterAll`. Otherwise Jest prints `A worker process has failed to exit gracefully`. Mocking the `SchedulerRegistry` does **not** prevent this — the `CronJob` itself is what schedules the timer, so it must be `.stop()`ed regardless of whether the registry is mocked.
 
 ## Coverage Requirements
 
@@ -513,4 +514,20 @@ describe('HttpExceptionFilter', () => {
 ## Known Limitations
 
 - **ESM Modules**: Some device control providers (Tuya, Shelly) use ESM-only dependencies (`color`, `tuyapi`) that cannot be tested directly with Jest's CommonJS transform. Mock the factories instead.
-- **Cron Jobs**: Use `jest.useFakeTimers()` for testing scheduled tasks
+- **Cron Jobs**: Prefer `jest.useFakeTimers()` for testing scheduled tasks. If the service under test calls `new CronJob(...).start()` for real (e.g. `SchedulerService.scheduleJob`), collect every returned `CronJob` and call `.stop()` on it in `afterEach` — otherwise the cron timer keeps the Jest worker alive and you'll see `A worker process has failed to exit gracefully`.
+
+    ```typescript
+    const startedJobs: Array<CronJob> = [];
+
+    afterEach(() => {
+        while (startedJobs.length) {
+            startedJobs.pop().stop();
+        }
+    });
+
+    it('...', () => {
+        const job = service.scheduleJob({ name: 'x', cron: '* * * * * *', handler: jest.fn() });
+        startedJobs.push(job);
+        // assertions...
+    });
+    ```
