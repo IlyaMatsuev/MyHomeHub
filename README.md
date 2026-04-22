@@ -1,5 +1,8 @@
 # SmartHome Hub
 
+[![Validation](https://github.com/IlyaMatsuev/MySmartHome/actions/workflows/validation.yaml/badge.svg)](https://github.com/IlyaMatsuev/MySmartHome/actions/workflows/validation.yaml)
+[![Publish Package](https://github.com/IlyaMatsuev/MySmartHome/actions/workflows/publish.yaml/badge.svg)](https://github.com/IlyaMatsuev/MySmartHome/actions/workflows/publish.yaml)
+
 A NestJS-based SmartHome Hub that controls, stores, and provides information about IoT devices. The hub communicates with devices via multiple protocols (MQTT, Tuya API, HTTP) and provides REST/WebSocket APIs for control and monitoring.
 
 ## Features
@@ -16,8 +19,6 @@ A NestJS-based SmartHome Hub that controls, stores, and provides information abo
 - Node.js >= 20.0.0
 - npm >= 10.0.0
 - Docker and Docker Compose
-- MongoDB 7.0+
-- MQTT Broker (Eclipse Mosquitto)
 
 ## 🚀 Build & Run
 
@@ -81,7 +82,6 @@ Configuration is managed through environment files.
 | `REGISTRATION_TOTP_SECRET`    | TOTP secret for admin registration                                                                                                |
 | `USER_PASSWORD_SECRET`        | Argon2 password hashing secret                                                                                                    |
 | `USER_PASSWORD_SALT`          | Argon2 password hashing salt                                                                                                      |
-| `DEVICE_ACCESS_KEY`           | Key for device authentication                                                                                                     |
 | `MONGO_*`                     | MongoDB connection settings                                                                                                       |
 | `MQTT_*`                      | MQTT broker connection settings                                                                                                   |
 
