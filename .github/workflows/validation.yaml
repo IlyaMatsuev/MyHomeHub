@@ -8,6 +8,8 @@ on:
     paths:
       - "src/**"
       - "Dockerfile"
+      - "package.json"
+      - "package-lock.json"
   pull_request:
     branches:
       - main
@@ -21,11 +23,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: "Checkout source code"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: "Restore node_modules cache"
         id: cache-npm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules
           key: npm-${{ hashFiles('**/package-lock.json') }}
@@ -49,11 +51,11 @@ jobs:
     needs: linting
     steps:
       - name: "Checkout source code"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: "Restore node_modules cache"
         id: cache-npm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules
           key: npm-${{ hashFiles('**/package-lock.json') }}
