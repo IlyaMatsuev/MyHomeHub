@@ -1,47 +1,68 @@
 services:
   smarthome-hub:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      platforms:
-        - linux/amd64
-        - linux/arm64/v8
+    build: .
     image: ilyamatsuev/smarthome-hub-server
     container_name: smarthome-hub
-    env_file: .env.local
-    ports:
-      - "3000:3000"
+    restart: always
     volumes:
-      - ./.env.local:/usr/src/app/.env.local
-    expose:
-      - "3000"
+      - ./.env:/usr/src/app/.env
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    depends_on:
+      - mongodb
+      - mqtt-broker
     network_mode: host
 
   mongodb:
     image: mongo:7.0.16-jammy
     container_name: mongodb
-    env_file: .env.local
     restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
-      - ./data/local/:/data/db
+      - ./data/${NODE_ENV:-local}/:/data/db
     networks:
       - smarthome-network
 
   mqtt-broker:
     image: eclipse-mosquitto
     container_name: mqtt-broker
-    env_file: .env.local
     restart: unless-stopped
     tty: true
     ports:
-      - "1883:1883"
+      - "1885:1885"
     volumes:
-      - ./configs/mqtt/mosquitto.local.conf:/mosquitto/config/mosquitto.conf:rw
-      - ./configs/mqtt/pwfile.local:/mosquitto/config/pwfile:rw
+      - ./configs/mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:rw
+      - ./configs/mqtt/pwfile:/mosquitto/config/pwfile:rw
     networks:
       - smarthome-network
+
+  smarthome-image-watcher:
+    image: ghcr.io/nicholas-fedor/watchtower:latest
+    container_name: smarthome-image-watcher
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - $HOME/.docker/config.json:/config.json
+    environment:
+      - TZ=Europe/Amsterdam
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_SCHEDULE=0 0 * * * *
+      - WATCHTOWER_CLEANUP=true
+    network_mode: host
+
+  smarthome-image-watcher-once:
+    image: ghcr.io/nicholas-fedor/watchtower:latest
+    container_name: smarthome-image-watcher-once
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - $HOME/.docker/config.json:/config.json
+    environment:
+      - TZ=Europe/Amsterdam
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_RUN_ONCE=true
+      - WATCHTOWER_CLEANUP=true
+    network_mode: host
 
 networks:
   smarthome-network:

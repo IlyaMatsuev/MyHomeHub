@@ -28,10 +28,11 @@ Import this collection into Postman for quick API testing and exploration.
 
 ### Environment Setup
 
-The application uses environment-specific configuration files:
+The application uses env file `.env`, which can be created from the [`.env.example`](../.env.example):
 
-- `.env.local` - Development environment
-- `.env.prod` - Production environment
+```shell
+cp .env.example .env
+```
 
 Configuration is loaded based on the `NODE_ENV` variable.
 

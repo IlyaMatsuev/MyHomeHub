@@ -35,7 +35,7 @@ Use `exit` command to log out of the container.
 
 ## Configuration
 
-Mosquitto MQTT broker is configured by specifying values in [mosquitto.local.conf](mosquitto.local.conf) (or [mosquitto.prod.conf](mosquitto.prod.conf) for prod environment).
+Mosquitto MQTT broker is configured by specifying values in [mosquitto.conf](mosquitto.conf).
 
 All available config options are listed [here](https://mosquitto.org/man/mosquitto-conf-5.html).
 

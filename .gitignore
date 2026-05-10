@@ -28,11 +28,11 @@
 /data/**
 
 # Secrets
-**/secrets.cpp
 **/mqtt/pwfile.*
-
-# dotenv environment variable files
-.env.prod
+**/mqtt/pwfile
+.env.*
+.env
+!.env.example
 
 # temp directory
 .temp

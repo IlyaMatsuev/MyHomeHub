@@ -42,10 +42,16 @@ coverage/
 .claudeignore
 CLAUDE.md
 
+# Secrets
+**/mosquitto.conf
+**/pwfile.*
+**/pwfile
+**/.env.*
+**/.env
+
 # Other
 docs/
 devices/
 **/Procfile
 **/LICENSE
 **/README.md
-**/.env.*

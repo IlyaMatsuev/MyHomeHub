@@ -16,8 +16,10 @@ dist/
 build/
 
 # Secrets and environment variables
-**/pwfile.prod
-**/.env.prod
+**/pwfile.*
+**/pwfile
+**/.env.*
+**/.env
 
 # Logs
 *.log

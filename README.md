@@ -66,7 +66,11 @@ npm run build:image
 
 ## 🛠️ Configuration
 
-Configuration is managed through environment files.
+The application uses env file `.env`, which can be created from the [`.env.example`](../.env.example):
+
+```shell
+cp .env.example .env
+```
 
 ### Environment Variables
 

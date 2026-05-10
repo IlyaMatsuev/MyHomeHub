@@ -111,13 +111,7 @@ db/*            → src/db/*
 
 ## Environment Configuration
 
-Environment files: `.env.local` (development), `.env.prod` (production)
-
-Config is loaded based on `NODE_ENV`:
-
-```typescript
-ConfigModule.forRoot({ envFilePath: `.env.${process.env.NODE_ENV}` });
-```
+Environment file: `.env`
 
 Key variables:
 

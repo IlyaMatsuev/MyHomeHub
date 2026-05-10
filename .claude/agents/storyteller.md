@@ -341,7 +341,7 @@ DevicesControlServiceFactory
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `MQTT_DOMAIN` | Broker host | `localhost` |
-| `MQTT_PORT` | Broker port | `1883` |
+| `MQTT_PORT` | Broker port | `1885` |
 | `MQTT_CLIENT_ID` | Client ID for receiver | `smarthome-hub` |
 | `MQTT_CLIENT_SENDER_ID` | Client ID for sender | `smarthome-hub-sender` |
 | `MQTT_USERNAME` | Broker username | |

@@ -20,7 +20,7 @@ import { MqttModule } from 'mqtt/mqtt.module';
 
         ScheduleModule.forRoot(),
         EventEmitterModule.forRoot(),
-        ConfigModule.forRoot({ isGlobal: true, envFilePath: `.env.${process.env.NODE_ENV}` }),
+        ConfigModule.forRoot({ isGlobal: true, envFilePath: `.env` }),
     ],
     controllers: [],
     providers: [],

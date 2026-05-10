@@ -309,7 +309,7 @@ const mockConfigService = {
         const config: Record<string, string> = {
             JWT_SECRET: 'test-secret',
             MQTT_DOMAIN: 'localhost',
-            MQTT_PORT: '1883',
+            MQTT_PORT: '1885',
         };
         return config[key];
     }),
