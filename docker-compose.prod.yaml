@@ -1,7 +1,8 @@
 services:
-  smarthome-hub-server:
+  smarthome-hub:
+    build: .
     image: ilyamatsuev/smarthome-hub-server
-    container_name: smarthome-hub-server
+    container_name: smarthome-hub
     env_file: .env.prod
     restart: always
     volumes:
