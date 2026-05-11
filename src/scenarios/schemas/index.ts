@@ -1,4 +1,6 @@
 export * from './scenario.schema';
+export * from './scenario-group.schema';
+export * from './scenario-group.helpers';
 export * from './trigger.schema';
 export * from './trigger-source.schema';
 export * from './scenario-device-action.schema';

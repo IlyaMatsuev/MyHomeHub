@@ -10,13 +10,17 @@ import {
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ScenariosService } from 'scenarios/scenarios.service';
-import { Scenario, ScenariosPage } from 'scenarios/interfaces';
-import { CreateScenarioDto, GetScenariosDto, UpdateScenarioDto } from 'scenarios/dto';
+import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
+import { Scenario, ScenarioGroup, ScenariosPage } from 'scenarios/interfaces';
+import { CreateScenarioDto, DeleteScenarioGroupDto, GetScenarioGroupsDto, GetScenariosDto, UpdateScenarioDto } from 'scenarios/dto';
 
 @ApiBearerAuth()
 @Controller('scenarios')
 export class ScenariosController {
-    constructor(private readonly scenariosService: ScenariosService) {}
+    constructor(
+        private readonly scenariosService: ScenariosService,
+        private readonly scenarioGroupsService: ScenarioGroupsService,
+    ) {}
 
     @Get()
     @ApiOperation({ summary: 'Get all added scenarios' })
@@ -24,6 +28,29 @@ export class ScenariosController {
     @ApiUnauthorizedResponse()
     async getScenarios(@Query() query: GetScenariosDto): Promise<ScenariosPage> {
         return this.scenariosService.getScenarios(query);
+    }
+
+    @Get('/groups')
+    @ApiOperation({ summary: 'Get all scenario groups' })
+    @ApiOkResponse()
+    @ApiUnauthorizedResponse()
+    async getGroups(@Query() query: GetScenarioGroupsDto): Promise<Array<ScenarioGroup>> {
+        return this.scenarioGroupsService.getGroups(query);
+    }
+
+    @Delete('/groups/:idOrName')
+    @ApiParam({
+        name: 'idOrName',
+        description: 'Numeric ID or name of the scenario group to delete',
+        example: '1 or my_group',
+    })
+    @ApiOperation({ summary: 'Delete a scenario group by ID or name' })
+    @ApiOkResponse()
+    @ApiNotFoundResponse()
+    @ApiBadRequestResponse()
+    @ApiUnauthorizedResponse()
+    async deleteGroup(@Param('idOrName') idOrName: string, @Query() query: DeleteScenarioGroupDto): Promise<ScenarioGroup> {
+        return this.scenarioGroupsService.deleteGroup(idOrName, query.deleteScenarios);
     }
 
     @Get('/:externalId')

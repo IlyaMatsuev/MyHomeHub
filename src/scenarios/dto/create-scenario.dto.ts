@@ -6,6 +6,8 @@ import {
     SCENARIO_MINIMUM_REPEAT_TIMES,
     SCENARIO_NAME_MAX_LENGTH,
     SCENARIO_NAME_MIN_LENGTH,
+    SCENARIO_GROUP_NAME_MAX_LENGTH,
+    SCENARIO_GROUP_NAME_PATTERN,
 } from 'scenarios/scenarios.constants';
 import {
     ArrayNotEmpty,
@@ -17,6 +19,8 @@ import {
     IsOptional,
     IsString,
     Length,
+    Matches,
+    MaxLength,
     Min,
     ValidateNested,
 } from 'class-validator';
@@ -45,6 +49,20 @@ export class CreateScenarioDto {
         maxLength: SCENARIO_DESCRIPTION_MAX_LENGTH,
     })
     description?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(SCENARIO_GROUP_NAME_MAX_LENGTH)
+    @Matches(SCENARIO_GROUP_NAME_PATTERN, {
+        message: 'Group name must contain only English letters, digits, and underscores, and cannot be digits only',
+    })
+    @ApiProperty({
+        required: false,
+        description:
+            'The group name for the scenario. Must contain only English letters, digits, and underscores, and cannot be digits only',
+        maxLength: SCENARIO_GROUP_NAME_MAX_LENGTH,
+    })
+    group?: string;
 
     @IsOptional()
     @IsBoolean()

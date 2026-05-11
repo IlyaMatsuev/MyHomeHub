@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ScenariosController } from './scenarios.controller';
 import { ScenariosService } from './scenarios.service';
-import { Scenario, ScenarioCronTriggerSource, ScenarioTriggerSourceType } from './interfaces';
-import { CreateScenarioDto, GetScenariosDto, UpdateScenarioDto } from './dto';
+import { ScenarioGroupsService } from './scenario-groups.service';
+import { Scenario, ScenarioCronTriggerSource, ScenarioGroup, ScenarioTriggerSourceType } from './interfaces';
+import { CreateScenarioDto, DeleteScenarioGroupDto, GetScenarioGroupsDto, GetScenariosDto, UpdateScenarioDto } from './dto';
 
 describe('ScenariosController', () => {
     let controller: ScenariosController;
@@ -12,6 +13,10 @@ describe('ScenariosController', () => {
         addScenario: jest.Mock;
         updateScenario: jest.Mock;
         removeScenario: jest.Mock;
+    };
+    let mockScenarioGroupsService: {
+        getGroups: jest.Mock;
+        deleteGroup: jest.Mock;
     };
 
     const mockScenario: Partial<Scenario> = {
@@ -27,6 +32,13 @@ describe('ScenariosController', () => {
         devices: [],
     };
 
+    const mockGroup: Partial<ScenarioGroup> = {
+        _id: 'mongo-id-456',
+        id: 1,
+        name: 'test_group',
+        scenariosCount: 2,
+    };
+
     beforeEach(async () => {
         mockScenariosService = {
             getScenarios: jest.fn(),
@@ -35,6 +47,10 @@ describe('ScenariosController', () => {
             updateScenario: jest.fn(),
             removeScenario: jest.fn(),
         };
+        mockScenarioGroupsService = {
+            getGroups: jest.fn(),
+            deleteGroup: jest.fn(),
+        };
 
         const module: TestingModule = await Test.createTestingModule({
             controllers: [ScenariosController],
@@ -42,6 +58,10 @@ describe('ScenariosController', () => {
                 {
                     provide: ScenariosService,
                     useValue: mockScenariosService,
+                },
+                {
+                    provide: ScenarioGroupsService,
+                    useValue: mockScenarioGroupsService,
                 },
             ],
         }).compile();
@@ -123,6 +143,65 @@ describe('ScenariosController', () => {
 
             expect(result).toEqual(mockScenario);
             expect(mockScenariosService.removeScenario).toHaveBeenCalledWith('scenario-uuid-123');
+        });
+    });
+
+    describe('getGroups', () => {
+        it('should return all groups', async () => {
+            const groups = [mockGroup];
+            mockScenarioGroupsService.getGroups.mockResolvedValue(groups);
+
+            const query = new GetScenarioGroupsDto();
+            const result = await controller.getGroups(query);
+
+            expect(result).toEqual(groups);
+            expect(mockScenarioGroupsService.getGroups).toHaveBeenCalledWith(query);
+        });
+
+        it('should filter groups by term', async () => {
+            const groups = [mockGroup];
+            mockScenarioGroupsService.getGroups.mockResolvedValue(groups);
+
+            const query = new GetScenarioGroupsDto();
+            query.term = 'test';
+            const result = await controller.getGroups(query);
+
+            expect(result).toEqual(groups);
+            expect(mockScenarioGroupsService.getGroups).toHaveBeenCalledWith(query);
+        });
+    });
+
+    describe('deleteGroup', () => {
+        it('should delete group by id', async () => {
+            mockScenarioGroupsService.deleteGroup.mockResolvedValue(mockGroup);
+
+            const query = new DeleteScenarioGroupDto();
+            const result = await controller.deleteGroup('1', query);
+
+            expect(result).toEqual(mockGroup);
+            expect(mockScenarioGroupsService.deleteGroup).toHaveBeenCalledWith('1', undefined);
+        });
+
+        it('should delete group by name with deleteScenarios=true', async () => {
+            mockScenarioGroupsService.deleteGroup.mockResolvedValue(mockGroup);
+
+            const query = new DeleteScenarioGroupDto();
+            query.deleteScenarios = true;
+            const result = await controller.deleteGroup('test_group', query);
+
+            expect(result).toEqual(mockGroup);
+            expect(mockScenarioGroupsService.deleteGroup).toHaveBeenCalledWith('test_group', true);
+        });
+
+        it('should delete group with deleteScenarios=false', async () => {
+            mockScenarioGroupsService.deleteGroup.mockResolvedValue(mockGroup);
+
+            const query = new DeleteScenarioGroupDto();
+            query.deleteScenarios = false;
+            const result = await controller.deleteGroup('test_group', query);
+
+            expect(result).toEqual(mockGroup);
+            expect(mockScenarioGroupsService.deleteGroup).toHaveBeenCalledWith('test_group', false);
         });
     });
 });

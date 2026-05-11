@@ -7,6 +7,7 @@ import {
     NotFoundException,
     OnModuleInit,
 } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { Model, RootFilterQuery } from 'mongoose';
 import {
     GetScenarioOptions,
@@ -20,24 +21,32 @@ import { CreateScenarioDto, GetScenariosDto, UpdateScenarioDto } from 'scenarios
 import { SCENARIO_MODEL_PROVIDER_NAME } from 'scenarios/scenarios.constants';
 import { SchedulerService } from 'scheduler/scheduler.service';
 import { ScenariosExecutionService } from 'scenarios/scenarios-execution.service';
+import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
 
 @Injectable()
 export class ScenariosService implements OnModuleInit {
     private readonly logger = new Logger(ScenariosService.name);
+    private scenarioGroupsService: ScenarioGroupsService;
+    private scenariosExecutionService: ScenariosExecutionService;
 
     constructor(
         @Inject(SCENARIO_MODEL_PROVIDER_NAME)
         private readonly scenarioModel: Model<Scenario>,
         private readonly schedulerService: SchedulerService,
-        private readonly scenariosExecutionService: ScenariosExecutionService,
+        private readonly moduleRef: ModuleRef,
     ) {}
 
     async onModuleInit(): Promise<void> {
+        this.scenarioGroupsService = this.moduleRef.get(ScenarioGroupsService, { strict: false });
+        this.scenariosExecutionService = this.moduleRef.get(ScenariosExecutionService, { strict: false });
         await this.scheduleExistingScenarios();
     }
 
     async getScenarios(options: GetScenariosDto = new GetScenariosDto()): Promise<ScenariosPage> {
         const conditions: RootFilterQuery<Scenario> = options.includeInactive ? {} : { active: true };
+        if (options.group) {
+            conditions.group = options.group;
+        }
         const [scenarios, total] = await Promise.all([
             this.scenarioModel.find(conditions).skip(options.skipRecords).limit(options.pageSize).lean(),
             this.scenarioModel.countDocuments(conditions),
@@ -100,6 +109,7 @@ export class ScenariosService implements OnModuleInit {
             cronSource.cron = this.schedulerService.adjustScenarioDayTimeCron(cronSource);
         }
         const newScenario: Scenario = await new this.scenarioModel(scenarioDto).save({ validateBeforeSave: true });
+        await this.scenarioGroupsService.syncGroupOnCreate(newScenario.group);
         if (newScenario.active) {
             await this.scheduleScenarioJob(newScenario, () => this.removeScenario(newScenario.externalId));
         }
@@ -109,9 +119,13 @@ export class ScenariosService implements OnModuleInit {
     async updateScenario(externalId: string, scenarioDto: UpdateScenarioDto): Promise<Scenario> {
         const scenario = await this.getScenarioByExternalId(externalId);
         const oldScenario: Scenario = scenario.toObject();
+        const oldGroup = scenario.group;
 
         scenario.name = scenarioDto.name ?? scenario.name;
         scenario.description = scenarioDto.description ?? scenario.description;
+        if (scenarioDto.group !== undefined) {
+            scenario.group = scenarioDto.group || undefined;
+        }
         scenario.active = scenarioDto.active ?? scenario.active;
         scenario.repeatTimes = scenarioDto.repeatTimes || scenarioDto.repeatTimes === null ? scenarioDto.repeatTimes : scenario.repeatTimes;
         scenario.trigger = scenarioDto.trigger ?? scenario.trigger;
@@ -123,6 +137,7 @@ export class ScenariosService implements OnModuleInit {
         }
 
         const updatedScenario = await scenario.save({ validateBeforeSave: true });
+        await this.scenarioGroupsService.syncGroupOnUpdate(oldGroup, updatedScenario.group);
 
         if (this.isCronScenario(oldScenario) && oldScenario.active) {
             this.schedulerService.unscheduleJob(oldScenario.name);
@@ -140,6 +155,7 @@ export class ScenariosService implements OnModuleInit {
     async removeScenario(externalId: string): Promise<Scenario> {
         const scenario = await this.getScenarioByExternalId(externalId);
         await this.scenarioModel.deleteOne({ _id: scenario._id }).exec();
+        await this.scenarioGroupsService.syncGroupOnDelete(scenario.group);
         if (scenario.active) {
             this.schedulerService.unscheduleJob(scenario.name);
         }
