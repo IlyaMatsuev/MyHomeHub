@@ -22,7 +22,6 @@ describe('ScenarioGroupsService', () => {
 
     const mockGroup: Partial<ScenarioGroup> = {
         _id: 'mongo-id-123',
-        id: 1,
         name: 'test_group',
         scenariosCount: 2,
     };
@@ -71,17 +70,24 @@ describe('ScenarioGroupsService', () => {
     });
 
     describe('getGroups', () => {
-        it('should return all groups when no term provided', async () => {
+        it('should return paginated groups when no term provided', async () => {
             const groups = [mockGroup];
             mockScenarioGroupModel.find.mockReturnValue({
                 sort: jest.fn().mockReturnValue({
-                    exec: jest.fn().mockResolvedValue(groups),
+                    skip: jest.fn().mockReturnValue({
+                        limit: jest.fn().mockReturnValue({
+                            lean: jest.fn().mockResolvedValue(groups),
+                        }),
+                    }),
                 }),
             });
+            (mockScenarioGroupModel as unknown as { countDocuments: jest.Mock }).countDocuments = jest.fn().mockResolvedValue(1);
 
             const result = await service.getGroups();
 
-            expect(result).toEqual(groups);
+            expect(result.groups).toEqual(groups);
+            expect(result.page).toBe(1);
+            expect(result.totalPages).toBe(1);
             expect(mockScenarioGroupModel.find).toHaveBeenCalledWith({});
         });
 
@@ -89,39 +95,33 @@ describe('ScenarioGroupsService', () => {
             const groups = [mockGroup];
             mockScenarioGroupModel.find.mockReturnValue({
                 sort: jest.fn().mockReturnValue({
-                    exec: jest.fn().mockResolvedValue(groups),
+                    skip: jest.fn().mockReturnValue({
+                        limit: jest.fn().mockReturnValue({
+                            lean: jest.fn().mockResolvedValue(groups),
+                        }),
+                    }),
                 }),
             });
+            (mockScenarioGroupModel as unknown as { countDocuments: jest.Mock }).countDocuments = jest.fn().mockResolvedValue(1);
 
             const options = new GetScenarioGroupsDto();
             options.term = 'test';
             const result = await service.getGroups(options);
 
-            expect(result).toEqual(groups);
+            expect(result.groups).toEqual(groups);
             expect(mockScenarioGroupModel.find).toHaveBeenCalledWith({
                 name: { $regex: 'test', $options: 'i' },
             });
         });
     });
 
-    describe('getGroupByIdOrName', () => {
-        it('should return group when found by numeric id', async () => {
-            mockScenarioGroupModel.findOne.mockReturnValue({
-                exec: jest.fn().mockResolvedValue(mockGroup),
-            });
-
-            const result = await service.getGroupByIdOrName('1');
-
-            expect(result).toEqual(mockGroup);
-            expect(mockScenarioGroupModel.findOne).toHaveBeenCalledWith({ id: 1 });
-        });
-
+    describe('getGroupByName', () => {
         it('should return group when found by name', async () => {
             mockScenarioGroupModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockGroup),
             });
 
-            const result = await service.getGroupByIdOrName('test_group');
+            const result = await service.getGroupByName('test_group');
 
             expect(result).toEqual(mockGroup);
             expect(mockScenarioGroupModel.findOne).toHaveBeenCalledWith({ name: 'test_group' });
@@ -132,7 +132,7 @@ describe('ScenarioGroupsService', () => {
                 exec: jest.fn().mockResolvedValue(null),
             });
 
-            await expect(service.getGroupByIdOrName('nonexistent')).rejects.toThrow(NotFoundException);
+            await expect(service.getGroupByName('nonexistent')).rejects.toThrow(NotFoundException);
         });
     });
 

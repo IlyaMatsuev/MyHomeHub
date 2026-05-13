@@ -7,7 +7,6 @@ import {
     NotFoundException,
     OnModuleInit,
 } from '@nestjs/common';
-import { ModuleRef } from '@nestjs/core';
 import { Model, RootFilterQuery } from 'mongoose';
 import {
     GetScenarioOptions,
@@ -26,19 +25,17 @@ import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
 @Injectable()
 export class ScenariosService implements OnModuleInit {
     private readonly logger = new Logger(ScenariosService.name);
-    private scenarioGroupsService: ScenarioGroupsService;
-    private scenariosExecutionService: ScenariosExecutionService;
 
+    // eslint-disable-next-line max-params
     constructor(
         @Inject(SCENARIO_MODEL_PROVIDER_NAME)
         private readonly scenarioModel: Model<Scenario>,
         private readonly schedulerService: SchedulerService,
-        private readonly moduleRef: ModuleRef,
+        private readonly scenariosExecutionService: ScenariosExecutionService,
+        private readonly scenarioGroupsService: ScenarioGroupsService,
     ) {}
 
     async onModuleInit(): Promise<void> {
-        this.scenarioGroupsService = this.moduleRef.get(ScenarioGroupsService, { strict: false });
-        this.scenariosExecutionService = this.moduleRef.get(ScenariosExecutionService, { strict: false });
         await this.scheduleExistingScenarios();
     }
 
@@ -119,13 +116,10 @@ export class ScenariosService implements OnModuleInit {
     async updateScenario(externalId: string, scenarioDto: UpdateScenarioDto): Promise<Scenario> {
         const scenario = await this.getScenarioByExternalId(externalId);
         const oldScenario: Scenario = scenario.toObject();
-        const oldGroup = scenario.group;
 
         scenario.name = scenarioDto.name ?? scenario.name;
         scenario.description = scenarioDto.description ?? scenario.description;
-        if (scenarioDto.group !== undefined) {
-            scenario.group = scenarioDto.group || undefined;
-        }
+        scenario.group = scenarioDto.group ?? scenario.group;
         scenario.active = scenarioDto.active ?? scenario.active;
         scenario.repeatTimes = scenarioDto.repeatTimes || scenarioDto.repeatTimes === null ? scenarioDto.repeatTimes : scenario.repeatTimes;
         scenario.trigger = scenarioDto.trigger ?? scenario.trigger;
@@ -137,7 +131,7 @@ export class ScenariosService implements OnModuleInit {
         }
 
         const updatedScenario = await scenario.save({ validateBeforeSave: true });
-        await this.scenarioGroupsService.syncGroupOnUpdate(oldGroup, updatedScenario.group);
+        await this.scenarioGroupsService.syncGroupOnUpdate(oldScenario.group, updatedScenario.group);
 
         if (this.isCronScenario(oldScenario) && oldScenario.active) {
             this.schedulerService.unscheduleJob(oldScenario.name);

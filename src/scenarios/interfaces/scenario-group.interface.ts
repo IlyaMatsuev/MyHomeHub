@@ -1,7 +1,7 @@
 import { Document } from 'mongodb';
+import { RecordsPage } from 'common/interfaces';
 
 export interface ScenarioGroup extends Document {
-    id: number;
     name: string;
     scenariosCount: number;
     createdAt: Date;
@@ -9,3 +9,7 @@ export interface ScenarioGroup extends Document {
 }
 
 export type ScenarioGroupFilter = Partial<ScenarioGroup & { _id: string }>;
+
+export interface ScenarioGroupsPage extends RecordsPage {
+    groups: Array<ScenarioGroup>;
+}

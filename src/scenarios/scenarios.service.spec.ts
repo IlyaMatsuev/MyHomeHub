@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ModuleRef } from '@nestjs/core';
 import { BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { ScenariosService } from './scenarios.service';
 import { ScenarioGroupsService } from './scenario-groups.service';
@@ -88,18 +87,6 @@ describe('ScenariosService', () => {
             syncGroupOnDelete: jest.fn().mockResolvedValue(undefined),
         };
 
-        const mockModuleRef = {
-            get: jest.fn((type: unknown) => {
-                if (type === ScenarioGroupsService) {
-                    return mockScenarioGroupsService;
-                }
-                if (type === ScenariosExecutionService) {
-                    return mockScenariosExecutionService;
-                }
-                return null;
-            }),
-        };
-
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 ScenariosService,
@@ -112,8 +99,12 @@ describe('ScenariosService', () => {
                     useValue: mockSchedulerService,
                 },
                 {
-                    provide: ModuleRef,
-                    useValue: mockModuleRef,
+                    provide: ScenariosExecutionService,
+                    useValue: mockScenariosExecutionService,
+                },
+                {
+                    provide: ScenarioGroupsService,
+                    useValue: mockScenarioGroupsService,
                 },
             ],
         }).compile();
@@ -401,6 +392,16 @@ describe('ScenariosService', () => {
             const scenarioWithGroup = {
                 ...mockScenario,
                 group: 'old_group',
+                toObject: jest.fn().mockReturnValue({
+                    name: 'Test Scenario',
+                    active: true,
+                    group: 'old_group',
+                    trigger: {
+                        sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 8 * * *' }],
+                        logic: '1',
+                    },
+                    devices: [],
+                }),
                 save: jest.fn().mockResolvedValue({ ...mockScenario, group: 'new_group' }),
             };
             mockScenarioModel.findOne.mockReturnValue({

@@ -13,6 +13,6 @@ import { scenariosProviders } from 'scenarios/scenarios.providers';
     imports: [CommonModule, DatabaseModule, DevicesModule, SchedulerModule],
     controllers: [ScenariosController],
     providers: [ScenariosService, ScenarioGroupsService, ScenariosExecutionService, ...scenariosProviders],
-    exports: [ScenariosService, ScenarioGroupsService],
+    exports: [ScenariosService],
 })
 export class ScenariosModule {}

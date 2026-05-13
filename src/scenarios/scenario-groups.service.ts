@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Model, RootFilterQuery } from 'mongoose';
-import { Scenario, ScenarioGroup, ScenarioGroupFilter } from 'scenarios/interfaces';
+import { Scenario, ScenarioGroup, ScenarioGroupsPage } from 'scenarios/interfaces';
 import { GetScenarioGroupsDto } from 'scenarios/dto';
 import { SCENARIO_GROUP_MODEL_PROVIDER_NAME, SCENARIO_MODEL_PROVIDER_NAME } from 'scenarios/scenarios.constants';
 
@@ -13,25 +13,34 @@ export class ScenarioGroupsService {
         private readonly scenarioModel: Model<Scenario>,
     ) {}
 
-    async getGroups(options: GetScenarioGroupsDto = new GetScenarioGroupsDto()): Promise<Array<ScenarioGroup>> {
+    async getGroups(options: GetScenarioGroupsDto = new GetScenarioGroupsDto()): Promise<ScenarioGroupsPage> {
         const conditions: RootFilterQuery<ScenarioGroup> = {};
         if (options.term) {
             conditions.name = { $regex: options.term, $options: 'i' };
         }
-        return this.scenarioGroupModel.find(conditions).sort({ name: 1 }).exec();
+        const [groups, total] = await Promise.all([
+            this.scenarioGroupModel.find(conditions).sort({ name: 1 }).skip(options.skipRecords).limit(options.pageSize).lean(),
+            this.scenarioGroupModel.countDocuments(conditions),
+        ]);
+
+        return {
+            groups,
+            page: options.page,
+            pageSize: options.pageSize,
+            totalPages: Math.ceil(total / options.pageSize),
+        };
     }
 
-    async getGroupByIdOrName(idOrName: string): Promise<ScenarioGroup> {
-        const filter = this.buildIdOrNameFilter(idOrName);
-        const group = await this.scenarioGroupModel.findOne(filter).exec();
+    async getGroupByName(name: string): Promise<ScenarioGroup> {
+        const group = await this.scenarioGroupModel.findOne({ name }).exec();
         if (!group) {
-            throw new NotFoundException(`Scenario group '${idOrName}' not found`);
+            throw new NotFoundException(`Scenario group '${name}' not found`);
         }
         return group;
     }
 
-    async deleteGroup(idOrName: string, deleteScenarios?: boolean): Promise<ScenarioGroup> {
-        const group = await this.getGroupByIdOrName(idOrName);
+    async deleteGroup(name: string, deleteScenarios?: boolean): Promise<ScenarioGroup> {
+        const group = await this.getGroupByName(name);
 
         if (group.scenariosCount > 0 && deleteScenarios === undefined) {
             throw new BadRequestException(
@@ -100,13 +109,5 @@ export class ScenarioGroupsService {
             group.scenariosCount -= 1;
             await group.save();
         }
-    }
-
-    private buildIdOrNameFilter(idOrName: string): ScenarioGroupFilter {
-        const numericId = parseInt(idOrName, 10);
-        if (!isNaN(numericId) && numericId.toString() === idOrName) {
-            return { id: numericId };
-        }
-        return { name: idOrName };
     }
 }

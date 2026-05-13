@@ -11,7 +11,7 @@ import {
 } from '@nestjs/swagger';
 import { ScenariosService } from 'scenarios/scenarios.service';
 import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
-import { Scenario, ScenarioGroup, ScenariosPage } from 'scenarios/interfaces';
+import { Scenario, ScenarioGroup, ScenarioGroupsPage, ScenariosPage } from 'scenarios/interfaces';
 import { CreateScenarioDto, DeleteScenarioGroupDto, GetScenarioGroupsDto, GetScenariosDto, UpdateScenarioDto } from 'scenarios/dto';
 
 @ApiBearerAuth()
@@ -34,23 +34,23 @@ export class ScenariosController {
     @ApiOperation({ summary: 'Get all scenario groups' })
     @ApiOkResponse()
     @ApiUnauthorizedResponse()
-    async getGroups(@Query() query: GetScenarioGroupsDto): Promise<Array<ScenarioGroup>> {
+    async getGroups(@Query() query: GetScenarioGroupsDto): Promise<ScenarioGroupsPage> {
         return this.scenarioGroupsService.getGroups(query);
     }
 
-    @Delete('/groups/:idOrName')
+    @Delete('/groups/:name')
     @ApiParam({
-        name: 'idOrName',
-        description: 'Numeric ID or name of the scenario group to delete',
-        example: '1 or my_group',
+        name: 'name',
+        description: 'Name of the scenario group to delete',
+        example: 'my_group',
     })
-    @ApiOperation({ summary: 'Delete a scenario group by ID or name' })
+    @ApiOperation({ summary: 'Delete a scenario group by name' })
     @ApiOkResponse()
     @ApiNotFoundResponse()
     @ApiBadRequestResponse()
     @ApiUnauthorizedResponse()
-    async deleteGroup(@Param('idOrName') idOrName: string, @Query() query: DeleteScenarioGroupDto): Promise<ScenarioGroup> {
-        return this.scenarioGroupsService.deleteGroup(idOrName, query.deleteScenarios);
+    async deleteGroup(@Param('name') name: string, @Query() query: DeleteScenarioGroupDto): Promise<ScenarioGroup> {
+        return this.scenarioGroupsService.deleteGroup(name, query.deleteScenarios);
     }
 
     @Get('/:externalId')
