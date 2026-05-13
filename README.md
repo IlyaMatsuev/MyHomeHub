@@ -5,13 +5,13 @@
 
 A NestJS-based SmartHome Hub that controls, stores, and provides information about IoT devices. The hub communicates with devices via multiple protocols (MQTT, Tuya API, HTTP) and provides a REST API for control and monitoring.
 
-## Features
+## Overview
 
-- **Multi-Protocol Device Support** - Control devices via MQTT, Tuya local API, HTTP, and Google Cast
-- **Device Brands** - ESP32 (custom MQTT devices using [SmartHomeDevices](https://github.com/IlyaMatsuev/SmartHomeDevices) library), Tuya, Shelly, Google Speakers
-- **Automation Scenarios** - Create automation rules with cron schedules and device state triggers
-- **Secure Authentication** - JWT-based authentication with TOTP for user registration
-- **REST API** - Full device management through REST endpoints with Swagger documentation
+- **Multi-Protocol Device Support**: Control devices via MQTT, Tuya local API, HTTP, and Google Cast
+- **Device Brands**: ESP32 (custom MQTT devices using [SmartHomeDevices](https://github.com/IlyaMatsuev/SmartHomeDevices) library), Tuya, Shelly, Google Speakers
+- **Automation Scenarios**: Create automation rules with cron schedules and device state triggers
+- **Secure Authentication**: JWT-based authentication with TOTP for user registration
+- **REST API**: Full device management through REST endpoints with Swagger documentation
 
 ## Prerequisites
 
@@ -21,72 +21,22 @@ A NestJS-based SmartHome Hub that controls, stores, and provides information abo
 
 ## 🚀 Build & Run
 
-### Install Dependencies
+1. Install Dependencies: `npm install`
+2. Start Infrastructure Services
 
-```bash
-npm install
-```
+- Start MongoDB (via Docker): `npm run mongo:start`
+- Start MQTT broker (via Docker): `npm run mqtt:start`
 
-### Start Infrastructure Services
+3. Start the Application
 
-MongoDB and MQTT broker run as Docker containers managed by Docker Compose.
+- Start in development mode with hot-reload: `npm run start:dev`
+- Start in production mode (via Docker): `npm run start`
 
-```bash
-# Development - Start MongoDB
-npm run mongo:start
-
-# Development - Start MQTT broker
-npm run mqtt:start
-
-# Production - Start MongoDB
-npm run mongo:start:prod
-
-# Production - Start MQTT broker
-npm run mqtt:start:prod
-```
-
-### Run the Application
-
-```bash
-# Development mode with hot-reload
-npm run start:dev
-
-# Local mode
-npm run start
-
-# Production mode (via Docker)
-npm run start:prod
-```
-
-### Build Docker Image
-
-```bash
-npm run build:image
-```
+4. Run all unit tests: `npm test`
 
 ## 🛠️ Configuration
 
-The application uses env file `.env`, which can be created from the [`.env.example`](../.env.example):
-
-```shell
-cp .env.example .env
-```
-
-### Environment Variables
-
-| Variable                      | Description                                                                                                                       |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `PORT`                        | Server port (default: 3000)                                                                                                       |
-| `NODE_ENV`                    | Environment name (`local`, `prod`)                                                                                                |
-| `LOG_LEVEL`                   | Minimum log level: `verbose`, `debug`, `log`/`info`, `warn`, `error`, `fatal` (default: `log` for `prod` and `debug` for `local`) |
-| `TZ_LATITUDE`, `TZ_LONGITUDE` | Location for sun calculations                                                                                                     |
-| `JWT_SECRET`                  | Secret for JWT token signing                                                                                                      |
-| `JWT_EXPIRATION_TIMEOUT`      | Token expiration in seconds                                                                                                       |
-| `REGISTRATION_TOTP_SECRET`    | TOTP secret for admin registration                                                                                                |
-| `USER_PASSWORD_SECRET`        | Argon2 password hashing secret                                                                                                    |
-| `USER_PASSWORD_SALT`          | Argon2 password hashing salt                                                                                                      |
-| `MONGO_*`                     | MongoDB connection settings                                                                                                       |
-| `MQTT_*`                      | MQTT broker connection settings                                                                                                   |
+The application uses env file `.env`, which can be created from the [`.env.example`](../.env.example): `cp .env.example .env`
 
 ## 📝 Documentation
 

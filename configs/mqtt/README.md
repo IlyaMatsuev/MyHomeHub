@@ -9,11 +9,7 @@ In order to store the mosquitto credentials, the password file has to be created
 The broker can be started from the `hub` folder using command:
 
 ```shell
-# For local development
 npm run mqtt:start
-
-# For prod environment
-npm run mqtt:start:prod
 ```
 
 If the container is new, user credentials have to be configured. For that you need to interact with the running container...:
