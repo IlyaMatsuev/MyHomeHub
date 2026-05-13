@@ -8,6 +8,7 @@ import {
     SCENARIO_NAME_MIN_LENGTH,
     SCENARIO_GROUP_NAME_MAX_LENGTH,
     SCENARIO_GROUP_NAME_PATTERN,
+    SCENARIO_GROUP_NAME_PATTERN_ERROR_MESSAGE,
 } from 'scenarios/scenarios.constants';
 import { TriggerSchema } from './trigger.schema';
 import { ScenarioDeviceActionSchema } from './scenario-device-action.schema';
@@ -44,7 +45,7 @@ export const ScenarioSchema = new Schema(
             maxLength: SCENARIO_GROUP_NAME_MAX_LENGTH,
             validate: {
                 validator: (value: string) => !value || SCENARIO_GROUP_NAME_PATTERN.test(value),
-                message: 'Group name must contain only English letters, digits, and underscores, and cannot be digits only',
+                message: SCENARIO_GROUP_NAME_PATTERN_ERROR_MESSAGE,
             },
         },
         active: {

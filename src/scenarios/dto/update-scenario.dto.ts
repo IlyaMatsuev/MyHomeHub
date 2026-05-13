@@ -21,6 +21,7 @@ import {
     SCENARIO_NAME_MIN_LENGTH,
     SCENARIO_GROUP_NAME_MAX_LENGTH,
     SCENARIO_GROUP_NAME_PATTERN,
+    SCENARIO_GROUP_NAME_PATTERN_ERROR_MESSAGE,
 } from 'scenarios/scenarios.constants';
 import { Type } from 'class-transformer';
 
@@ -51,9 +52,7 @@ export class UpdateScenarioDto {
     @IsOptional()
     @IsString()
     @MaxLength(SCENARIO_GROUP_NAME_MAX_LENGTH)
-    @Matches(SCENARIO_GROUP_NAME_PATTERN, {
-        message: 'Group name must contain only English letters, digits, and underscores, and cannot be digits only',
-    })
+    @Matches(SCENARIO_GROUP_NAME_PATTERN, { message: SCENARIO_GROUP_NAME_PATTERN_ERROR_MESSAGE })
     @ApiProperty({
         required: false,
         description:

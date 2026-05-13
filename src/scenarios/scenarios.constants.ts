@@ -14,3 +14,5 @@ export const SCENARIO_MINIMUM_REPEAT_TIMES = 1;
 
 export const SCENARIO_GROUP_NAME_MAX_LENGTH = 40;
 export const SCENARIO_GROUP_NAME_PATTERN = /^(?![0-9]+$)[A-Za-z0-9_]+$/;
+export const SCENARIO_GROUP_NAME_PATTERN_ERROR_MESSAGE =
+    'Group name must contain only English letters, digits, and underscores, and cannot be digits only';
