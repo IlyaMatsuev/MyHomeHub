@@ -124,8 +124,8 @@ Store `mqtt_password` in `data/zigbee2mqtt/secret.yaml` and reference with `!sec
 Add an npm script for parity with the existing ones:
 
 ```json
-"zigbee2mqtt:start": "docker compose up -d zigbee2mqtt",
-"zigbee2mqtt:restart": "docker compose up -d zigbee2mqtt --force-recreate",
+"zigbee:start": "docker compose up -d zigbee2mqtt",
+"zigbee:restart": "docker compose up -d zigbee2mqtt --force-recreate",
 ```
 
 ---

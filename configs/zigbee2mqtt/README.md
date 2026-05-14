@@ -9,30 +9,18 @@ This directory contains the Zigbee2MQTT configuration files.
 
 ## Setup
 
-Create a `secret.yaml` file in this directory with the following content:
-
-```yaml
-mqtt_user: zigbee2mqtt
-mqtt_password: <your_mqtt_password>
-```
-
-Make sure to add the `zigbee2mqtt` user to the Mosquitto password file:
-
-```bash
-docker exec -it mqtt-broker mosquitto_passwd /mosquitto/config/pwfile zigbee2mqtt
-```
+1. Specify all `Z2M_*`, `MQTT_*`, and `ZIGBEE_*` variables in `.env` file in the root as shown in [.env.example](../../.env.example).
+2. Then, make sure [MQTT broker](../mqtt) is started.
+3. Start the Z2M service with: `npm run zigbee:start`
 
 ## Hardware
 
-This configuration is designed for the SONOFF Zigbee 3.0 & Thread Dongle Lite (EFR32MG21).
-
-### Firmware Requirements
-
-Ensure the dongle has EmberZNet NCP 7.4+ firmware flashed. The default configuration uses the `ember` adapter.
+This configuration is designed for the SONOFF Zigbee 3.0 & Thread Dongle Lite (EFR32MG21) or similar.
 
 ### Device Path
 
-Set the `ZIGBEE_DONGLE_PATH` environment variable to the device path of your Zigbee dongle.
+Set the `ZIGBEE_DONGLE_PATH` environment variable to the device path of your Zigbee dongle. It can be checked with: `ls -l /dev/serial/by-id/`.
+
 Prefer using the stable `/dev/serial/by-id/` path:
 
 ```bash

@@ -7,7 +7,7 @@
  *   - writes configs/zigbee2mqtt/secret.yaml with the resolved broker URL, credentials, and Zigbee network keys;
  *   - ensures Z2M_MQTT_USERNAME has an entry in configs/mqtt/pwfile by invoking `npm run mqtt:user:new` when it does not.
  *
- * Invoked by the `zigbee2mqtt:start` / `zigbee2mqtt:restart` npm scripts.
+ * Invoked by the `zigbee:start` / `zigbee:restart` npm scripts.
  */
 
 const fs = require('fs');
