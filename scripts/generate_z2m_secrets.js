@@ -1,13 +1,26 @@
 #!/usr/bin/env node
 
+/**
+ * Prepares Zigbee2MQTT to run against the local MQTT broker:
+ *   - validates required Z2M_* / MQTT_* variables in .env
+ *   - generates network_key, pan_id, and ext_pan_id when their value is `GENERATE`, then writing the generated values back to .env;
+ *   - writes configs/zigbee2mqtt/secret.yaml with the resolved broker URL, credentials, and Zigbee network keys;
+ *   - ensures Z2M_MQTT_USERNAME has an entry in configs/mqtt/pwfile by invoking `npm run mqtt:user:new` when it does not.
+ *
+ * Invoked by the `zigbee2mqtt:start` / `zigbee2mqtt:restart` npm scripts.
+ */
+
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const child_process = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const ENV_FILE = path.join(ROOT, '.env');
 const ENV_RELATIVE_FILE = path.relative(ROOT, ENV_FILE);
 const Z2M_SECRET_FILE = path.join(ROOT, 'configs/zigbee2mqtt/secret.yaml');
+const MQTT_PWFILE = path.join(ROOT, 'configs/mqtt/pwfile');
+const CREATE_MQTT_USER_NPM_SCRIPT = 'mqtt:user:new';
 
 const REQUIRED_VARS = [
     'MQTT_DOMAIN',
@@ -80,6 +93,8 @@ function main() {
     if (Object.keys(envUpdates).length) {
         console.log(`Z2M variables (${Object.keys(envUpdates).join(', ')}) have been generated and written back to ${ENV_RELATIVE_FILE}`);
     }
+
+    ensureMqttUser(resolved.Z2M_MQTT_USERNAME, resolved.Z2M_MQTT_PASSWORD);
 }
 
 function fail(message) {
@@ -122,4 +137,35 @@ function randomPanId() {
 
 function yamlString(value) {
     return `'${value.replace(/'/g, "''")}'`;
+}
+
+function ensureMqttUser(username, password) {
+    if (mqttPwfileHasUser(username)) {
+        return;
+    }
+
+    const pwfileRelative = path.relative(ROOT, MQTT_PWFILE);
+    console.log(`MQTT user '${username}' not found in ${pwfileRelative}, creating via 'npm run ${CREATE_MQTT_USER_NPM_SCRIPT}'...`);
+
+    const result = child_process.spawnSync('npm', ['run', CREATE_MQTT_USER_NPM_SCRIPT, '--', username, password], { stdio: 'inherit' });
+    if (result.error) {
+        fail(`failed to run 'npm run ${CREATE_MQTT_USER_NPM_SCRIPT}': ${result.error.message}`);
+    }
+    if (result.status !== 0) {
+        fail(`failed to create MQTT user '${username}' (exit code ${result.status})`);
+    }
+}
+
+function mqttPwfileHasUser(username) {
+    if (!fs.existsSync(MQTT_PWFILE)) {
+        return false;
+    }
+    const content = fs.readFileSync(MQTT_PWFILE, 'utf8');
+    return content.split('\n').some(line => {
+        const colonIndex = line.indexOf(':');
+        if (colonIndex < 0) {
+            return false;
+        }
+        return line.slice(0, colonIndex) === username;
+    });
 }
