@@ -21,4 +21,4 @@ advanced:
 
 frontend:
   enabled: true
-  port: 1886
+  port: "!secret.yaml frontend_port"

@@ -25,6 +25,7 @@ const CREATE_MQTT_USER_NPM_SCRIPT = 'mqtt:user:new';
 const REQUIRED_VARS = [
     'MQTT_DOMAIN',
     'MQTT_PORT',
+    'Z2M_FRONT_END_PORT',
     'Z2M_MQTT_BASE_TOPIC',
     'Z2M_MQTT_USERNAME',
     'Z2M_MQTT_PASSWORD',
@@ -84,7 +85,9 @@ function main() {
         `\n` +
         `network_key: ${resolved.Z2M_NETWORK_KEY}\n` +
         `pan_id: ${resolved.Z2M_PAN_ID}\n` +
-        `ext_pan_id: ${resolved.Z2M_EXT_PAN_ID}\n`;
+        `ext_pan_id: ${resolved.Z2M_EXT_PAN_ID}\n` +
+        `\n` +
+        `frontend_port: ${resolved.Z2M_FRONT_END_PORT}\n`;
 
     fs.mkdirSync(path.dirname(Z2M_SECRET_FILE), { recursive: true });
     fs.writeFileSync(Z2M_SECRET_FILE, secretYaml);
