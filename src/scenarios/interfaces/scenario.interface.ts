@@ -41,6 +41,7 @@ export interface Scenario extends Document {
     externalId: string;
     name: string;
     description?: string;
+    group?: string;
     active: boolean;
     repeatTimes?: number;
     trigger: ScenarioTrigger;

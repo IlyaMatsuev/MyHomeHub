@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { ScenariosService } from './scenarios.service';
+import { ScenarioGroupsService } from './scenario-groups.service';
 import { SCENARIO_MODEL_PROVIDER_NAME } from './scenarios.constants';
 import { SchedulerService } from 'scheduler/scheduler.service';
 import { ScenariosExecutionService } from './scenarios-execution.service';
@@ -23,6 +24,11 @@ describe('ScenariosService', () => {
         adjustScenarioDayTimeCron: jest.Mock;
     };
     let mockScenariosExecutionService: { execute: jest.Mock };
+    let mockScenarioGroupsService: {
+        syncGroupOnCreate: jest.Mock;
+        syncGroupOnUpdate: jest.Mock;
+        syncGroupOnDelete: jest.Mock;
+    };
 
     const mockScenario: Partial<Scenario> = {
         _id: 'mongo-id-123',
@@ -75,6 +81,11 @@ describe('ScenariosService', () => {
             adjustScenarioDayTimeCron: jest.fn().mockReturnValue('0 6 * * *'),
         };
         mockScenariosExecutionService = { execute: jest.fn() };
+        mockScenarioGroupsService = {
+            syncGroupOnCreate: jest.fn().mockResolvedValue(undefined),
+            syncGroupOnUpdate: jest.fn().mockResolvedValue(undefined),
+            syncGroupOnDelete: jest.fn().mockResolvedValue(undefined),
+        };
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -91,10 +102,18 @@ describe('ScenariosService', () => {
                     provide: ScenariosExecutionService,
                     useValue: mockScenariosExecutionService,
                 },
+                {
+                    provide: ScenarioGroupsService,
+                    useValue: mockScenarioGroupsService,
+                },
             ],
         }).compile();
 
         service = module.get<ScenariosService>(ScenariosService);
+        mockScenarioModel.find.mockReturnValue({
+            exec: jest.fn().mockResolvedValue([]),
+        });
+        await service.onModuleInit();
     });
 
     afterEach(() => {
@@ -153,6 +172,24 @@ describe('ScenariosService', () => {
             await service.getScenarios(options);
 
             expect(mockScenarioModel.find).toHaveBeenCalledWith({});
+        });
+
+        it('should filter scenarios by group when provided', async () => {
+            mockScenarioModel.find.mockReturnValue({
+                skip: jest.fn().mockReturnValue({
+                    limit: jest.fn().mockReturnValue({
+                        lean: jest.fn().mockResolvedValue([]),
+                    }),
+                }),
+            });
+            mockScenarioModel.countDocuments.mockResolvedValue(0);
+
+            const options = new GetScenariosDto();
+            options.group = 'test_group';
+
+            await service.getScenarios(options);
+
+            expect(mockScenarioModel.find).toHaveBeenCalledWith({ active: true, group: 'test_group' });
         });
     });
 
@@ -251,6 +288,26 @@ describe('ScenariosService', () => {
             expect(mockSchedulerService.scheduleJob).toHaveBeenCalled();
         });
 
+        it('should sync group on create when group is provided', async () => {
+            mockScenarioModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            const createDto: CreateScenarioDto = {
+                name: 'Grouped Scenario',
+                group: 'test_group',
+                trigger: {
+                    sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 9 * * *' }],
+                    logic: '1',
+                },
+                devices: [],
+            } as unknown as CreateScenarioDto;
+
+            await service.addScenario(createDto);
+
+            expect(mockScenarioGroupsService.syncGroupOnCreate).toHaveBeenCalledWith('test_group');
+        });
+
         it('should throw BadRequestException when scenario with same name exists', async () => {
             mockScenarioModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockScenario),
@@ -331,6 +388,33 @@ describe('ScenariosService', () => {
             expect(scenarioWithSave.save).toHaveBeenCalled();
         });
 
+        it('should sync group on update when group changes', async () => {
+            const scenarioWithGroup = {
+                ...mockScenario,
+                group: 'old_group',
+                toObject: jest.fn().mockReturnValue({
+                    name: 'Test Scenario',
+                    active: true,
+                    group: 'old_group',
+                    trigger: {
+                        sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 8 * * *' }],
+                        logic: '1',
+                    },
+                    devices: [],
+                }),
+                save: jest.fn().mockResolvedValue({ ...mockScenario, group: 'new_group' }),
+            };
+            mockScenarioModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(scenarioWithGroup),
+            });
+
+            const updateDto: UpdateScenarioDto = { group: 'new_group' };
+
+            await service.updateScenario('scenario-uuid-123', updateDto);
+
+            expect(mockScenarioGroupsService.syncGroupOnUpdate).toHaveBeenCalledWith('old_group', 'new_group');
+        });
+
         it('should reschedule cron scenario when updated', async () => {
             const scenarioWithSave = {
                 ...mockScenario,
@@ -379,6 +463,20 @@ describe('ScenariosService', () => {
             expect(result).toEqual(mockScenario);
             expect(mockSchedulerService.unscheduleJob).toHaveBeenCalledWith('Test Scenario');
             expect(mockScenarioModel.deleteOne).toHaveBeenCalledWith({ _id: mockScenario._id });
+        });
+
+        it('should sync group on delete when scenario has a group', async () => {
+            const scenarioWithGroup = { ...mockScenario, group: 'test_group' };
+            mockScenarioModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(scenarioWithGroup),
+            });
+            mockScenarioModel.deleteOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ deletedCount: 1 }),
+            });
+
+            await service.removeScenario('scenario-uuid-123');
+
+            expect(mockScenarioGroupsService.syncGroupOnDelete).toHaveBeenCalledWith('test_group');
         });
 
         it('should not unschedule inactive scenarios', async () => {
