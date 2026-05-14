@@ -64,6 +64,42 @@ export const DeviceSchema = new Schema(
                 message: `Tuya device local key can be specified only for a device of brand "${DeviceBrand.Tuya}"`,
             },
         },
+        zigbeeFriendlyName: {
+            type: String,
+            index: true,
+            required: function () {
+                return this.brand === DeviceBrand.Zigbee;
+            },
+            validate: {
+                validator: function (): boolean {
+                    return this.brand === DeviceBrand.Zigbee;
+                },
+                message: `Zigbee friendly name can be specified only for a device of brand "${DeviceBrand.Zigbee}"`,
+            },
+        },
+        zigbeeIeeeAddress: {
+            type: String,
+            index: true,
+            required: function () {
+                return this.brand === DeviceBrand.Zigbee;
+            },
+            validate: {
+                validator: function (): boolean {
+                    return this.brand === DeviceBrand.Zigbee;
+                },
+                message: `Zigbee IEEE address can be specified only for a device of brand "${DeviceBrand.Zigbee}"`,
+            },
+        },
+        zigbeeModelId: {
+            type: String,
+            required: false,
+            validate: {
+                validator: function (): boolean {
+                    return this.brand === DeviceBrand.Zigbee;
+                },
+                message: `Zigbee model ID can be specified only for a device of brand "${DeviceBrand.Zigbee}"`,
+            },
+        },
         updateInterval: {
             type: Number,
             required: false,

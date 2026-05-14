@@ -99,6 +99,33 @@ export class CreateDeviceDto {
     })
     tuyaDeviceLocalKey?: string;
 
+    @IsNotEmpty()
+    @IsString()
+    @ValidateIf(d => d.brand === DeviceBrand.Zigbee)
+    @ApiProperty({
+        required: false,
+        description: 'The Z2M friendly name of the Zigbee device (used as MQTT topic suffix)',
+    })
+    zigbeeFriendlyName?: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @ValidateIf(d => d.brand === DeviceBrand.Zigbee)
+    @ApiProperty({
+        required: false,
+        description: 'The IEEE address of the Zigbee device (e.g. 0x00158d0001234567)',
+    })
+    zigbeeIeeeAddress?: string;
+
+    @IsOptional()
+    @IsString()
+    @ValidateIf(d => d.brand === DeviceBrand.Zigbee)
+    @ApiProperty({
+        required: false,
+        description: 'The Z2M-reported model ID of the Zigbee device',
+    })
+    zigbeeModelId?: string;
+
     @IsOptional()
     @IsNotEmptyObject()
     @ValidateNested()

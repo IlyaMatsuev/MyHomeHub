@@ -19,4 +19,5 @@ export enum DeviceBrand {
     Shelly = 'shelly',
     Tuya = 'tuya',
     ESP32 = 'esp32',
+    Zigbee = 'zigbee',
 }

@@ -1,0 +1,22 @@
+homeassistant: false
+permit_join: false
+
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://mqtt-broker:1885
+  user: "!secret mqtt_user"
+  password: "!secret mqtt_password"
+
+serial:
+  adapter: ember
+  port: /dev/ttyACM0
+
+advanced:
+  log_level: info
+  channel: 15
+  network_key: GENERATE
+  pan_id: GENERATE
+  ext_pan_id: GENERATE
+
+frontend:
+  port: 8080

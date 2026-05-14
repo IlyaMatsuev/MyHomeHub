@@ -10,14 +10,19 @@ import {
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { DevicesService } from 'devices/devices.service';
-import { Device, DevicesPage } from 'devices/interfaces';
+import { Device, DeviceBrand, DevicesPage } from 'devices/interfaces';
 import { CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
 import { GetDevicesDto } from 'devices/dto/get-devices.dto';
+import { MqttService } from 'mqtt/mqtt.service';
+import { ZigbeePermitJoinDto, ZigbeeRenameDto } from 'mqtt/dto';
 
 @ApiBearerAuth()
 @Controller('devices')
 export class DevicesController {
-    constructor(private readonly deviceService: DevicesService) {}
+    constructor(
+        private readonly deviceService: DevicesService,
+        private readonly mqttService: MqttService,
+    ) {}
 
     @Get()
     @ApiOperation({ summary: 'Get all added devices' })
@@ -65,6 +70,35 @@ export class DevicesController {
     @ApiBadRequestResponse()
     @ApiUnauthorizedResponse()
     async removeDevice(@Param('externalId') externalId: string): Promise<Device> {
+        const device = await this.deviceService.getDeviceByExternalId(externalId);
+
+        if (device.brand === DeviceBrand.Zigbee && device.zigbeeIeeeAddress) {
+            await this.mqttService.removeZigbeeDevice(device.zigbeeIeeeAddress);
+        }
+
         return this.deviceService.removeDevice(externalId);
+    }
+
+    @Post('/zigbee/permit-join')
+    @ApiOperation({ summary: 'Enable or disable Zigbee permit join mode for device pairing' })
+    @ApiOkResponse()
+    @ApiBadRequestResponse()
+    @ApiUnauthorizedResponse()
+    async zigbeePermitJoin(@Body() permitJoinDto: ZigbeePermitJoinDto): Promise<void> {
+        await this.mqttService.setZigbeePermitJoin(permitJoinDto.enable, permitJoinDto.seconds);
+    }
+
+    @Post('/zigbee/rename')
+    @ApiOperation({ summary: 'Rename a Zigbee device in Z2M by IEEE address' })
+    @ApiOkResponse()
+    @ApiBadRequestResponse()
+    @ApiUnauthorizedResponse()
+    async zigbeeRename(@Body() renameDto: ZigbeeRenameDto): Promise<void> {
+        await this.mqttService.renameZigbeeDevice(renameDto.ieeeAddress, renameDto.friendlyName);
+
+        const device = await this.deviceService.getDevice({ zigbeeIeeeAddress: renameDto.ieeeAddress }, { strict: false });
+        if (device) {
+            await this.deviceService.updateDevice(device.externalId, new UpdateDeviceDto({ zigbeeFriendlyName: renameDto.friendlyName }));
+        }
     }
 }

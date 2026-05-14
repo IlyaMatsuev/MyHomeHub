@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DevicesController } from './devices.controller';
 import { DevicesService } from './devices.service';
+import { MqttService } from 'mqtt/mqtt.service';
 import { Device, DeviceBrand, DeviceType, Room } from './interfaces';
 import { CreateDeviceDto, GetDevicesDto, UpdateDeviceDto } from './dto';
 
@@ -9,9 +10,15 @@ describe('DevicesController', () => {
     let mockDevicesService: {
         getDevices: jest.Mock;
         getDeviceByExternalId: jest.Mock;
+        getDevice: jest.Mock;
         addDevice: jest.Mock;
         updateDevice: jest.Mock;
         removeDevice: jest.Mock;
+    };
+    let mockMqttService: {
+        setZigbeePermitJoin: jest.Mock;
+        renameZigbeeDevice: jest.Mock;
+        removeZigbeeDevice: jest.Mock;
     };
 
     const mockDevice: Partial<Device> = {
@@ -28,9 +35,15 @@ describe('DevicesController', () => {
         mockDevicesService = {
             getDevices: jest.fn(),
             getDeviceByExternalId: jest.fn(),
+            getDevice: jest.fn(),
             addDevice: jest.fn(),
             updateDevice: jest.fn(),
             removeDevice: jest.fn(),
+        };
+        mockMqttService = {
+            setZigbeePermitJoin: jest.fn(),
+            renameZigbeeDevice: jest.fn(),
+            removeZigbeeDevice: jest.fn(),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -39,6 +52,10 @@ describe('DevicesController', () => {
                 {
                     provide: DevicesService,
                     useValue: mockDevicesService,
+                },
+                {
+                    provide: MqttService,
+                    useValue: mockMqttService,
                 },
             ],
         }).compile();
@@ -112,12 +129,68 @@ describe('DevicesController', () => {
 
     describe('removeDevice', () => {
         it('should delete and return device', async () => {
+            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
             mockDevicesService.removeDevice.mockResolvedValue(mockDevice);
 
             const result = await controller.removeDevice('device-uuid-123');
 
             expect(result).toEqual(mockDevice);
             expect(mockDevicesService.removeDevice).toHaveBeenCalledWith('device-uuid-123');
+        });
+
+        it('should remove Zigbee device from Z2M when deleting', async () => {
+            const zigbeeDevice = {
+                ...mockDevice,
+                brand: DeviceBrand.Zigbee,
+                zigbeeIeeeAddress: '0x00158d0001234567',
+            };
+            mockDevicesService.getDeviceByExternalId.mockResolvedValue(zigbeeDevice);
+            mockDevicesService.removeDevice.mockResolvedValue(zigbeeDevice);
+
+            await controller.removeDevice('device-uuid-123');
+
+            expect(mockMqttService.removeZigbeeDevice).toHaveBeenCalledWith('0x00158d0001234567');
+        });
+    });
+
+    describe('zigbeePermitJoin', () => {
+        it('should enable permit join', async () => {
+            await controller.zigbeePermitJoin({ enable: true, seconds: 60 });
+
+            expect(mockMqttService.setZigbeePermitJoin).toHaveBeenCalledWith(true, 60);
+        });
+
+        it('should disable permit join', async () => {
+            await controller.zigbeePermitJoin({ enable: false });
+
+            expect(mockMqttService.setZigbeePermitJoin).toHaveBeenCalledWith(false, undefined);
+        });
+    });
+
+    describe('zigbeeRename', () => {
+        it('should rename Zigbee device and update local device', async () => {
+            const zigbeeDevice = {
+                ...mockDevice,
+                brand: DeviceBrand.Zigbee,
+                zigbeeIeeeAddress: '0x00158d0001234567',
+                zigbeeFriendlyName: 'old_name',
+            };
+            mockDevicesService.getDevice.mockResolvedValue(zigbeeDevice);
+            mockDevicesService.updateDevice.mockResolvedValue({
+                ...zigbeeDevice,
+                zigbeeFriendlyName: 'new_name',
+            });
+
+            await controller.zigbeeRename({
+                ieeeAddress: '0x00158d0001234567',
+                friendlyName: 'new_name',
+            });
+
+            expect(mockMqttService.renameZigbeeDevice).toHaveBeenCalledWith('0x00158d0001234567', 'new_name');
+            expect(mockDevicesService.updateDevice).toHaveBeenCalledWith(
+                'device-uuid-123',
+                expect.objectContaining({ zigbeeFriendlyName: 'new_name' }),
+            );
         });
     });
 });
