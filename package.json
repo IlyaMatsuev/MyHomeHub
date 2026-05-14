@@ -24,6 +24,8 @@
     "mongo:restart": "docker compose up -d mongodb --force-recreate",
     "mqtt:start": "docker compose up -d mqtt-broker",
     "mqtt:restart": "docker compose up -d mqtt-broker --force-recreate",
+    "zigbee2mqtt:start": "docker compose up -d zigbee2mqtt",
+    "zigbee2mqtt:restart": "docker compose up -d zigbee2mqtt --force-recreate",
     "watcher:start": "docker compose up -d smarthome-image-watcher",
     "watcher:restart": "docker compose up -d smarthome-image-watcher --force-recreate",
     "watcher:start:once": "docker compose up smarthome-image-watcher-once && docker compose rm smarthome-image-watcher-once -fsv",
