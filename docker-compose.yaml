@@ -38,7 +38,7 @@ services:
       - smarthome-network
 
   zigbee2mqtt:
-    image: koenkk/zigbee2mqtt:2.4.0
+    image: koenkk/zigbee2mqtt
     container_name: zigbee2mqtt
     restart: unless-stopped
     volumes:
@@ -46,16 +46,15 @@ services:
       - ./data/zigbee2mqtt:/app/data
       - /run/udev:/run/udev:ro
     devices:
-      - ${ZIGBEE_DONGLE_PATH:-/dev/ttyUSB0}:/dev/ttyACM0
+      - ${ZIGBEE_DONGLE_PATH}:/dev/ttyACM0
     environment:
-      - TZ=${TZ:-Europe/Amsterdam}
       - ZIGBEE2MQTT_CONFIG=/app/config/configuration.yaml
+    ports:
+      - "1886:1886"
     depends_on:
       - mqtt-broker
     networks:
       - smarthome-network
-    ports:
-      - "8080:8080"
 
   smarthome-image-watcher:
     image: ghcr.io/nicholas-fedor/watchtower:latest

@@ -10,7 +10,7 @@ export const MEASUREMENTS_UPDATE_TOPIC_NAME = 'home/devices/+/measurements/updat
 
 export const MEASUREMENTS_DEFAULT_UPDATE_INTERVAL = 1000 * 60 * 5;
 
-export const ZIGBEE2MQTT_BASE_TOPIC = 'zigbee2mqtt';
+export const Z2M_MQTT_BASE_TOPIC = 'zigbee2mqtt';
 export const ZIGBEE_DEVICE_STATE_TOPIC = 'zigbee2mqtt/+';
 export const ZIGBEE_DEVICE_COMMAND_TOPIC = 'zigbee2mqtt/+/set';
 export const ZIGBEE_BRIDGE_STATE_TOPIC = 'zigbee2mqtt/bridge/state';

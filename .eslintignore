@@ -16,6 +16,9 @@
 **/build/
 **/dist/
 
+# Random scripts
+scripts/generate_z2m_secrets.js
+
 # System Files
 .DS_Store
 *.db

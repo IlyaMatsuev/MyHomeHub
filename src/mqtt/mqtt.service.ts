@@ -4,7 +4,7 @@ import {
     CONTROLS_UPDATE_TOPIC_NAME,
     DEVICE_PAIR_REPLY_TOPIC_NAME,
     MQTT_CLIENT_PROVIDER_NAME,
-    ZIGBEE2MQTT_BASE_TOPIC,
+    Z2M_MQTT_BASE_TOPIC,
     ZIGBEE_BRIDGE_PERMIT_JOIN_TOPIC,
     ZIGBEE_BRIDGE_DEVICE_RENAME_TOPIC,
     ZIGBEE_BRIDGE_DEVICE_REMOVE_TOPIC,
@@ -29,7 +29,7 @@ export class MqttService {
     }
 
     async publishZigbeeCommand(friendlyName: string, payload: object): Promise<void> {
-        this.client.emit(`${ZIGBEE2MQTT_BASE_TOPIC}/${friendlyName}/set`, payload);
+        this.client.emit(`${Z2M_MQTT_BASE_TOPIC}/${friendlyName}/set`, payload);
     }
 
     async setZigbeePermitJoin(enable: boolean, seconds?: number): Promise<void> {

@@ -204,7 +204,7 @@ async publishZigbeeCommand(friendlyName: string, payload: object): Promise<void>
 Add the topic constants to `src/mqtt/mqtt.constants.ts`:
 
 ```ts
-export const ZIGBEE2MQTT_BASE_TOPIC = 'zigbee2mqtt';
+export const Z2M_MQTT_BASE_TOPIC = 'zigbee2mqtt';
 export const ZIGBEE_DEVICE_STATE_TOPIC = 'zigbee2mqtt/+'; // friendly_name
 export const ZIGBEE_DEVICE_COMMAND_TOPIC = 'zigbee2mqtt/+/set';
 export const ZIGBEE_BRIDGE_DEVICES_TOPIC = 'zigbee2mqtt/bridge/devices';
@@ -264,12 +264,12 @@ Sanity-check this by tracing one scenario: trigger fires → `DevicesControlServ
 Add to `.env`:
 
 ```
-ZIGBEE2MQTT_BASE_TOPIC=zigbee2mqtt
-ZIGBEE2MQTT_MQTT_USERNAME=zigbee2mqtt
-ZIGBEE2MQTT_MQTT_PASSWORD=<generated>
+Z2M_MQTT_BASE_TOPIC=zigbee2mqtt
+Z2M_MQTT_USERNAME=zigbee2mqtt
+Z2M_MQTT_PASSWORD=<generated>
 ```
 
-The hub only reads `ZIGBEE2MQTT_BASE_TOPIC` (so the prefix isn't hard-coded). The username/password are consumed by Z2M's config, not by the hub.
+The hub only reads `Z2M_MQTT_BASE_TOPIC` (so the prefix isn't hard-coded). The username/password are consumed by Z2M's config, not by the hub.
 
 ---
 
