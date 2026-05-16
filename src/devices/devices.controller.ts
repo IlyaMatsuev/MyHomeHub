@@ -72,7 +72,7 @@ export class DevicesController {
     async removeDevice(@Param('externalId') externalId: string): Promise<Device> {
         const device = await this.deviceService.getDeviceByExternalId(externalId);
 
-        if (device.brand === DeviceBrand.Zigbee && device.zigbeeIeeeAddress) {
+        if (device.brand === DeviceBrand.Philips && device.zigbeeIeeeAddress) {
             await this.mqttService.removeZigbeeDevice(device.zigbeeIeeeAddress);
         }
 

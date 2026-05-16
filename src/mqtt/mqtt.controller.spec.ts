@@ -212,35 +212,35 @@ describe('MqttController', () => {
     });
 
     describe('onZigbeeDeviceState', () => {
-        const mockZigbeeDevice: Partial<Device> = {
+        const mockPhilipsDevice: Partial<Device> = {
             _id: 'mongo-id-456',
-            externalId: 'zigbee-device-uuid',
-            name: 'Zigbee Bulb',
+            externalId: 'philips-device-uuid',
+            name: 'Philips Bulb',
             type: DeviceType.LED,
-            brand: DeviceBrand.Zigbee,
+            brand: DeviceBrand.Philips,
             zigbeeFriendlyName: 'living_room_bulb',
             zigbeeIeeeAddress: '0x00158d0001234567',
             controls: { on: false },
         };
 
-        it('should update Zigbee device state', async () => {
+        it('should update Philips device state via Z2M', async () => {
             const mockContext = {
                 getTopic: jest.fn().mockReturnValue('zigbee2mqtt/living_room_bulb'),
             } as unknown as MqttContext;
             const z2mState = { state: 'ON', brightness: 254 };
 
-            mockDevicesService.getDevice.mockResolvedValue(mockZigbeeDevice);
+            mockDevicesService.getDevice.mockResolvedValue(mockPhilipsDevice);
             mockZigbeeStateMapper.mapState.mockReturnValue({
                 controls: { on: true, brightness: 100 },
                 measurements: {},
             });
-            mockDevicesService.updateDevice.mockResolvedValue(mockZigbeeDevice);
+            mockDevicesService.updateDevice.mockResolvedValue(mockPhilipsDevice);
 
             await controller.onZigbeeDeviceState(mockContext, z2mState);
 
             expect(mockDevicesService.getDevice).toHaveBeenCalledWith({ zigbeeFriendlyName: 'living_room_bulb' }, { strict: false });
             expect(mockZigbeeStateMapper.mapState).toHaveBeenCalledWith(z2mState);
-            expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('zigbee-device-uuid', expect.any(UpdateDeviceDto));
+            expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('philips-device-uuid', expect.any(UpdateDeviceDto));
         });
 
         it('should ignore bridge messages', async () => {

@@ -101,7 +101,7 @@ export class CreateDeviceDto {
 
     @IsNotEmpty()
     @IsString()
-    @ValidateIf(d => d.brand === DeviceBrand.Zigbee)
+    @ValidateIf(d => d.brand === DeviceBrand.Philips)
     @ApiProperty({
         required: false,
         description: 'The Z2M friendly name of the Zigbee device (used as MQTT topic suffix)',
@@ -110,7 +110,7 @@ export class CreateDeviceDto {
 
     @IsNotEmpty()
     @IsString()
-    @ValidateIf(d => d.brand === DeviceBrand.Zigbee)
+    @ValidateIf(d => d.brand === DeviceBrand.Philips)
     @ApiProperty({
         required: false,
         description: 'The IEEE address of the Zigbee device (e.g. 0x00158d0001234567)',
@@ -119,7 +119,7 @@ export class CreateDeviceDto {
 
     @IsOptional()
     @IsString()
-    @ValidateIf(d => d.brand === DeviceBrand.Zigbee)
+    @ValidateIf(d => d.brand === DeviceBrand.Philips)
     @ApiProperty({
         required: false,
         description: 'The Z2M-reported model ID of the Zigbee device',

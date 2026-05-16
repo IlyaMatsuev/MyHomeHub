@@ -1,10 +1,10 @@
 import { ConfigService } from '@nestjs/config';
 import { MqttService } from 'mqtt/mqtt.service';
 import { Device, DeviceBrand, DeviceType, Room } from 'devices/interfaces';
-import { ZigbeeControlService } from './zigbee-control.service';
+import { PhilipsControlService } from './philips-control.service';
 
-describe('ZigbeeControlService', () => {
-    let service: ZigbeeControlService;
+describe('PhilipsControlService', () => {
+    let service: PhilipsControlService;
     let mockConfigService: jest.Mocked<ConfigService>;
     let mockMqttService: {
         publishZigbeeCommand: jest.Mock;
@@ -12,9 +12,9 @@ describe('ZigbeeControlService', () => {
 
     const mockDevice: Partial<Device> = {
         externalId: 'device-uuid-123',
-        name: 'Zigbee Bulb',
+        name: 'Philips Bulb',
         type: DeviceType.LED,
-        brand: DeviceBrand.Zigbee,
+        brand: DeviceBrand.Philips,
         zigbeeFriendlyName: 'living_room_bulb',
         zigbeeIeeeAddress: '0x00158d0001234567',
         room: Room.LivingRoom,
@@ -27,7 +27,7 @@ describe('ZigbeeControlService', () => {
             publishZigbeeCommand: jest.fn().mockResolvedValue(undefined),
         };
 
-        service = new ZigbeeControlService(mockDevice as Device, mockConfigService, mockMqttService as unknown as MqttService);
+        service = new PhilipsControlService(mockDevice as Device, mockConfigService, mockMqttService as unknown as MqttService);
     });
 
     afterEach(() => {
@@ -85,7 +85,7 @@ describe('ZigbeeControlService', () => {
                 ...mockDevice,
                 zigbeeFriendlyName: undefined,
             };
-            const serviceWithoutFriendlyName = new ZigbeeControlService(
+            const serviceWithoutFriendlyName = new PhilipsControlService(
                 deviceWithoutFriendlyName as Device,
                 mockConfigService,
                 mockMqttService as unknown as MqttService,

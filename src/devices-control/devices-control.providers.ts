@@ -6,7 +6,7 @@ import {
     ShellyControlServiceFactory,
     TuyaControlServiceFactory,
     Esp32ControlServiceFactory,
-    ZigbeeControlServiceFactory,
+    PhilipsControlServiceFactory,
 } from 'devices-control/providers';
 
 export const providers = [
@@ -19,7 +19,7 @@ export const providers = [
             GoogleSpeakerControlServiceFactory,
             ShellyControlServiceFactory,
             Esp32ControlServiceFactory,
-            ZigbeeControlServiceFactory,
+            PhilipsControlServiceFactory,
         ],
     },
 ];

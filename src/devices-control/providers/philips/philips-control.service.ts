@@ -3,9 +3,9 @@ import { MqttService } from 'mqtt/mqtt.service';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { Device } from 'devices/interfaces';
 import { DevicesControlService } from 'devices-control/devices-control.service';
-import { ZigbeeControlsDto } from './zigbee-controls.dto';
+import { PhilipsControlsDto } from './philips-controls.dto';
 
-export class ZigbeeControlService extends DevicesControlService {
+export class PhilipsControlService extends DevicesControlService {
     constructor(
         protected readonly device: Device,
         protected readonly configService: ConfigService,
@@ -15,14 +15,14 @@ export class ZigbeeControlService extends DevicesControlService {
     }
 
     protected getServiceName(): string {
-        return ZigbeeControlService.name;
+        return PhilipsControlService.name;
     }
 
     protected getControlsDtoType<T extends object>(): ClassConstructor<T> {
-        return ZigbeeControlsDto as ClassConstructor<T>;
+        return PhilipsControlsDto as ClassConstructor<T>;
     }
 
-    protected async setDeviceControls(controls: ZigbeeControlsDto): Promise<void | never> {
+    protected async setDeviceControls(controls: PhilipsControlsDto): Promise<void | never> {
         const friendlyName = this.device.zigbeeFriendlyName;
         if (!friendlyName) {
             throw new Error(`The device with id "${this.device.externalId}" does not have a Zigbee friendly name`);
@@ -32,7 +32,7 @@ export class ZigbeeControlService extends DevicesControlService {
         await this.mqttService.publishZigbeeCommand(friendlyName, payload);
     }
 
-    private mapControlsToZ2MPayload(controls: ZigbeeControlsDto): Record<string, unknown> {
+    private mapControlsToZ2MPayload(controls: PhilipsControlsDto): Record<string, unknown> {
         const payload: Record<string, unknown> = {};
 
         if (controls.on !== undefined) {

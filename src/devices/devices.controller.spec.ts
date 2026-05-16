@@ -138,14 +138,14 @@ describe('DevicesController', () => {
             expect(mockDevicesService.removeDevice).toHaveBeenCalledWith('device-uuid-123');
         });
 
-        it('should remove Zigbee device from Z2M when deleting', async () => {
-            const zigbeeDevice = {
+        it('should remove Philips device from Z2M when deleting', async () => {
+            const philipsDevice = {
                 ...mockDevice,
-                brand: DeviceBrand.Zigbee,
+                brand: DeviceBrand.Philips,
                 zigbeeIeeeAddress: '0x00158d0001234567',
             };
-            mockDevicesService.getDeviceByExternalId.mockResolvedValue(zigbeeDevice);
-            mockDevicesService.removeDevice.mockResolvedValue(zigbeeDevice);
+            mockDevicesService.getDeviceByExternalId.mockResolvedValue(philipsDevice);
+            mockDevicesService.removeDevice.mockResolvedValue(philipsDevice);
 
             await controller.removeDevice('device-uuid-123');
 
@@ -168,16 +168,16 @@ describe('DevicesController', () => {
     });
 
     describe('zigbeeRename', () => {
-        it('should rename Zigbee device and update local device', async () => {
-            const zigbeeDevice = {
+        it('should rename Philips device and update local device', async () => {
+            const philipsDevice = {
                 ...mockDevice,
-                brand: DeviceBrand.Zigbee,
+                brand: DeviceBrand.Philips,
                 zigbeeIeeeAddress: '0x00158d0001234567',
                 zigbeeFriendlyName: 'old_name',
             };
-            mockDevicesService.getDevice.mockResolvedValue(zigbeeDevice);
+            mockDevicesService.getDevice.mockResolvedValue(philipsDevice);
             mockDevicesService.updateDevice.mockResolvedValue({
-                ...zigbeeDevice,
+                ...philipsDevice,
                 zigbeeFriendlyName: 'new_name',
             });
 

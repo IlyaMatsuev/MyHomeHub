@@ -68,26 +68,26 @@ export const DeviceSchema = new Schema(
             type: String,
             index: true,
             required: function () {
-                return this.brand === DeviceBrand.Zigbee;
+                return this.brand === DeviceBrand.Philips;
             },
             validate: {
                 validator: function (): boolean {
-                    return this.brand === DeviceBrand.Zigbee;
+                    return this.brand === DeviceBrand.Philips;
                 },
-                message: `Zigbee friendly name can be specified only for a device of brand "${DeviceBrand.Zigbee}"`,
+                message: `Zigbee friendly name can be specified only for a device of brand "${DeviceBrand.Philips}"`,
             },
         },
         zigbeeIeeeAddress: {
             type: String,
             index: true,
             required: function () {
-                return this.brand === DeviceBrand.Zigbee;
+                return this.brand === DeviceBrand.Philips;
             },
             validate: {
                 validator: function (): boolean {
-                    return this.brand === DeviceBrand.Zigbee;
+                    return this.brand === DeviceBrand.Philips;
                 },
-                message: `Zigbee IEEE address can be specified only for a device of brand "${DeviceBrand.Zigbee}"`,
+                message: `Zigbee IEEE address can be specified only for a device of brand "${DeviceBrand.Philips}"`,
             },
         },
         zigbeeModelId: {
@@ -95,9 +95,9 @@ export const DeviceSchema = new Schema(
             required: false,
             validate: {
                 validator: function (): boolean {
-                    return this.brand === DeviceBrand.Zigbee;
+                    return this.brand === DeviceBrand.Philips;
                 },
-                message: `Zigbee model ID can be specified only for a device of brand "${DeviceBrand.Zigbee}"`,
+                message: `Zigbee model ID can be specified only for a device of brand "${DeviceBrand.Philips}"`,
             },
         },
         updateInterval: {

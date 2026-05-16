@@ -2,8 +2,8 @@ import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { DeviceControlsDto } from 'devices/dto';
 import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
-@ApiSchema({ name: 'ZigbeeControls', description: 'DTO describing the structure of Zigbee device controls' })
-export class ZigbeeControlsDto extends DeviceControlsDto {
+@ApiSchema({ name: 'PhilipsControls', description: 'DTO describing the structure of Philips device controls' })
+export class PhilipsControlsDto extends DeviceControlsDto {
     @IsOptional()
     @IsInt()
     @Min(0)
