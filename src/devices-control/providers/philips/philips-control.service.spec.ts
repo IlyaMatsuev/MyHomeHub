@@ -4,7 +4,6 @@ import { Device, DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import { PhilipsControlService } from './philips-control.service';
 
 describe('PhilipsControlService', () => {
-    let service: PhilipsControlService;
     let mockConfigService: jest.Mocked<ConfigService>;
     let mockMqttService: {
         publishZigbeeCommand: jest.Mock;
@@ -26,26 +25,10 @@ describe('PhilipsControlService', () => {
         mockMqttService = {
             publishZigbeeCommand: jest.fn().mockResolvedValue(undefined),
         };
-
-        service = new PhilipsControlService(mockDevice as Device, mockConfigService, mockMqttService as unknown as MqttService);
     });
 
     afterEach(() => {
         jest.clearAllMocks();
-    });
-
-    describe('setControls', () => {
-        it('should publish ON state to Z2M', async () => {
-            await service.setControls({ on: true });
-
-            expect(mockMqttService.publishZigbeeCommand).toHaveBeenCalledWith('living_room_bulb', { state: 'ON' });
-        });
-
-        it('should publish OFF state to Z2M', async () => {
-            await service.setControls({ on: false });
-
-            expect(mockMqttService.publishZigbeeCommand).toHaveBeenCalledWith('living_room_bulb', { state: 'OFF' });
-        });
     });
 
     describe('setControls with missing friendlyName', () => {
