@@ -133,15 +133,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "exec": [
-                      "if (pm.response.code === 200) {",
-                      "    const allDevices = pm.response.json().devices;",
-                      "    if (allDevices.length) {",
-                      "        const lastQueriedDevice = allDevices.pop();",
-                      "        pm.environment.set('lastQueriedDeviceId', lastQueriedDevice.externalId);",
-                      "    }",
-                      "}"
-                    ],
+                    "exec": [""],
                     "type": "text/javascript",
                     "packages": {},
                     "requests": {}
@@ -207,12 +199,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "exec": [
-                      "if (pm.response.code === 201) {",
-                      "    const lastAddedDevice = pm.response.json();",
-                      "    pm.environment.set('lastAddedDeviceId', lastAddedDevice.externalId);",
-                      "}"
-                    ],
+                    "exec": [""],
                     "type": "text/javascript",
                     "packages": {},
                     "requests": {}
@@ -275,12 +262,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "exec": [
-                      "if (pm.response.code === 201) {",
-                      "    const lastAddedDevice = pm.response.json();",
-                      "    pm.environment.set('lastAddedDeviceId', lastAddedDevice.externalId);",
-                      "}"
-                    ],
+                    "exec": [""],
                     "type": "text/javascript",
                     "packages": {},
                     "requests": {}
