@@ -1,0 +1,28 @@
+# Zigbee2MQTT Configuration
+
+This directory contains the Zigbee2MQTT configuration files.
+
+## Files
+
+- `configuration.yaml` - Main configuration file (committed to git)
+- `secret.yaml` - Secrets file containing MQTT credentials (NOT committed to git)
+
+## Setup
+
+1. Specify all `Z2M_*`, `MQTT_*`, and `ZIGBEE_*` variables in `.env` file in the root as shown in [.env.example](../../.env.example).
+2. Then, make sure [MQTT broker](../mqtt) is started.
+3. Start the Z2M service with: `npm run zigbee:start`
+
+## Hardware
+
+This configuration is designed for the SONOFF Zigbee 3.0 & Thread Dongle Lite (EFR32MG21) or similar.
+
+### Device Path
+
+Set the `ZIGBEE_DONGLE_PATH` environment variable to the device path of your Zigbee dongle. It can be checked with: `ls -l /dev/serial/by-id/`.
+
+Prefer using the stable `/dev/serial/by-id/` path:
+
+```bash
+ZIGBEE_DONGLE_PATH=/dev/serial/by-id/usb-Silicon_Labs_<your_dongle_id>-if00-port0
+```

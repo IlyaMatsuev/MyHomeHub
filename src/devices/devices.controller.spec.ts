@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DevicesController } from './devices.controller';
 import { DevicesService } from './devices.service';
 import { Device, DeviceBrand, DeviceType, Room } from './interfaces';
-import { CreateDeviceDto, GetDevicesDto, UpdateDeviceDto } from './dto';
+import { CreateDeviceDto, GetDevicesDto, GetPairableDevicesDto, ToggleDevicesPairingModeDto, UpdateDeviceDto } from './dto';
 
 describe('DevicesController', () => {
     let controller: DevicesController;
@@ -12,6 +12,8 @@ describe('DevicesController', () => {
         addDevice: jest.Mock;
         updateDevice: jest.Mock;
         removeDevice: jest.Mock;
+        getPairableDevices: jest.Mock;
+        toggleDevicePairingMode: jest.Mock;
     };
 
     const mockDevice: Partial<Device> = {
@@ -31,6 +33,8 @@ describe('DevicesController', () => {
             addDevice: jest.fn(),
             updateDevice: jest.fn(),
             removeDevice: jest.fn(),
+            getPairableDevices: jest.fn(),
+            toggleDevicePairingMode: jest.fn(),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -118,6 +122,48 @@ describe('DevicesController', () => {
 
             expect(result).toEqual(mockDevice);
             expect(mockDevicesService.removeDevice).toHaveBeenCalledWith('device-uuid-123');
+        });
+    });
+
+    describe('getPairableDevices', () => {
+        it('should return paginated pairable devices', async () => {
+            const pairablePage = {
+                devices: [{ zigbeeIeeeAddress: '0x001', zigbeeFriendlyName: 'bulb_a' }],
+                page: 1,
+                pageSize: 10,
+                totalPages: 1,
+            };
+            mockDevicesService.getPairableDevices.mockResolvedValue(pairablePage);
+
+            const options = new GetPairableDevicesDto();
+            const result = await controller.getPairableDevices(options);
+
+            expect(result).toEqual(pairablePage);
+            expect(mockDevicesService.getPairableDevices).toHaveBeenCalledWith(options);
+        });
+    });
+
+    describe('toggleDevicesPairingMode', () => {
+        it('should enable pairing mode with provided seconds', async () => {
+            const status = { enabled: true, timeout: 60 };
+            mockDevicesService.toggleDevicePairingMode.mockResolvedValue(status);
+
+            const dto: ToggleDevicesPairingModeDto = { enable: true, seconds: 60 };
+            const result = await controller.toggleDevicesPairingMode(dto);
+
+            expect(result).toEqual(status);
+            expect(mockDevicesService.toggleDevicePairingMode).toHaveBeenCalledWith(true, 60);
+        });
+
+        it('should disable pairing mode', async () => {
+            const status = { enabled: false, timeout: 0 };
+            mockDevicesService.toggleDevicePairingMode.mockResolvedValue(status);
+
+            const dto: ToggleDevicesPairingModeDto = { enable: false, seconds: 60 };
+            const result = await controller.toggleDevicesPairingMode(dto);
+
+            expect(result).toEqual(status);
+            expect(mockDevicesService.toggleDevicePairingMode).toHaveBeenCalledWith(false, 60);
         });
     });
 });

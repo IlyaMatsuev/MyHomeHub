@@ -87,6 +87,22 @@ export class UpdateDeviceDto {
     tuyaDeviceLocalKey?: string;
 
     @IsOptional()
+    @IsString()
+    @ApiProperty({
+        required: false,
+        description: 'The Z2M friendly name of the Zigbee device (used as MQTT topic suffix)',
+    })
+    zigbeeFriendlyName?: string;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({
+        required: false,
+        description: 'The IEEE address of the Zigbee device (e.g. 0x00158d0001234567)',
+    })
+    zigbeeIeeeAddress?: string;
+
+    @IsOptional()
     @IsNotEmptyObject()
     @ValidateNested()
     @ApiProperty({

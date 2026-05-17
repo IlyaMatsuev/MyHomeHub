@@ -6,28 +6,13 @@ In order to store the mosquitto credentials, the password file has to be created
 
 ## Running
 
-The broker can be started from the `hub` folder using command:
+The broker can be started from the `hub` folder using command: `npm run mqtt:start`
+
+If the container is new, user credentials have to be configured. Create a new user with this script:
 
 ```shell
-npm run mqtt:start
+npm run mqtt:user:new -- myusername mypassword
 ```
-
-If the container is new, user credentials have to be configured. For that you need to interact with the running container...:
-
-```shell
-# `mqtt-broker` is the name of the running container
-docker exec -it mqtt-broker sh
-```
-
-...And create a new user:
-
-```shell
-# `username` is the name of the new user. It will prompt to enter a password as well after that
-# I suggest typing password manually instead of pasting from clipboard. The password is saved differently (for some reason) if you try to paste it
-mosquitto_passwd -c /mosquitto/config/pwfile username
-```
-
-Use `exit` command to log out of the container.
 
 ## Configuration
 

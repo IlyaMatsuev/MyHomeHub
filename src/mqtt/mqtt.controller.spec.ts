@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MqttContext } from '@nestjs/microservices';
 import { MqttController } from './mqtt.controller';
 import { MqttService } from './mqtt.service';
+import { ZigbeeStateMapperService } from './zigbee-state-mapper.service';
 import { DevicesService } from 'devices/devices.service';
 import { PairRequestDto } from './dto';
 import { Device, DeviceBrand, DeviceType, Room } from 'devices/interfaces';
@@ -15,8 +16,12 @@ describe('MqttController', () => {
     };
     let mockDevicesService: {
         getDeviceByIp: jest.Mock;
+        getDevice: jest.Mock;
         addDevice: jest.Mock;
         updateDevice: jest.Mock;
+    };
+    let mockZigbeeStateMapper: {
+        mapState: jest.Mock;
     };
 
     const mockDevice: Partial<Device> = {
@@ -38,8 +43,12 @@ describe('MqttController', () => {
         };
         mockDevicesService = {
             getDeviceByIp: jest.fn(),
+            getDevice: jest.fn(),
             addDevice: jest.fn(),
             updateDevice: jest.fn(),
+        };
+        mockZigbeeStateMapper = {
+            mapState: jest.fn(),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -52,6 +61,10 @@ describe('MqttController', () => {
                 {
                     provide: DevicesService,
                     useValue: mockDevicesService,
+                },
+                {
+                    provide: ZigbeeStateMapperService,
+                    useValue: mockZigbeeStateMapper,
                 },
             ],
         }).compile();
@@ -195,6 +208,71 @@ describe('MqttController', () => {
             mockDevicesService.updateDevice.mockRejectedValue(new Error('Device not found'));
 
             await expect(controller.onHomeMeasurementsUpdate(mockContext, measurements)).resolves.not.toThrow();
+        });
+    });
+
+    describe('onZigbeeDeviceState', () => {
+        const mockPhilipsDevice: Partial<Device> = {
+            _id: 'mongo-id-456',
+            externalId: 'philips-device-uuid',
+            name: 'Philips Bulb',
+            type: DeviceType.LED,
+            brand: DeviceBrand.Philips,
+            zigbeeFriendlyName: 'living_room_bulb',
+            zigbeeIeeeAddress: '0x00158d0001234567',
+            controls: { on: false },
+        };
+
+        it('should update Philips device state via Z2M', async () => {
+            const mockContext = {
+                getTopic: jest.fn().mockReturnValue('zigbee2mqtt/living_room_bulb'),
+            } as unknown as MqttContext;
+            const z2mState = { state: 'ON', brightness: 254 };
+
+            mockDevicesService.getDevice.mockResolvedValue(mockPhilipsDevice);
+            mockZigbeeStateMapper.mapState.mockReturnValue({
+                controls: { on: true, brightness: 100 },
+                measurements: {},
+            });
+            mockDevicesService.updateDevice.mockResolvedValue(mockPhilipsDevice);
+
+            await controller.onZigbeeDeviceState(mockContext, z2mState);
+
+            expect(mockDevicesService.getDevice).toHaveBeenCalledWith({ zigbeeFriendlyName: 'living_room_bulb' }, { strict: false });
+            expect(mockZigbeeStateMapper.mapState).toHaveBeenCalledWith(z2mState);
+            expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('philips-device-uuid', expect.any(UpdateDeviceDto));
+        });
+
+        it('should ignore bridge messages', async () => {
+            const mockContext = {
+                getTopic: jest.fn().mockReturnValue('zigbee2mqtt/bridge'),
+            } as unknown as MqttContext;
+
+            await controller.onZigbeeDeviceState(mockContext, { state: 'online' });
+
+            expect(mockDevicesService.getDevice).not.toHaveBeenCalled();
+        });
+
+        it('should ignore messages for unknown devices', async () => {
+            const mockContext = {
+                getTopic: jest.fn().mockReturnValue('zigbee2mqtt/unknown_device'),
+            } as unknown as MqttContext;
+
+            mockDevicesService.getDevice.mockResolvedValue(null);
+
+            await controller.onZigbeeDeviceState(mockContext, { state: 'ON' });
+
+            expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
+        });
+
+        it('should handle errors gracefully', async () => {
+            const mockContext = {
+                getTopic: jest.fn().mockReturnValue('zigbee2mqtt/living_room_bulb'),
+            } as unknown as MqttContext;
+
+            mockDevicesService.getDevice.mockRejectedValue(new Error('Database error'));
+
+            await expect(controller.onZigbeeDeviceState(mockContext, { state: 'ON' })).resolves.not.toThrow();
         });
     });
 });

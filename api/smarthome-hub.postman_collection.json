@@ -7,307 +7,6 @@
   },
   "item": [
     {
-      "name": "Devices",
-      "item": [
-        {
-          "name": "Get All Devices",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const allDevices = pm.response.json().devices;",
-                  "    if (allDevices.length) {",
-                  "        const lastQueriedDevice = allDevices.pop();",
-                  "        pm.environment.set('lastQueriedDeviceId', lastQueriedDevice.externalId);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [""],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{accessToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [
-              {
-                "key": "x-host",
-                "value": "{{proxyHubHostname}}",
-                "type": "text"
-              },
-              {
-                "key": "X-Proxy-Authorization",
-                "value": "{{proxyAccessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/devices",
-              "host": ["{{baseUrl}}"],
-              "path": ["devices"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Add Device",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const lastAddedDevice = pm.response.json();",
-                  "    pm.environment.set('lastAddedDeviceId', lastAddedDevice.externalId);",
-                  "}"
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [""],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{accessToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "x-host",
-                "value": "{{proxyHubHostname}}",
-                "type": "text"
-              },
-              {
-                "key": "X-Proxy-Authorization",
-                "value": "{{proxyAccessToken}}",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"name\": \"\",\n    \"type\": \"google-speaker\",\n    \"room\": \"living-room\",\n    \"ip\": \"192.168.0.15\",\n    \"controls\": null\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/devices",
-              "host": ["{{baseUrl}}"],
-              "path": ["devices"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Device",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const lastUpdatedDevice = pm.response.json();",
-                  "    pm.environment.set('lastUpdatedDeviceId', lastUpdatedDevice.externalId);",
-                  "}"
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [""],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{accessToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "PUT",
-            "header": [
-              {
-                "key": "x-host",
-                "value": "{{proxyHubHostname}}",
-                "type": "text"
-              },
-              {
-                "key": "X-Proxy-Authorization",
-                "value": "{{proxyAccessToken}}",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"controls\": {\n        \"on\": false\n    }\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/devices/{{lastQueriedDeviceId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["devices", "{{lastQueriedDeviceId}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Remove Device",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [""],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [""],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{accessToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "x-host",
-                "value": "{{proxyHubHostname}}",
-                "type": "text"
-              },
-              {
-                "key": "X-Proxy-Authorization",
-                "value": "{{proxyAccessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/devices/{{lastQueriedDeviceId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["devices", "{{lastQueriedDeviceId}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Device",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [""],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [""],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{accessToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [
-              {
-                "key": "x-host",
-                "value": "{{proxyHubHostname}}",
-                "type": "text"
-              },
-              {
-                "key": "X-Proxy-Authorization",
-                "value": "{{proxyAccessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/devices/{{lastQueriedDeviceId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["devices", "{{lastQueriedDeviceId}}"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
       "name": "Auth",
       "item": [
         {
@@ -322,7 +21,8 @@
                   "}"
                 ],
                 "type": "text/javascript",
-                "packages": {}
+                "packages": {},
+                "requests": {}
               }
             },
             {
@@ -330,7 +30,8 @@
               "script": {
                 "exec": [""],
                 "type": "text/javascript",
-                "packages": {}
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -373,7 +74,8 @@
               "script": {
                 "exec": [""],
                 "type": "text/javascript",
-                "packages": {}
+                "packages": {},
+                "requests": {}
               }
             },
             {
@@ -381,7 +83,8 @@
               "script": {
                 "exec": [""],
                 "type": "text/javascript",
-                "packages": {}
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -401,7 +104,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"ilya@test2.com\",\n    \"password\": \"ilyamatsuev2password\",\n    \"totp\": \"111111\"\n}\n",
+              "raw": "{\n    \"email\": \"{{username}}\",\n    \"password\": \"{{password}}\",\n    \"totp\": \"268472\"\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -412,6 +115,544 @@
               "raw": "{{baseUrl}}/auth/register",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "register"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Devices",
+      "item": [
+        {
+          "name": "Discover",
+          "item": [
+            {
+              "name": "Get Pairable Devices",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-host",
+                    "value": "{{proxyHubHostname}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Proxy-Authorization",
+                    "value": "{{proxyAccessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/devices/discover",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["devices", "discover"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": null,
+                      "disabled": true
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": null,
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Enable Pairing Mode",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-host",
+                    "value": "{{proxyHubHostname}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Proxy-Authorization",
+                    "value": "{{proxyAccessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"enable\": true,\n    \"timeout\": 60\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/devices/discover/pair",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["devices", "discover", "pair"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Disable Pairing Mode",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-host",
+                    "value": "{{proxyHubHostname}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Proxy-Authorization",
+                    "value": "{{proxyAccessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"enable\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/devices/discover/pair",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["devices", "discover", "pair"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Get All Devices",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const allDevices = pm.response.json().devices;",
+                  "    if (allDevices.length) {",
+                  "        const lastQueriedDevice = allDevices.pop();",
+                  "        pm.environment.set('lastQueriedDeviceId', lastQueriedDevice.externalId);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/devices",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": null,
+                  "disabled": true
+                },
+                {
+                  "key": "pageSize",
+                  "value": null,
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Device",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/devices/:deviceId",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", ":deviceId"],
+              "variable": [
+                {
+                  "key": "deviceId",
+                  "value": "{{lastQueriedDeviceId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Device",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const lastAddedDevice = pm.response.json();",
+                  "    pm.environment.set('lastAddedDeviceId', lastAddedDevice.externalId);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Main ceiling light\",\n    \"type\": \"plug\",\n    \"brand\": \"shelly\",\n    \"room\": \"living-room\",\n    \"updateInterval\": 0,\n    \"controls\": {\n        \"on\": true\n    },\n    \"ip\": \"192.168.0.16\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/devices",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Device",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const lastUpdatedDevice = pm.response.json();",
+                  "    pm.environment.set('lastUpdatedDeviceId', lastUpdatedDevice.externalId);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"controls\": {\n        \"on\": true\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/devices/:deviceId",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", ":deviceId"],
+              "variable": [
+                {
+                  "key": "deviceId",
+                  "value": "{{lastQueriedDeviceId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Device",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/devices/:deviceId",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", ":deviceId"],
+              "variable": [
+                {
+                  "key": "deviceId",
+                  "value": "{{lastQueriedDeviceId}}"
+                }
+              ]
             }
           },
           "response": []
@@ -437,7 +678,8 @@
                   "}"
                 ],
                 "type": "text/javascript",
-                "packages": {}
+                "packages": {},
+                "requests": {}
               }
             },
             {
@@ -445,7 +687,8 @@
               "script": {
                 "exec": [""],
                 "type": "text/javascript",
-                "packages": {}
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -474,18 +717,88 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/scenarios?includeInactive=true",
+              "raw": "{{baseUrl}}/scenarios?pageSize=20",
               "host": ["{{baseUrl}}"],
               "path": ["scenarios"],
               "query": [
                 {
                   "key": "page",
-                  "value": "6",
+                  "value": null,
                   "disabled": true
                 },
                 {
+                  "key": "pageSize",
+                  "value": "20"
+                },
+                {
                   "key": "includeInactive",
-                  "value": "true"
+                  "value": "false",
+                  "disabled": true
+                },
+                {
+                  "key": "group",
+                  "value": "test",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Scenario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/scenarios/:scenarioId",
+              "host": ["{{baseUrl}}"],
+              "path": ["scenarios", ":scenarioId"],
+              "variable": [
+                {
+                  "key": "scenarioId",
+                  "value": "{{lastQueriedScenarioId}}"
                 }
               ]
             }
@@ -505,7 +818,8 @@
                   "}"
                 ],
                 "type": "text/javascript",
-                "packages": {}
+                "packages": {},
+                "requests": {}
               }
             },
             {
@@ -513,7 +827,8 @@
               "script": {
                 "exec": [""],
                 "type": "text/javascript",
-                "packages": {}
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -543,7 +858,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Christmas Tree Lights\",\n    \"description\": \"Switches off the christmas tree lights\",\n    \"trigger\": {\n        \"sources\": [{}],\n        \"logic\": \"1 AND 2\"\n    },\n    \"devices\": [\n        {\"externalId\": \"5f9ffdce-bf7b-4fdf-9a3e-7c62edf77ca0\", \"set\": {}}\n    ]\n}",
+              "raw": "{\n    \"name\": \"Test\",\n    \"group\": \"test\",\n    \"description\": \"Automatically switches off the LED strip at the office desk based on motion\",\n    \"trigger\": {\n        \"sources\": [\n            {\n                \"device\": {\n                    \"measurements\": {\n                        \"are\": {\n                            \"motion\": false\n                        }\n                    },\n                    \"externalId\": \"0a68df33-db7a-4db0-8226-5c4d357583cf\"\n                },\n                \"type\": \"device\"\n            }\n        ],\n        \"logic\": \"1\"\n    },\n    \"devices\": [\n        {\n            \"set\": {\n                \"controls\": {\n                    \"on\": false\n                }\n            },\n            \"externalId\": \"63554728-2b2e-461a-930a-bffa5394f5c4\"\n        }\n    ],\n    \"active\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -554,58 +869,6 @@
               "raw": "{{baseUrl}}/scenarios",
               "host": ["{{baseUrl}}"],
               "path": ["scenarios"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Scenario",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [""],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [""],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{accessToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [
-              {
-                "key": "x-host",
-                "value": "{{proxyHubHostname}}",
-                "type": "text"
-              },
-              {
-                "key": "X-Proxy-Authorization",
-                "value": "{{proxyAccessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/scenarios/{{lastQueriedScenarioId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["scenarios", "{{lastQueriedScenarioId}}"]
             }
           },
           "response": []
@@ -623,7 +886,8 @@
                   "}"
                 ],
                 "type": "text/javascript",
-                "packages": {}
+                "packages": {},
+                "requests": {}
               }
             },
             {
@@ -631,7 +895,8 @@
               "script": {
                 "exec": [""],
                 "type": "text/javascript",
-                "packages": {}
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -669,9 +934,15 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/scenarios/{{lastQueriedScenarioId}}",
+              "raw": "{{baseUrl}}/scenarios/:scenarioId",
               "host": ["{{baseUrl}}"],
-              "path": ["scenarios", "{{lastQueriedScenarioId}}"]
+              "path": ["scenarios", ":scenarioId"],
+              "variable": [
+                {
+                  "key": "scenarioId",
+                  "value": "{{lastQueriedScenarioId}}"
+                }
+              ]
             }
           },
           "response": []
@@ -684,7 +955,8 @@
               "script": {
                 "exec": [""],
                 "type": "text/javascript",
-                "packages": {}
+                "packages": {},
+                "requests": {}
               }
             },
             {
@@ -692,7 +964,8 @@
               "script": {
                 "exec": [""],
                 "type": "text/javascript",
-                "packages": {}
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -721,9 +994,157 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/scenarios/{{lastQueriedScenarioId}}",
+              "raw": "{{baseUrl}}/scenarios/:scenarioId",
               "host": ["{{baseUrl}}"],
-              "path": ["scenarios", "{{lastQueriedScenarioId}}"]
+              "path": ["scenarios", ":scenarioId"],
+              "variable": [
+                {
+                  "key": "scenarioId",
+                  "value": "{{lastQueriedScenarioId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Scenario Groups",
+      "item": [
+        {
+          "name": "Get All Scenario Groups",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/scenarios/groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["scenarios", "groups"],
+              "query": [
+                {
+                  "key": "term",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Scenario Group",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/scenarios/groups/:name?deleteScenarios=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["scenarios", "groups", ":name"],
+              "query": [
+                {
+                  "key": "deleteScenarios",
+                  "value": "false"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "name",
+                  "value": "test"
+                }
+              ]
             }
           },
           "response": []

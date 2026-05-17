@@ -6,6 +6,7 @@ import {
     ShellyControlServiceFactory,
     TuyaControlServiceFactory,
     Esp32ControlServiceFactory,
+    PhilipsControlServiceFactory,
 } from 'devices-control/providers';
 import { providers } from 'devices-control/devices-control.providers';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
@@ -17,6 +18,7 @@ import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-contro
         GoogleSpeakerControlServiceFactory,
         ShellyControlServiceFactory,
         Esp32ControlServiceFactory,
+        PhilipsControlServiceFactory,
         ...providers,
     ],
     exports: [DEVICES_CONTROL_FACTORY_PROVIDER],
