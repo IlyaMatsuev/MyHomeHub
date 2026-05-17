@@ -48,7 +48,6 @@ services:
     volumes:
       - ./data/zigbee2mqtt:/app/data
       - ./configs/zigbee2mqtt/configuration.yaml:/app/data/configuration.yaml
-      - ./configs/zigbee2mqtt/secret.yaml:/app/data/secret.yaml
       - /run/udev:/run/udev:ro
     devices:
       - ${ZIGBEE_DONGLE_PATH}:/dev/ttyACM0

@@ -18,7 +18,6 @@ build/
 # Secrets and environment variables
 configs/mqtt/pwfile.*
 configs/mqtt/pwfile
-configs/zigbee2mqtt/secret.yaml
 **/.env.*
 **/.env
 

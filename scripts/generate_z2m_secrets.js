@@ -4,7 +4,7 @@
  * Prepares Zigbee2MQTT to run against the local MQTT broker:
  *   - validates required Z2M_* / MQTT_* variables in .env
  *   - generates network_key, pan_id, and ext_pan_id when their value is `GENERATE`, then writing the generated values back to .env;
- *   - writes configs/zigbee2mqtt/secret.yaml with the resolved broker URL, credentials, and Zigbee network keys;
+ *   - renders configs/zigbee2mqtt/configuration.example.yaml into configs/zigbee2mqtt/configuration.yaml with the resolved values;
  *   - ensures Z2M_MQTT_USERNAME has an entry in configs/mqtt/pwfile by invoking `npm run mqtt:user:new` when it does not.
  *
  * Invoked by the `zigbee:start` / `zigbee:restart` npm scripts.
@@ -18,7 +18,8 @@ const child_process = require('child_process');
 const ROOT = path.resolve(__dirname, '..');
 const ENV_FILE = path.join(ROOT, '.env');
 const ENV_RELATIVE_FILE = path.relative(ROOT, ENV_FILE);
-const Z2M_SECRET_FILE = path.join(ROOT, 'configs/zigbee2mqtt/secret.yaml');
+const Z2M_TEMPLATE_FILE = path.join(ROOT, 'configs/zigbee2mqtt/configuration.example.yaml');
+const Z2M_CONFIG_FILE = path.join(ROOT, 'configs/zigbee2mqtt/configuration.yaml');
 const MQTT_PWFILE = path.join(ROOT, 'configs/mqtt/pwfile');
 const CREATE_MQTT_USER_NPM_SCRIPT = 'mqtt:user:new';
 
@@ -32,6 +33,7 @@ const REQUIRED_VARS = [
     'Z2M_PAN_ID',
     'Z2M_EXT_PAN_ID',
 ];
+const STRING_VARS = new Set(['Z2M_MQTT_BASE_TOPIC', 'Z2M_MQTT_USERNAME', 'Z2M_MQTT_PASSWORD']);
 const RESERVED_PAN_IDS = [0, 0xffff];
 
 main();
@@ -39,6 +41,9 @@ main();
 function main() {
     if (!fs.existsSync(ENV_FILE)) {
         fail(`.env file does not exist at ${ENV_RELATIVE_FILE}`);
+    }
+    if (!fs.existsSync(Z2M_TEMPLATE_FILE)) {
+        fail(`template file does not exist at ${path.relative(ROOT, Z2M_TEMPLATE_FILE)}`);
     }
 
     const env = parseEnv(fs.readFileSync(ENV_FILE, 'utf8'));
@@ -76,20 +81,19 @@ function main() {
         fs.writeFileSync(ENV_FILE, newLines.join('\n'));
     }
 
-    const secretYaml =
-        `mqtt_base_topic: ${yamlString(resolved.Z2M_MQTT_BASE_TOPIC)}\n` +
-        `mqtt_server: ${yamlString(`mqtt://${resolved.MQTT_DOMAIN}:${resolved.MQTT_PORT}`)}\n` +
-        `mqtt_user: ${yamlString(resolved.Z2M_MQTT_USERNAME)}\n` +
-        `mqtt_password: ${yamlString(resolved.Z2M_MQTT_PASSWORD)}\n` +
-        `\n` +
-        `network_key: ${resolved.Z2M_NETWORK_KEY}\n` +
-        `pan_id: ${resolved.Z2M_PAN_ID}\n` +
-        `ext_pan_id: ${resolved.Z2M_EXT_PAN_ID}\n`;
+    const substitutions = {
+        MQTT_SERVER_URL: yamlString(`mqtt://${resolved.MQTT_DOMAIN}:${resolved.MQTT_PORT}`),
+    };
+    for (const name of REQUIRED_VARS) {
+        substitutions[name] = STRING_VARS.has(name) ? yamlString(resolved[name]) : resolved[name];
+    }
 
-    fs.mkdirSync(path.dirname(Z2M_SECRET_FILE), { recursive: true });
-    fs.writeFileSync(Z2M_SECRET_FILE, secretYaml);
+    const rendered = renderTemplate(fs.readFileSync(Z2M_TEMPLATE_FILE, 'utf8'), substitutions);
 
-    console.log(`Updated ${path.relative(ROOT, Z2M_SECRET_FILE)} with the secrets from ${ENV_RELATIVE_FILE}`);
+    fs.mkdirSync(path.dirname(Z2M_CONFIG_FILE), { recursive: true });
+    fs.writeFileSync(Z2M_CONFIG_FILE, rendered);
+
+    console.log(`Rendered ${path.relative(ROOT, Z2M_CONFIG_FILE)} from ${path.relative(ROOT, Z2M_TEMPLATE_FILE)}`);
     if (Object.keys(envUpdates).length) {
         console.log(`Z2M variables (${Object.keys(envUpdates).join(', ')}) have been generated and written back to ${ENV_RELATIVE_FILE}`);
     }
@@ -137,6 +141,15 @@ function randomPanId() {
 
 function yamlString(value) {
     return `'${value.replace(/'/g, "''")}'`;
+}
+
+function renderTemplate(template, substitutions) {
+    return template.replace(/__([A-Z0-9_]+?)__/g, (_, name) => {
+        if (!(name in substitutions)) {
+            fail(`template references unknown placeholder '${name}'`);
+        }
+        return substitutions[name];
+    });
 }
 
 function ensureMqttUser(username, password) {

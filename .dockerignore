@@ -46,7 +46,6 @@ CLAUDE.md
 configs/mqtt/mosquitto.conf
 configs/mqtt/pwfile.*
 configs/mqtt/pwfile
-configs/zigbee2mqtt/secret.yaml
 **/.env.*
 **/.env
 

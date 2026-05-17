@@ -1,0 +1,26 @@
+version: 5
+
+homeassistant:
+  enabled: false
+
+mqtt:
+  base_topic: __Z2M_MQTT_BASE_TOPIC__
+  server: __MQTT_SERVER_URL__
+  user: __Z2M_MQTT_USERNAME__
+  password: __Z2M_MQTT_PASSWORD__
+
+serial:
+  adapter: ember
+  port: /dev/ttyACM0
+
+advanced:
+  # debug | info | warning | error
+  log_level: info
+  channel: 15
+  network_key: __Z2M_NETWORK_KEY__
+  pan_id: __Z2M_PAN_ID__
+  ext_pan_id: __Z2M_EXT_PAN_ID__
+
+frontend:
+  enabled: true
+  port: 8080

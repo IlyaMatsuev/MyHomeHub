@@ -30,7 +30,7 @@
 # Secrets
 configs/mqtt/pwfile.*
 configs/mqtt/pwfile
-configs/zigbee2mqtt/secret.yaml
+configs/zigbee2mqtt/configuration.yaml
 .env.*
 .env
 !.env.example
