@@ -92,18 +92,17 @@ export class MqttController {
 
     // TODO: Review the logic closely
     @MessagePattern(ZIGBEE_DEVICE_STATE_TOPIC)
-    async onZigbeeDeviceState(@Ctx() context: MqttContext, @Payload() state: Record<string, unknown>): Promise<void> {
+    async onZigbeeDeviceStateChange(@Ctx() context: MqttContext, @Payload() state: Record<string, unknown>): Promise<void> {
         this.logger.debug(`Received Zigbee state for "${context.getTopic()}": ${JSON.stringify(state)}`);
 
         const [friendlyName] = this.extractTopicWildcards(ZIGBEE_DEVICE_STATE_TOPIC, context.getTopic());
 
         if (friendlyName === 'bridge' || friendlyName.startsWith('bridge/')) {
+            this.logger.debug(`Bridge state update, skipping`);
             return;
         }
 
         try {
-            this.logger.debug(`Received Zigbee state for "${friendlyName}": ${JSON.stringify(state)}`);
-
             const device = await this.devicesService.getDevice({ zigbeeFriendlyName: friendlyName }, { strict: false });
             if (!device) {
                 this.logger.debug(`No device found with Zigbee friendly name "${friendlyName}", ignoring state update`);
@@ -126,7 +125,7 @@ export class MqttController {
                 this.logger.debug(`Updated Zigbee device "${friendlyName}" state`);
             }
         } catch (error) {
-            this.logger.error(`Error while processing Zigbee state for "${friendlyName}"`);
+            this.logger.error(`Error while processing Zigbee device state for "${friendlyName}"`);
             this.logger.error(error);
         }
     }

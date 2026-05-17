@@ -80,6 +80,7 @@ export class DevicesService {
 
         const newDevice = await this.assignDtoValues(new this.deviceModel(deviceDto), deviceDto);
         if (newDevice.zigbeeFriendlyName) {
+            // TODO: This doesn't do anything for some reason
             await this.mqttService.renameZigbeeDevice(newDevice.zigbeeIeeeAddress, newDevice.zigbeeFriendlyName);
         }
         return newDevice;
@@ -87,7 +88,7 @@ export class DevicesService {
 
     async updateDevice(externalId: string, updateDeviceInfoDto: UpdateDeviceDto): Promise<Device> {
         const device = await this.getDeviceByExternalId(externalId);
-        if (device.zigbeeIeeeAddress !== updateDeviceInfoDto.zigbeeIeeeAddress) {
+        if (updateDeviceInfoDto.zigbeeIeeeAddress && device.zigbeeIeeeAddress !== updateDeviceInfoDto.zigbeeIeeeAddress) {
             throw new BadRequestException(`Zigbee Ieee address cannot be changed, add a new device instead`);
         }
 
@@ -174,6 +175,9 @@ export class DevicesService {
         for (const field of Object.keys(updatedDevice)) {
             if (field === 'controls') {
                 device.controls = await controlService.mergeValidateControls(updatedDevice.controls, device.controls);
+            } else if (field === 'measurements') {
+                // TODO: Do I need to validate them?
+                device.measurements = updatedDevice.measurements;
             } else {
                 device[field] = updatedDevice[field];
             }

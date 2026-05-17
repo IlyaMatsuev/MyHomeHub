@@ -211,7 +211,7 @@ describe('MqttController', () => {
         });
     });
 
-    describe('onZigbeeDeviceState', () => {
+    describe('onZigbeeDeviceStateChange', () => {
         const mockPhilipsDevice: Partial<Device> = {
             _id: 'mongo-id-456',
             externalId: 'philips-device-uuid',
@@ -236,7 +236,7 @@ describe('MqttController', () => {
             });
             mockDevicesService.updateDevice.mockResolvedValue(mockPhilipsDevice);
 
-            await controller.onZigbeeDeviceState(mockContext, z2mState);
+            await controller.onZigbeeDeviceStateChange(mockContext, z2mState);
 
             expect(mockDevicesService.getDevice).toHaveBeenCalledWith({ zigbeeFriendlyName: 'living_room_bulb' }, { strict: false });
             expect(mockZigbeeStateMapper.mapState).toHaveBeenCalledWith(z2mState);
@@ -248,7 +248,7 @@ describe('MqttController', () => {
                 getTopic: jest.fn().mockReturnValue('zigbee2mqtt/bridge'),
             } as unknown as MqttContext;
 
-            await controller.onZigbeeDeviceState(mockContext, { state: 'online' });
+            await controller.onZigbeeDeviceStateChange(mockContext, { state: 'online' });
 
             expect(mockDevicesService.getDevice).not.toHaveBeenCalled();
         });
@@ -260,7 +260,7 @@ describe('MqttController', () => {
 
             mockDevicesService.getDevice.mockResolvedValue(null);
 
-            await controller.onZigbeeDeviceState(mockContext, { state: 'ON' });
+            await controller.onZigbeeDeviceStateChange(mockContext, { state: 'ON' });
 
             expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
         });
@@ -272,7 +272,7 @@ describe('MqttController', () => {
 
             mockDevicesService.getDevice.mockRejectedValue(new Error('Database error'));
 
-            await expect(controller.onZigbeeDeviceState(mockContext, { state: 'ON' })).resolves.not.toThrow();
+            await expect(controller.onZigbeeDeviceStateChange(mockContext, { state: 'ON' })).resolves.not.toThrow();
         });
     });
 });

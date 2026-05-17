@@ -64,6 +64,7 @@ export const DeviceSchema = new Schema(
                 message: `Tuya device local key can be specified only for a device of brand "${DeviceBrand.Tuya}"`,
             },
         },
+        // TODO: This field must be unique, but make sure that null/undefined are not treated as unique
         zigbeeFriendlyName: {
             type: String,
             index: true,
