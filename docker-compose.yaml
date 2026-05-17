@@ -5,7 +5,7 @@ services:
     container_name: smarthome-hub
     restart: always
     ports:
-      - "${PORT}:3000"
+      - "${PORT}:${PORT}"
     volumes:
       - ./.env:/usr/src/app/.env
     labels:
