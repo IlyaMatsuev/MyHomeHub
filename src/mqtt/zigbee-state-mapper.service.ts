@@ -8,25 +8,8 @@ export interface ZigbeeMappedState {
 
 @Injectable()
 export class ZigbeeStateMapperService {
-    private static readonly CONTROL_KEYS = new Set(['state', 'brightness', 'color', 'color_temp', 'color_mode']);
-    private static readonly MEASUREMENT_KEYS = new Set([
-        'battery',
-        'linkquality',
-        'temperature',
-        'humidity',
-        'pressure',
-        'occupancy',
-        'contact',
-        'tamper',
-        'water_leak',
-        'illuminance',
-        'illuminance_lux',
-        'voltage',
-        'current',
-        'power',
-        'energy',
-        'action',
-    ]);
+    private static readonly CONTROL_KEYS = new Set(['state']);
+    private static readonly MEASUREMENT_KEYS = new Set(['battery']);
 
     mapState(z2mPayload: Record<string, unknown>): ZigbeeMappedState {
         const controls: DevicePayload = {};
@@ -48,20 +31,6 @@ export class ZigbeeStateMapperService {
         switch (key) {
             case 'state':
                 return { on: value === 'ON' };
-            case 'brightness':
-                return { brightness: Math.round((Number(value) / 254) * 100) };
-            case 'color':
-                if (typeof value === 'object' && value !== null) {
-                    const colorObj = value as Record<string, unknown>;
-                    if (colorObj.hex) {
-                        return { color: String(colorObj.hex) };
-                    }
-                }
-                return {};
-            case 'color_temp':
-                return { colorTemp: Number(value) };
-            case 'color_mode':
-                return { colorMode: value };
             default:
                 return {};
         }

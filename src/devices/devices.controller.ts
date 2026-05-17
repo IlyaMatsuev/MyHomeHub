@@ -79,6 +79,7 @@ export class DevicesController {
         return this.deviceService.removeDevice(externalId);
     }
 
+    // TODO: Think of where to put this/how to change it
     @Post('/zigbee/permit-join')
     @ApiOperation({ summary: 'Enable or disable Zigbee permit join mode for device pairing' })
     @ApiOkResponse()
@@ -88,6 +89,7 @@ export class DevicesController {
         await this.mqttService.setZigbeePermitJoin(permitJoinDto.enable, permitJoinDto.seconds);
     }
 
+    // TODO: Think of where to put this/how to change it
     @Post('/zigbee/rename')
     @ApiOperation({ summary: 'Rename a Zigbee device in Z2M by IEEE address' })
     @ApiOkResponse()

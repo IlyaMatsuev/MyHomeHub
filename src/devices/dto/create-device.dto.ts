@@ -118,15 +118,6 @@ export class CreateDeviceDto {
     zigbeeIeeeAddress?: string;
 
     @IsOptional()
-    @IsString()
-    @ValidateIf(d => d.brand === DeviceBrand.Philips)
-    @ApiProperty({
-        required: false,
-        description: 'The Z2M-reported model ID of the Zigbee device',
-    })
-    zigbeeModelId?: string;
-
-    @IsOptional()
     @IsNotEmptyObject()
     @ValidateNested()
     @ApiProperty({

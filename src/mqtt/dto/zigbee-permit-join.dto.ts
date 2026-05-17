@@ -12,6 +12,7 @@ export class ZigbeePermitJoinDto {
 
     @IsOptional()
     @IsInt()
+    // TODO: Use constants
     @Min(0)
     @Max(254)
     @ApiProperty({

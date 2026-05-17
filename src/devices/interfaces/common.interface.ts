@@ -18,6 +18,6 @@ export enum DeviceBrand {
     Google = 'google',
     Shelly = 'shelly',
     Tuya = 'tuya',
-    ESP32 = 'esp32',
     Philips = 'philips',
+    ESP32 = 'esp32',
 }

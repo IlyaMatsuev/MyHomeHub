@@ -46,37 +46,6 @@ describe('PhilipsControlService', () => {
 
             expect(mockMqttService.publishZigbeeCommand).toHaveBeenCalledWith('living_room_bulb', { state: 'OFF' });
         });
-
-        it('should scale brightness from 0-100 to 0-254', async () => {
-            await service.setControls({ brightness: 50 });
-
-            expect(mockMqttService.publishZigbeeCommand).toHaveBeenCalledWith('living_room_bulb', { brightness: 127 });
-        });
-
-        it('should map color hex to Z2M format', async () => {
-            await service.setControls({ color: '#FF0000' });
-
-            expect(mockMqttService.publishZigbeeCommand).toHaveBeenCalledWith('living_room_bulb', {
-                color: { hex: '#FF0000' },
-            });
-        });
-
-        it('should pass color temperature as-is', async () => {
-            await service.setControls({ colorTemp: 250 });
-
-            // eslint-disable-next-line camelcase
-            expect(mockMqttService.publishZigbeeCommand).toHaveBeenCalledWith('living_room_bulb', { color_temp: 250 });
-        });
-
-        it('should handle multiple controls at once', async () => {
-            await service.setControls({ on: true, brightness: 100, color: '#00FF00' });
-
-            expect(mockMqttService.publishZigbeeCommand).toHaveBeenCalledWith('living_room_bulb', {
-                state: 'ON',
-                brightness: 254,
-                color: { hex: '#00FF00' },
-            });
-        });
     });
 
     describe('setControls with missing friendlyName', () => {

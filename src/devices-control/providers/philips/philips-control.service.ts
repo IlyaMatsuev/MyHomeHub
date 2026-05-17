@@ -1,9 +1,9 @@
 import { ConfigService } from '@nestjs/config';
 import { MqttService } from 'mqtt/mqtt.service';
-import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { Device } from 'devices/interfaces';
 import { DevicesControlService } from 'devices-control/devices-control.service';
 import { PhilipsControlsDto } from './philips-controls.dto';
+import type { ClassConstructor } from 'class-transformer';
 
 export class PhilipsControlService extends DevicesControlService {
     constructor(
@@ -37,19 +37,6 @@ export class PhilipsControlService extends DevicesControlService {
 
         if (controls.on !== undefined) {
             payload.state = controls.on ? 'ON' : 'OFF';
-        }
-
-        if (controls.brightness !== undefined) {
-            payload.brightness = Math.round((controls.brightness / 100) * 254);
-        }
-
-        if (controls.color !== undefined) {
-            payload.color = { hex: controls.color };
-        }
-
-        if (controls.colorTemp !== undefined) {
-            // eslint-disable-next-line camelcase
-            payload.color_temp = controls.colorTemp;
         }
 
         return payload;

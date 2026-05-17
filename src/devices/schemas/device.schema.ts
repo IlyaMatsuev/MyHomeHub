@@ -90,16 +90,6 @@ export const DeviceSchema = new Schema(
                 message: `Zigbee IEEE address can be specified only for a device of brand "${DeviceBrand.Philips}"`,
             },
         },
-        zigbeeModelId: {
-            type: String,
-            required: false,
-            validate: {
-                validator: function (): boolean {
-                    return this.brand === DeviceBrand.Philips;
-                },
-                message: `Zigbee model ID can be specified only for a device of brand "${DeviceBrand.Philips}"`,
-            },
-        },
         updateInterval: {
             type: Number,
             required: false,

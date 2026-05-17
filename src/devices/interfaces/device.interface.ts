@@ -12,7 +12,6 @@ export interface Device extends Document {
     tuyaDeviceLocalKey: string;
     zigbeeFriendlyName: string;
     zigbeeIeeeAddress: string;
-    zigbeeModelId: string;
     updateInterval: number;
     controls: DevicePayload;
     controlsUpdatedAt: Date;

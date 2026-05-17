@@ -103,14 +103,6 @@ export class UpdateDeviceDto {
     zigbeeIeeeAddress?: string;
 
     @IsOptional()
-    @IsString()
-    @ApiProperty({
-        required: false,
-        description: 'The Z2M-reported model ID of the Zigbee device',
-    })
-    zigbeeModelId?: string;
-
-    @IsOptional()
     @IsNotEmptyObject()
     @ValidateNested()
     @ApiProperty({

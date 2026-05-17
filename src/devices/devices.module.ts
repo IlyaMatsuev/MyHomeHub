@@ -7,6 +7,7 @@ import { DevicesService } from 'devices/devices.service';
 import { devicesProviders } from 'devices/devices.providers';
 
 @Module({
+    // TODO: Remove MQTT module from here
     imports: [DatabaseModule, DevicesControlModule, forwardRef(() => MqttModule)],
     controllers: [DevicesController],
     providers: [DevicesService, ...devicesProviders],
