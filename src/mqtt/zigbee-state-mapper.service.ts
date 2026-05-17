@@ -8,8 +8,8 @@ export interface ZigbeeMappedState {
 
 @Injectable()
 export class ZigbeeStateMapperService {
-    private static readonly CONTROL_KEYS = new Set(['state']);
-    private static readonly MEASUREMENT_KEYS = new Set(['battery']);
+    private static readonly CONTROL_KEYS = new Set(['action']);
+    private static readonly MEASUREMENT_KEYS = new Set(['battery', 'linkquality']);
 
     mapState(z2mPayload: Record<string, unknown>): ZigbeeMappedState {
         const controls: DevicePayload = {};
@@ -28,11 +28,14 @@ export class ZigbeeStateMapperService {
     }
 
     private mapControl(key: string, value: unknown): DevicePayload {
-        switch (key) {
-            case 'state':
-                return { on: value === 'ON' };
-            default:
-                return {};
+        if (key === 'action') {
+            // TODO: Philips dimmer remote also has "up_press" and "down_press", as well as "*_release" actions
+            if (value === 'on_press') {
+                return { on: true };
+            } else if (value === 'off_press') {
+                return { on: false };
+            }
         }
+        return {};
     }
 }

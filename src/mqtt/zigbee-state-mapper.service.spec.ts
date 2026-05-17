@@ -9,16 +9,22 @@ describe('ZigbeeStateMapperService', () => {
 
     describe('mapState', () => {
         describe('controls mapping', () => {
-            it('should map ON state to on: true', () => {
-                const result = service.mapState({ state: 'ON' });
+            it('should map on_press action to on: true', () => {
+                const result = service.mapState({ action: 'on_press' });
 
                 expect(result.controls.on).toBe(true);
             });
 
-            it('should map OFF state to on: false', () => {
-                const result = service.mapState({ state: 'OFF' });
+            it('should map off_press action to on: false', () => {
+                const result = service.mapState({ action: 'off_press' });
 
                 expect(result.controls.on).toBe(false);
+            });
+
+            it('should ignore unmapped action values', () => {
+                const result = service.mapState({ action: 'up_press' });
+
+                expect(result.controls).toEqual({});
             });
         });
 
@@ -28,12 +34,18 @@ describe('ZigbeeStateMapperService', () => {
 
                 expect(result.measurements.battery).toBe(85);
             });
+
+            it('should map link quality', () => {
+                const result = service.mapState({ linkquality: 100 });
+
+                expect(result.measurements.linkquality).toBe(100);
+            });
         });
 
         describe('mixed payload', () => {
             it('should separate controls and measurements', () => {
                 const z2mPayload = {
-                    state: 'ON',
+                    action: 'on_press',
                     battery: 90,
                 };
 
@@ -45,9 +57,8 @@ describe('ZigbeeStateMapperService', () => {
 
             it('should ignore keys outside the supported sets', () => {
                 const z2mPayload = {
-                    state: 'ON',
+                    action: 'on_press',
                     brightness: 200,
-                    linkquality: 100,
                     temperature: 23.5,
                 };
 
