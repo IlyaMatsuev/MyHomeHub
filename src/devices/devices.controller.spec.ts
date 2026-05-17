@@ -1,24 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DevicesController } from './devices.controller';
 import { DevicesService } from './devices.service';
-import { MqttService } from 'mqtt/mqtt.service';
 import { Device, DeviceBrand, DeviceType, Room } from './interfaces';
-import { CreateDeviceDto, GetDevicesDto, UpdateDeviceDto } from './dto';
+import { CreateDeviceDto, GetDevicesDto, GetPairableDevicesDto, ToggleDevicesPairingModeDto, UpdateDeviceDto } from './dto';
 
 describe('DevicesController', () => {
     let controller: DevicesController;
     let mockDevicesService: {
         getDevices: jest.Mock;
         getDeviceByExternalId: jest.Mock;
-        getDevice: jest.Mock;
         addDevice: jest.Mock;
         updateDevice: jest.Mock;
         removeDevice: jest.Mock;
-    };
-    let mockMqttService: {
-        setZigbeePermitJoin: jest.Mock;
-        renameZigbeeDevice: jest.Mock;
-        removeZigbeeDevice: jest.Mock;
+        getPairableDevices: jest.Mock;
+        toggleDevicePairingMode: jest.Mock;
     };
 
     const mockDevice: Partial<Device> = {
@@ -35,15 +30,11 @@ describe('DevicesController', () => {
         mockDevicesService = {
             getDevices: jest.fn(),
             getDeviceByExternalId: jest.fn(),
-            getDevice: jest.fn(),
             addDevice: jest.fn(),
             updateDevice: jest.fn(),
             removeDevice: jest.fn(),
-        };
-        mockMqttService = {
-            setZigbeePermitJoin: jest.fn(),
-            renameZigbeeDevice: jest.fn(),
-            removeZigbeeDevice: jest.fn(),
+            getPairableDevices: jest.fn(),
+            toggleDevicePairingMode: jest.fn(),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -52,10 +43,6 @@ describe('DevicesController', () => {
                 {
                     provide: DevicesService,
                     useValue: mockDevicesService,
-                },
-                {
-                    provide: MqttService,
-                    useValue: mockMqttService,
                 },
             ],
         }).compile();
@@ -129,7 +116,6 @@ describe('DevicesController', () => {
 
     describe('removeDevice', () => {
         it('should delete and return device', async () => {
-            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
             mockDevicesService.removeDevice.mockResolvedValue(mockDevice);
 
             const result = await controller.removeDevice('device-uuid-123');
@@ -137,60 +123,47 @@ describe('DevicesController', () => {
             expect(result).toEqual(mockDevice);
             expect(mockDevicesService.removeDevice).toHaveBeenCalledWith('device-uuid-123');
         });
+    });
 
-        it('should remove Philips device from Z2M when deleting', async () => {
-            const philipsDevice = {
-                ...mockDevice,
-                brand: DeviceBrand.Philips,
-                zigbeeIeeeAddress: '0x00158d0001234567',
+    describe('getPairableDevices', () => {
+        it('should return paginated pairable devices', async () => {
+            const pairablePage = {
+                devices: [{ zigbeeIeeeAddress: '0x001', zigbeeFriendlyName: 'bulb_a' }],
+                page: 1,
+                pageSize: 10,
+                totalPages: 1,
             };
-            mockDevicesService.getDeviceByExternalId.mockResolvedValue(philipsDevice);
-            mockDevicesService.removeDevice.mockResolvedValue(philipsDevice);
+            mockDevicesService.getPairableDevices.mockResolvedValue(pairablePage);
 
-            await controller.removeDevice('device-uuid-123');
+            const options = new GetPairableDevicesDto();
+            const result = await controller.getPairableDevices(options);
 
-            expect(mockMqttService.removeZigbeeDevice).toHaveBeenCalledWith('0x00158d0001234567');
+            expect(result).toEqual(pairablePage);
+            expect(mockDevicesService.getPairableDevices).toHaveBeenCalledWith(options);
         });
     });
 
-    describe('zigbeePermitJoin', () => {
-        it('should enable permit join', async () => {
-            await controller.zigbeePermitJoin({ enable: true, seconds: 60 });
+    describe('toggleDevicesPairingMode', () => {
+        it('should enable pairing mode with provided seconds', async () => {
+            const status = { enabled: true, timeout: 60 };
+            mockDevicesService.toggleDevicePairingMode.mockResolvedValue(status);
 
-            expect(mockMqttService.setZigbeePermitJoin).toHaveBeenCalledWith(true, 60);
+            const dto: ToggleDevicesPairingModeDto = { enable: true, seconds: 60 };
+            const result = await controller.toggleDevicesPairingMode(dto);
+
+            expect(result).toEqual(status);
+            expect(mockDevicesService.toggleDevicePairingMode).toHaveBeenCalledWith(true, 60);
         });
 
-        it('should disable permit join', async () => {
-            await controller.zigbeePermitJoin({ enable: false });
+        it('should disable pairing mode', async () => {
+            const status = { enabled: false, timeout: 0 };
+            mockDevicesService.toggleDevicePairingMode.mockResolvedValue(status);
 
-            expect(mockMqttService.setZigbeePermitJoin).toHaveBeenCalledWith(false, undefined);
-        });
-    });
+            const dto: ToggleDevicesPairingModeDto = { enable: false, seconds: 60 };
+            const result = await controller.toggleDevicesPairingMode(dto);
 
-    describe('zigbeeRename', () => {
-        it('should rename Philips device and update local device', async () => {
-            const philipsDevice = {
-                ...mockDevice,
-                brand: DeviceBrand.Philips,
-                zigbeeIeeeAddress: '0x00158d0001234567',
-                zigbeeFriendlyName: 'old_name',
-            };
-            mockDevicesService.getDevice.mockResolvedValue(philipsDevice);
-            mockDevicesService.updateDevice.mockResolvedValue({
-                ...philipsDevice,
-                zigbeeFriendlyName: 'new_name',
-            });
-
-            await controller.zigbeeRename({
-                ieeeAddress: '0x00158d0001234567',
-                friendlyName: 'new_name',
-            });
-
-            expect(mockMqttService.renameZigbeeDevice).toHaveBeenCalledWith('0x00158d0001234567', 'new_name');
-            expect(mockDevicesService.updateDevice).toHaveBeenCalledWith(
-                'device-uuid-123',
-                expect.objectContaining({ zigbeeFriendlyName: 'new_name' }),
-            );
+            expect(result).toEqual(status);
+            expect(mockDevicesService.toggleDevicePairingMode).toHaveBeenCalledWith(false, 60);
         });
     });
 });
