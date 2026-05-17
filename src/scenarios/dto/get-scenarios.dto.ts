@@ -1,6 +1,7 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { PaginationDto } from 'common/dto';
 import { IsBoolean, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import {
     SCENARIO_GROUP_NAME_MAX_LENGTH,
     SCENARIO_GROUP_NAME_PATTERN,
@@ -10,6 +11,9 @@ import {
 @ApiSchema({ name: 'GetScenariosParameters', description: 'Parameters used to query scenarios' })
 export class GetScenariosDto extends PaginationDto {
     @IsBoolean()
+    // "false" is implicitly converted to boolean before @Transform, so it's always true. Hence, the explicit String type
+    @Type(() => String)
+    @Transform(({ value }) => value === 'true' || value === '1' || value === true)
     @ApiProperty({
         required: false,
         default: false,
