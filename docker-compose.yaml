@@ -4,6 +4,8 @@ services:
     image: ilyamatsuev/smarthome-hub-server
     container_name: smarthome-hub
     restart: always
+    ports:
+      - "${PORT}:3000"
     volumes:
       - ./.env:/usr/src/app/.env
     labels:
@@ -11,7 +13,8 @@ services:
     depends_on:
       - mongodb
       - mqtt-broker
-    network_mode: host
+    networks:
+      - smarthome-network
 
   mongodb:
     image: mongo:7.0.16-jammy
