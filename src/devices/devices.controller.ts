@@ -10,19 +10,13 @@ import {
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { DevicesService } from 'devices/devices.service';
-import { Device, DeviceBrand, DevicesPage } from 'devices/interfaces';
-import { CreateDeviceDto, UpdateDeviceDto } from 'devices/dto';
-import { GetDevicesDto } from 'devices/dto/get-devices.dto';
-import { MqttService } from 'mqtt/mqtt.service';
-import { ZigbeePermitJoinDto, ZigbeeRenameDto } from 'mqtt/dto';
+import { Device, DevicesPage, PairableDevicesPage, PairingModeStatus } from 'devices/interfaces';
+import { CreateDeviceDto, GetPairableDevicesDto, UpdateDeviceDto, GetDevicesDto, ToggleDevicesPairingModeDto } from 'devices/dto';
 
 @ApiBearerAuth()
 @Controller('devices')
 export class DevicesController {
-    constructor(
-        private readonly deviceService: DevicesService,
-        private readonly mqttService: MqttService,
-    ) {}
+    constructor(private readonly deviceService: DevicesService) {}
 
     @Get()
     @ApiOperation({ summary: 'Get all added devices' })
@@ -70,37 +64,24 @@ export class DevicesController {
     @ApiBadRequestResponse()
     @ApiUnauthorizedResponse()
     async removeDevice(@Param('externalId') externalId: string): Promise<Device> {
-        const device = await this.deviceService.getDeviceByExternalId(externalId);
-
-        if (device.brand === DeviceBrand.Philips && device.zigbeeIeeeAddress) {
-            await this.mqttService.removeZigbeeDevice(device.zigbeeIeeeAddress);
-        }
-
         return this.deviceService.removeDevice(externalId);
     }
 
-    // TODO: Think of where to put this/how to change it
-    @Post('/zigbee/permit-join')
-    @ApiOperation({ summary: 'Enable or disable Zigbee permit join mode for device pairing' })
+    @Get('/discover')
+    @ApiOperation({ summary: 'Return the list of discoverable devices that can be paired' })
     @ApiOkResponse()
     @ApiBadRequestResponse()
     @ApiUnauthorizedResponse()
-    async zigbeePermitJoin(@Body() permitJoinDto: ZigbeePermitJoinDto): Promise<void> {
-        await this.mqttService.setZigbeePermitJoin(permitJoinDto.enable, permitJoinDto.seconds);
+    getPairableDevices(@Query() options: GetPairableDevicesDto): Promise<PairableDevicesPage> {
+        return this.deviceService.getPairableDevices(options);
     }
 
-    // TODO: Think of where to put this/how to change it
-    @Post('/zigbee/rename')
-    @ApiOperation({ summary: 'Rename a Zigbee device in Z2M by IEEE address' })
+    @Post('/discover/pair')
+    @ApiOperation({ summary: 'Enable/disable devices pairing mode' })
     @ApiOkResponse()
     @ApiBadRequestResponse()
     @ApiUnauthorizedResponse()
-    async zigbeeRename(@Body() renameDto: ZigbeeRenameDto): Promise<void> {
-        await this.mqttService.renameZigbeeDevice(renameDto.ieeeAddress, renameDto.friendlyName);
-
-        const device = await this.deviceService.getDevice({ zigbeeIeeeAddress: renameDto.ieeeAddress }, { strict: false });
-        if (device) {
-            await this.deviceService.updateDevice(device.externalId, new UpdateDeviceDto({ zigbeeFriendlyName: renameDto.friendlyName }));
-        }
+    toggleDevicesPairingMode(@Body() pairingModeDto: ToggleDevicesPairingModeDto): Promise<PairingModeStatus> {
+        return this.deviceService.toggleDevicePairingMode(pairingModeDto.enable, pairingModeDto.seconds);
     }
 }

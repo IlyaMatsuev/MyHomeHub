@@ -7,6 +7,7 @@ import {
     MEASUREMENTS_UPDATE_TOPIC_NAME,
     MQTT_TOPIC_PARTS_SEPARATOR,
     MQTT_TOPIC_PARTS_WILDCARD,
+    ZIGBEE_BRIDGE_DEVICES_TOPIC,
     ZIGBEE_DEVICE_STATE_TOPIC,
 } from 'mqtt/mqtt.constants';
 import { DevicesService } from 'devices/devices.service';
@@ -14,6 +15,7 @@ import { PairRequestDto } from 'mqtt/dto';
 import { DeviceControlsDto, DevicePayloadDto, UpdateDeviceDto } from 'devices/dto';
 import { plainToInstance } from 'class-transformer';
 import { ZigbeeStateMapperService } from 'mqtt/zigbee-state-mapper.service';
+import { ZigbeeDevice } from 'mqtt/interfaces';
 
 @Controller()
 export class MqttController {
@@ -82,6 +84,13 @@ export class MqttController {
         }
     }
 
+    @MessagePattern(ZIGBEE_BRIDGE_DEVICES_TOPIC)
+    async onZigbeeDevicesChange(@Ctx() context: MqttContext, devices: Array<ZigbeeDevice>): Promise<void> {
+        this.logger.debug(`Received a list of devices on "${context.getTopic()}": ${JSON.stringify(devices)}`);
+        await this.devicesService.savePairableDevices(devices);
+    }
+
+    // TODO: Review the logic closely
     @MessagePattern(ZIGBEE_DEVICE_STATE_TOPIC)
     async onZigbeeDeviceState(@Ctx() context: MqttContext, @Payload() state: Record<string, unknown>): Promise<void> {
         this.logger.debug(`Received Zigbee state for "${context.getTopic()}": ${JSON.stringify(state)}`);

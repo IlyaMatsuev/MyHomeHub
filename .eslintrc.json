@@ -19,7 +19,7 @@
     "camelcase": "error",
     "curly": "error",
     "max-depth": ["error", 5],
-    "max-params": ["error", 3],
+    "max-params": ["error", 5],
     "no-return-assign": "off",
     "no-await-in-loop": "warn",
     "no-prototype-builtins": "warn",

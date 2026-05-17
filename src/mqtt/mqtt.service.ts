@@ -12,6 +12,7 @@ import {
 import { Device } from 'devices/interfaces';
 import { PairAcceptDto } from 'mqtt/dto';
 
+// TODO: Need to be able to use mqtt client outside of this module, should not be module-scoped
 @Injectable()
 export class MqttService {
     constructor(@Inject(MQTT_CLIENT_PROVIDER_NAME) private readonly client: ClientProxy) {}
