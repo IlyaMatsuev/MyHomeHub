@@ -1,3 +1,5 @@
+// TODO: Move them to mongodb documents
+
 export enum Room {
     Bathroom = 'bathroom',
     Bedroom = 'bedroom',
@@ -12,6 +14,7 @@ export enum DeviceType {
     LED = 'led',
     Fans = 'fans',
     MotionSensor = 'motion-sensor',
+    Remote = 'remote',
 }
 
 export enum DeviceBrand {
