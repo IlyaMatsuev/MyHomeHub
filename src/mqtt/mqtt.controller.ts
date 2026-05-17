@@ -85,8 +85,7 @@ export class MqttController {
     }
 
     @MessagePattern(ZIGBEE_BRIDGE_DEVICES_TOPIC)
-    async onZigbeeDevicesChange(@Ctx() context: MqttContext, devices: Array<ZigbeeDevice>): Promise<void> {
-        // TODO: List of devices is undefined
+    async onZigbeeDevicesChange(@Ctx() context: MqttContext, @Payload() devices: Array<ZigbeeDevice>): Promise<void> {
         this.logger.debug(`Received a list of devices on "${context.getTopic()}": ${JSON.stringify(devices)}`);
         await this.devicesService.savePairableDevices(devices ?? []);
     }
