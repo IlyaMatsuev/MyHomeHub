@@ -18,6 +18,24 @@ import { CreateDeviceDto, GetPairableDevicesDto, UpdateDeviceDto, GetDevicesDto,
 export class DevicesController {
     constructor(private readonly deviceService: DevicesService) {}
 
+    @Get('/discover')
+    @ApiOperation({ summary: 'Return the list of discoverable devices that can be paired' })
+    @ApiOkResponse()
+    @ApiBadRequestResponse()
+    @ApiUnauthorizedResponse()
+    getPairableDevices(@Query() options: GetPairableDevicesDto): Promise<PairableDevicesPage> {
+        return this.deviceService.getPairableDevices(options);
+    }
+
+    @Post('/discover/pair')
+    @ApiOperation({ summary: 'Enable/disable devices pairing mode' })
+    @ApiOkResponse()
+    @ApiBadRequestResponse()
+    @ApiUnauthorizedResponse()
+    toggleDevicesPairingMode(@Body() pairingModeDto: ToggleDevicesPairingModeDto): Promise<PairingModeStatus> {
+        return this.deviceService.toggleDevicePairingMode(pairingModeDto.enable, pairingModeDto.seconds);
+    }
+
     @Get()
     @ApiOperation({ summary: 'Get all added devices' })
     @ApiOkResponse()
@@ -65,23 +83,5 @@ export class DevicesController {
     @ApiUnauthorizedResponse()
     async removeDevice(@Param('externalId') externalId: string): Promise<Device> {
         return this.deviceService.removeDevice(externalId);
-    }
-
-    @Get('/discover')
-    @ApiOperation({ summary: 'Return the list of discoverable devices that can be paired' })
-    @ApiOkResponse()
-    @ApiBadRequestResponse()
-    @ApiUnauthorizedResponse()
-    getPairableDevices(@Query() options: GetPairableDevicesDto): Promise<PairableDevicesPage> {
-        return this.deviceService.getPairableDevices(options);
-    }
-
-    @Post('/discover/pair')
-    @ApiOperation({ summary: 'Enable/disable devices pairing mode' })
-    @ApiOkResponse()
-    @ApiBadRequestResponse()
-    @ApiUnauthorizedResponse()
-    toggleDevicesPairingMode(@Body() pairingModeDto: ToggleDevicesPairingModeDto): Promise<PairingModeStatus> {
-        return this.deviceService.toggleDevicePairingMode(pairingModeDto.enable, pairingModeDto.seconds);
     }
 }
