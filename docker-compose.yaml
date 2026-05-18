@@ -22,6 +22,10 @@ services:
     restart: unless-stopped
     ports:
       - "${MONGO_PORT}:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
       - ./data/${NODE_ENV:-local}/:/data/db
     networks:

@@ -8,10 +8,12 @@ import {
     Min,
     IsIP,
     IsNotEmptyObject,
+    Matches,
     ValidateIf,
     ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
+import { ZIGBEE_IEEE_ADDRESS_REGEX, ZIGBEE_IEEE_ADDRESS_REGEX_ERROR_MESSAGE } from 'common/common.constants';
 import { DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import {
     DEVICE_ALLOWED_IP_VERSION,
@@ -110,6 +112,7 @@ export class CreateDeviceDto {
 
     @IsNotEmpty()
     @IsString()
+    @Matches(ZIGBEE_IEEE_ADDRESS_REGEX, { message: ZIGBEE_IEEE_ADDRESS_REGEX_ERROR_MESSAGE })
     @ValidateIf(d => d.brand === DeviceBrand.Philips)
     @ApiProperty({
         required: false,

@@ -1,5 +1,6 @@
 import { Schema } from 'mongoose';
 import { v4 as uuid } from 'uuid';
+import { ZIGBEE_IEEE_ADDRESS_REGEX } from 'common/common.constants';
 import { DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import { DEVICE_DEFAULT_UPDATE_INTERVAL, DEVICE_NAME_MAX_LENGTH, DEVICE_NAME_MIN_LENGTH } from 'devices/devices.constants';
 
@@ -64,32 +65,33 @@ export const DeviceSchema = new Schema(
                 message: `Tuya device local key can be specified only for a device of brand "${DeviceBrand.Tuya}"`,
             },
         },
-        // TODO: This field must be unique, but make sure that null/undefined are not treated as unique
+        // TODO: Introduce "communicationType": 'http' | 'mqtt' | 'zigbee' and add validations
         zigbeeFriendlyName: {
             type: String,
             index: true,
+            unique: true,
+            sparse: true,
             required: function () {
-                return this.brand === DeviceBrand.Philips;
+                return !this.zigbeeIeeeAddress;
             },
-            validate: {
-                validator: function (): boolean {
-                    return this.brand === DeviceBrand.Philips;
+            validate: [
+                {
+                    validator: function (): boolean {
+                        return !!this.zigbeeIeeeAddress;
+                    },
+                    message: `Zigbee friendly name can be specified only together with zigbee ieee address`,
                 },
-                message: `Zigbee friendly name can be specified only for a device of brand "${DeviceBrand.Philips}"`,
-            },
+            ],
         },
         zigbeeIeeeAddress: {
             type: String,
             index: true,
-            required: function () {
-                return this.brand === DeviceBrand.Philips;
-            },
-            validate: {
-                validator: function (): boolean {
-                    return this.brand === DeviceBrand.Philips;
+            validate: [
+                {
+                    validator: (value: string): boolean => ZIGBEE_IEEE_ADDRESS_REGEX.test(value),
+                    message: 'Zigbee IEEE address must match the format 0x followed by 16 hex characters',
                 },
-                message: `Zigbee IEEE address can be specified only for a device of brand "${DeviceBrand.Philips}"`,
-            },
+            ],
         },
         updateInterval: {
             type: Number,
