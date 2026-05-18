@@ -81,6 +81,7 @@ describe('MqttController', () => {
 
         beforeEach(() => {
             mockContext = {
+                getTopic: jest.fn().mockReturnValue('home/devices/pair'),
                 getPacket: jest.fn().mockReturnValue({ payload: {} }),
             };
         });
