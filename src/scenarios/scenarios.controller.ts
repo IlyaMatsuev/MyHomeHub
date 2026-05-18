@@ -38,11 +38,41 @@ export class ScenariosController {
         return this.scenarioGroupsService.getGroups(query);
     }
 
+    @Get('/groups/:name')
+    @ApiParam({
+        name: 'name',
+        description: 'Name of the scenario group',
+        example: 'outside_lights',
+    })
+    @ApiOperation({ summary: 'Get scenario group by name' })
+    @ApiOkResponse()
+    @ApiNotFoundResponse()
+    @ApiBadRequestResponse()
+    @ApiUnauthorizedResponse()
+    async getGroup(@Param('name') name: string): Promise<ScenarioGroup> {
+        return this.scenarioGroupsService.getGroupByName(name);
+    }
+
+    @Post('/groups/:name')
+    @ApiParam({
+        name: 'name',
+        description: 'Name of the scenario group to create',
+        example: 'outside_lights',
+    })
+    @ApiOperation({ summary: 'Create a new scenario group' })
+    @ApiOkResponse()
+    @ApiNotFoundResponse()
+    @ApiBadRequestResponse()
+    @ApiUnauthorizedResponse()
+    async createGroup(@Param('name') name: string): Promise<ScenarioGroup> {
+        return this.scenarioGroupsService.createGroup(name);
+    }
+
     @Delete('/groups/:name')
     @ApiParam({
         name: 'name',
         description: 'Name of the scenario group to delete',
-        example: 'my_group',
+        example: 'outside_lights',
     })
     @ApiOperation({ summary: 'Delete a scenario group by name' })
     @ApiOkResponse()

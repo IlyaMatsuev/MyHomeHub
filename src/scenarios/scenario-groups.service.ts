@@ -31,16 +31,24 @@ export class ScenarioGroupsService {
         };
     }
 
-    async getGroupByName(name: string): Promise<ScenarioGroup> {
+    async getGroupByName(name: string, options: { strict: boolean } = { strict: true }): Promise<ScenarioGroup | null> {
         const group = await this.scenarioGroupModel.findOne({ name }).exec();
-        if (!group) {
+        if (!group && options.strict) {
             throw new NotFoundException(`Scenario group '${name}' not found`);
         }
         return group;
     }
 
+    async createGroup(name: string): Promise<ScenarioGroup> {
+        const group = await this.getGroupByName(name, { strict: false });
+        if (group) {
+            throw new BadRequestException(`Scenario group '${name}' already exists`);
+        }
+        return this.upsertGroup(name);
+    }
+
     async deleteGroup(name: string, deleteScenarios?: boolean): Promise<ScenarioGroup> {
-        const group = await this.getGroupByName(name);
+        const group = await this.getGroupByName(name, { strict: false });
 
         if (group.scenariosCount > 0 && deleteScenarios === undefined) {
             throw new BadRequestException(
@@ -74,7 +82,7 @@ export class ScenarioGroupsService {
         }
 
         if (oldGroupName) {
-            await this.decrementGroupCount(oldGroupName);
+            await this.upsertGroup(oldGroupName, -1);
         }
 
         if (newGroupName) {
@@ -86,28 +94,20 @@ export class ScenarioGroupsService {
         if (!groupName) {
             return;
         }
-        await this.decrementGroupCount(groupName);
+        await this.upsertGroup(groupName, -1);
     }
 
-    private async upsertGroup(groupName: string, incrementBy: number): Promise<void> {
-        const existingGroup = await this.scenarioGroupModel.findOne({ name: groupName }).exec();
+    private async upsertGroup(name: string, incrementBy?: number): Promise<ScenarioGroup> {
+        const existingGroup = await this.getGroupByName(name, { strict: false });
         if (existingGroup) {
-            existingGroup.scenariosCount += incrementBy;
-            await existingGroup.save();
-        } else {
-            const newGroup = new this.scenarioGroupModel({
-                name: groupName,
-                scenariosCount: incrementBy,
-            });
-            await newGroup.save();
+            existingGroup.scenariosCount += incrementBy || 0;
+            return existingGroup.save();
         }
-    }
 
-    private async decrementGroupCount(groupName: string): Promise<void> {
-        const group = await this.scenarioGroupModel.findOne({ name: groupName }).exec();
-        if (group && group.scenariosCount > 0) {
-            group.scenariosCount -= 1;
-            await group.save();
-        }
+        const newGroup = new this.scenarioGroupModel({
+            name: name,
+            scenariosCount: incrementBy || 0,
+        });
+        return newGroup.save();
     }
 }

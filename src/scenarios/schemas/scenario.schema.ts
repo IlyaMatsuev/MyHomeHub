@@ -9,6 +9,7 @@ import {
     SCENARIO_GROUP_NAME_MAX_LENGTH,
     SCENARIO_GROUP_NAME_PATTERN,
     SCENARIO_GROUP_NAME_PATTERN_ERROR_MESSAGE,
+    SCENARIO_GROUP_NAME_MIN_LENGTH,
 } from 'scenarios/scenarios.constants';
 import { TriggerSchema } from './trigger.schema';
 import { ScenarioDeviceActionSchema } from './scenario-device-action.schema';
@@ -42,6 +43,7 @@ export const ScenarioSchema = new Schema(
             required: false,
             trim: true,
             index: true,
+            minLength: SCENARIO_GROUP_NAME_MIN_LENGTH,
             maxLength: SCENARIO_GROUP_NAME_MAX_LENGTH,
             validate: {
                 validator: (value: string) => !value || SCENARIO_GROUP_NAME_PATTERN.test(value),

@@ -26,7 +26,6 @@ import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
 export class ScenariosService implements OnModuleInit {
     private readonly logger = new Logger(ScenariosService.name);
 
-    // eslint-disable-next-line max-params
     constructor(
         @Inject(SCENARIO_MODEL_PROVIDER_NAME)
         private readonly scenarioModel: Model<Scenario>,

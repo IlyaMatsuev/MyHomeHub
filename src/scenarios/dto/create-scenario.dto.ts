@@ -9,6 +9,7 @@ import {
     SCENARIO_GROUP_NAME_MAX_LENGTH,
     SCENARIO_GROUP_NAME_PATTERN,
     SCENARIO_GROUP_NAME_PATTERN_ERROR_MESSAGE,
+    SCENARIO_GROUP_NAME_MIN_LENGTH,
 } from 'scenarios/scenarios.constants';
 import {
     ArrayNotEmpty,
@@ -23,6 +24,7 @@ import {
     Matches,
     MaxLength,
     Min,
+    MinLength,
     ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -53,12 +55,14 @@ export class CreateScenarioDto {
 
     @IsOptional()
     @IsString()
+    @MinLength(SCENARIO_GROUP_NAME_MIN_LENGTH)
     @MaxLength(SCENARIO_GROUP_NAME_MAX_LENGTH)
     @Matches(SCENARIO_GROUP_NAME_PATTERN, { message: SCENARIO_GROUP_NAME_PATTERN_ERROR_MESSAGE })
     @ApiProperty({
         required: false,
         description:
             'The group name for the scenario. Must contain only English letters, digits, and underscores, and cannot be digits only',
+        minLength: SCENARIO_GROUP_NAME_MIN_LENGTH,
         maxLength: SCENARIO_GROUP_NAME_MAX_LENGTH,
     })
     group?: string;
