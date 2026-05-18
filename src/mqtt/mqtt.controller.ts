@@ -29,10 +29,11 @@ export class MqttController {
 
     @MessagePattern(DEVICE_PAIR_REQUEST_TOPIC_NAME)
     async onHomeDevicePairRequest(@Ctx() context: MqttContext, @Payload() pairRequest: PairRequestDto): Promise<void> {
+        this.logger.debug(`[${context.getTopic()}]: Pair request: ${JSON.stringify(pairRequest)}`);
+
         try {
             pairRequest = plainToInstance(PairRequestDto, pairRequest);
             this.logger.log(`Received a device (${pairRequest?.deviceName}) pairing request with IP "${pairRequest?.deviceIp}"`);
-            this.logger.debug(`Pair request: ${JSON.stringify(pairRequest)}`);
 
             if (!pairRequest?.deviceIp || !pairRequest?.deviceName) {
                 this.logger.debug(`No device ip and name provided: ${JSON.stringify(context.getPacket())}`);
@@ -62,9 +63,11 @@ export class MqttController {
 
     @MessagePattern(CONTROLS_SYNC_TOPIC_NAME)
     async onHomeControlsSync(@Ctx() context: MqttContext, @Payload('controls') controls: DeviceControlsDto): Promise<void> {
+        this.logger.debug(`[${context.getTopic()}]: Sync controls: ${JSON.stringify({ controls })}`);
+
         const [deviceId] = this.extractTopicWildcards(CONTROLS_SYNC_TOPIC_NAME, context.getTopic());
         try {
-            this.logger.debug(`Syncing controls for a device with id "${deviceId}": ${JSON.stringify(controls)}`);
+            this.logger.debug(`Syncing controls for a device with id "${deviceId}"`);
             await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ controls }));
         } catch (error) {
             this.logger.error(`Error while syncing controls for a device with id "${deviceId}"`);
@@ -74,6 +77,8 @@ export class MqttController {
 
     @MessagePattern(MEASUREMENTS_UPDATE_TOPIC_NAME)
     async onHomeMeasurementsUpdate(@Ctx() context: MqttContext, @Payload('measurements') measurements: DevicePayloadDto): Promise<void> {
+        this.logger.debug(`[${context.getTopic()}]: Update measurements: ${JSON.stringify({ measurements })}`);
+
         const [deviceId] = this.extractTopicWildcards(MEASUREMENTS_UPDATE_TOPIC_NAME, context.getTopic());
         try {
             this.logger.debug(`Updating measurements for a device with id "${deviceId}": ${JSON.stringify(measurements)}`);
@@ -86,14 +91,14 @@ export class MqttController {
 
     @MessagePattern(ZIGBEE_BRIDGE_DEVICES_TOPIC)
     async onZigbeeDevicesChange(@Ctx() context: MqttContext, @Payload() devices: Array<ZigbeeDevice>): Promise<void> {
-        this.logger.debug(`Received a list of devices on "${context.getTopic()}": ${JSON.stringify(devices)}`);
+        this.logger.debug(`[${context.getTopic()}]: Update ZigBee devices list: ${JSON.stringify(devices)}`);
         await this.devicesService.savePairableDevices(devices ?? []);
     }
 
     // TODO: Review the logic closely
     @MessagePattern(ZIGBEE_DEVICE_STATE_TOPIC)
     async onZigbeeDeviceStateChange(@Ctx() context: MqttContext, @Payload() state: Record<string, unknown>): Promise<void> {
-        this.logger.debug(`Received Zigbee state for "${context.getTopic()}": ${JSON.stringify(state)}`);
+        this.logger.debug(`[${context.getTopic()}]: Update ZigBee device state: ${JSON.stringify(state)}`);
 
         const [friendlyName] = this.extractTopicWildcards(ZIGBEE_DEVICE_STATE_TOPIC, context.getTopic());
 

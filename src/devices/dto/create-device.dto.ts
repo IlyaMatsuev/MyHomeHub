@@ -11,9 +11,18 @@ import {
     Matches,
     ValidateIf,
     ValidateNested,
+    MinLength,
+    MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { ZIGBEE_IEEE_ADDRESS_REGEX, ZIGBEE_IEEE_ADDRESS_REGEX_ERROR_MESSAGE } from 'common/common.constants';
+import {
+    ZIGBEE_FRIENDLY_NAME_MAX_LENGTH,
+    ZIGBEE_FRIENDLY_NAME_MIN_LENGTH,
+    ZIGBEE_FRIENDLY_NAME_REGEX,
+    ZIGBEE_FRIENDLY_NAME_REGEX_ERROR_MESSAGE,
+    ZIGBEE_IEEE_ADDRESS_REGEX,
+    ZIGBEE_IEEE_ADDRESS_REGEX_ERROR_MESSAGE,
+} from 'common/common.constants';
 import { DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import {
     DEVICE_ALLOWED_IP_VERSION,
@@ -101,21 +110,26 @@ export class CreateDeviceDto {
     })
     tuyaDeviceLocalKey?: string;
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
-    @ValidateIf(d => d.brand === DeviceBrand.Philips)
+    @MinLength(ZIGBEE_FRIENDLY_NAME_MIN_LENGTH)
+    @MaxLength(ZIGBEE_FRIENDLY_NAME_MAX_LENGTH)
+    @Matches(ZIGBEE_FRIENDLY_NAME_REGEX, { message: ZIGBEE_FRIENDLY_NAME_REGEX_ERROR_MESSAGE })
     @ApiProperty({
         required: false,
+        minLength: ZIGBEE_FRIENDLY_NAME_MIN_LENGTH,
+        maxLength: ZIGBEE_FRIENDLY_NAME_MAX_LENGTH,
+        pattern: ZIGBEE_FRIENDLY_NAME_REGEX,
         description: 'The Z2M friendly name of the Zigbee device (used as MQTT topic suffix)',
     })
     zigbeeFriendlyName?: string;
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
     @Matches(ZIGBEE_IEEE_ADDRESS_REGEX, { message: ZIGBEE_IEEE_ADDRESS_REGEX_ERROR_MESSAGE })
-    @ValidateIf(d => d.brand === DeviceBrand.Philips)
     @ApiProperty({
         required: false,
+        pattern: ZIGBEE_IEEE_ADDRESS_REGEX,
         description: 'The IEEE address of the Zigbee device (e.g. 0x00158d0001234567)',
     })
     zigbeeIeeeAddress?: string;

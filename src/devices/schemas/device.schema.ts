@@ -1,6 +1,6 @@
 import { Schema } from 'mongoose';
 import { v4 as uuid } from 'uuid';
-import { ZIGBEE_IEEE_ADDRESS_REGEX } from 'common/common.constants';
+import { ZIGBEE_FRIENDLY_NAME_MAX_LENGTH, ZIGBEE_FRIENDLY_NAME_MIN_LENGTH, ZIGBEE_IEEE_ADDRESS_REGEX } from 'common/common.constants';
 import { DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import { DEVICE_DEFAULT_UPDATE_INTERVAL, DEVICE_NAME_MAX_LENGTH, DEVICE_NAME_MIN_LENGTH } from 'devices/devices.constants';
 
@@ -71,6 +71,8 @@ export const DeviceSchema = new Schema(
             index: true,
             unique: true,
             sparse: true,
+            minLength: ZIGBEE_FRIENDLY_NAME_MIN_LENGTH,
+            maxLength: ZIGBEE_FRIENDLY_NAME_MAX_LENGTH,
             required: function () {
                 return !this.zigbeeIeeeAddress;
             },
@@ -79,7 +81,7 @@ export const DeviceSchema = new Schema(
                     validator: function (): boolean {
                         return !!this.zigbeeIeeeAddress;
                     },
-                    message: `Zigbee friendly name can be specified only together with zigbee ieee address`,
+                    message: `Zigbee friendly name can be specified only together with Zigbee IEEE address`,
                 },
             ],
         },
