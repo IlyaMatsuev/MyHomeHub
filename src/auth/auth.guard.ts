@@ -14,7 +14,7 @@ export class AuthGuard implements CanActivate {
     ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        if (this.isPublicEndpoint(context)) {
+        if (this.isPublicEndpoint(context) || (this.isLocalEnvironment() && !this.isLocalAuthEnabled())) {
             return true;
         }
 
@@ -35,6 +35,14 @@ export class AuthGuard implements CanActivate {
 
     private isPublicEndpoint(context: ExecutionContext): boolean {
         return this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
+    }
+
+    private isLocalEnvironment(): boolean {
+        return this.configService.get<string>('NODE_ENV') === 'local';
+    }
+
+    private isLocalAuthEnabled(): boolean {
+        return this.configService.get<string>('ENABLE_LOCAL_AUTH') === 'true';
     }
 
     private extractTokenFromHeader(request: Request): string | undefined {
