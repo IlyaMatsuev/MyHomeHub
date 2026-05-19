@@ -21,7 +21,6 @@ export abstract class DevicesControlService {
     protected abstract getControlsDtoType<T extends object>(): ClassConstructor<T>;
     protected abstract setDeviceControls<T extends DeviceControls, V>(controls: T): Promise<V | void | never>;
 
-    // TODO: Need to implement "$onSwitchDelay" option
     mergeValidateControls(controls: DeviceControls, oldControls?: DeviceControls): Promise<DeviceControls | never> {
         const { $override, ...otherControls } = controls ?? {};
         const mergedControls: DeviceControls = $override ? { ...otherControls } : { ...oldControls, ...otherControls };

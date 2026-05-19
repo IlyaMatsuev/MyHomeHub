@@ -74,7 +74,7 @@ export const DeviceSchema = new Schema(
             minLength: ZIGBEE_FRIENDLY_NAME_MIN_LENGTH,
             maxLength: ZIGBEE_FRIENDLY_NAME_MAX_LENGTH,
             required: function () {
-                return !this.zigbeeIeeeAddress;
+                return !!this.zigbeeIeeeAddress;
             },
             validate: [
                 {

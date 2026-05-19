@@ -17,6 +17,7 @@ export class DevicePayloadDto implements DevicePayload {
 
 @ApiSchema({ name: 'DeviceControls', description: 'DTO describing the structure of a generic controls payload' })
 export class DeviceControlsDto extends DevicePayloadDto implements DeviceControls {
+    // TODO: Need to implement "$onSwitchDelay" option?
     @IsOptional()
     @IsInt()
     @Min(0)
