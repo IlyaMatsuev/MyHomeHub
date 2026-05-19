@@ -15,6 +15,9 @@ export const mqttProviders = [
                     port: config.get('MQTT_PORT'),
                     username: config.get('MQTT_USERNAME'),
                     password: config.get('MQTT_PASSWORD'),
+                    serializer: {
+                        serialize: (packet: { data: unknown }) => JSON.stringify(packet.data),
+                    },
                 },
             }),
         inject: [ConfigService],

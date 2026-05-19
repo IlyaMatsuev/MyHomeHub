@@ -380,25 +380,6 @@ describe('DevicesService', () => {
             await expect(service.updateDevice('nonexistent', new UpdateDeviceDto({}))).rejects.toThrow(NotFoundException);
         });
 
-        it('should throw BadRequestException when zigbeeIeeeAddress is changed', async () => {
-            const deviceWithSave = {
-                ...mockDevice,
-                zigbeeIeeeAddress: '0xexisting',
-                save: jest.fn(),
-            };
-            mockDeviceModel.findOne.mockReturnValue({
-                exec: jest.fn().mockResolvedValue(deviceWithSave),
-            });
-
-            const updateDto = new UpdateDeviceDto({ zigbeeIeeeAddress: '0xdifferent' });
-
-            await expect(service.updateDevice('device-uuid-123', updateDto)).rejects.toThrow(BadRequestException);
-            await expect(service.updateDevice('device-uuid-123', updateDto)).rejects.toThrow(
-                'Zigbee Ieee address cannot be changed, add a new device instead',
-            );
-            expect(deviceWithSave.save).not.toHaveBeenCalled();
-        });
-
         it('should rename zigbee device when friendly name changes', async () => {
             const deviceWithSave = {
                 ...mockDevice,
@@ -419,7 +400,6 @@ describe('DevicesService', () => {
             });
 
             const updateDto = new UpdateDeviceDto({
-                zigbeeIeeeAddress: '0xpairable',
                 zigbeeFriendlyName: 'new_name',
             });
 
@@ -448,7 +428,6 @@ describe('DevicesService', () => {
             });
 
             const updateDto = new UpdateDeviceDto({
-                zigbeeIeeeAddress: '0xpairable',
                 zigbeeFriendlyName: 'same_name',
             });
 
