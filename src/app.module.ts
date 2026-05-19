@@ -8,6 +8,7 @@ import { UsersModule } from 'users/users.module';
 import { DevicesModule } from 'devices/devices.module';
 import { ScenariosModule } from 'scenarios/scenarios.module';
 import { MqttModule } from 'mqtt/mqtt.module';
+import { ZigbeeModule } from 'zigbee/zigbee.module';
 
 @Module({
     imports: [
@@ -17,6 +18,7 @@ import { MqttModule } from 'mqtt/mqtt.module';
         DevicesModule,
         ScenariosModule,
         MqttModule,
+        ZigbeeModule,
 
         ScheduleModule.forRoot(),
         EventEmitterModule.forRoot(),
