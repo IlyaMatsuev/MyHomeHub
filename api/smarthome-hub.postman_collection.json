@@ -376,19 +376,18 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/devices",
+              "raw": "{{baseUrl}}/devices?pageSize=10",
               "host": ["{{baseUrl}}"],
               "path": ["devices"],
               "query": [
                 {
                   "key": "page",
-                  "value": null,
+                  "value": "",
                   "disabled": true
                 },
                 {
                   "key": "pageSize",
-                  "value": null,
-                  "disabled": true
+                  "value": "10"
                 }
               ]
             }
@@ -508,7 +507,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Main ceiling light\",\n    \"type\": \"plug\",\n    \"brand\": \"shelly\",\n    \"room\": \"living-room\",\n    \"updateInterval\": 0,\n    \"controls\": {\n        \"on\": true\n    },\n    \"ip\": \"192.168.0.16\"\n}",
+              "raw": "{\n    \"name\": \"Main light remote\",\n    \"type\": \"remote\",\n    \"brand\": \"philips\",\n    \"room\": \"living-room\",\n    \"controls\": {\n        \"on\": true\n    },\n    \"zigbeeFriendlyName\": \"w\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -576,7 +575,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"controls\": {\n        \"on\": true\n    }\n}",
+              "raw": "{\n            \"zigbeeFriendlyName\": \"MainLightRemote\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -723,7 +722,7 @@
               "query": [
                 {
                   "key": "page",
-                  "value": null,
+                  "value": "",
                   "disabled": true
                 },
                 {
@@ -737,7 +736,7 @@
                 },
                 {
                   "key": "group",
-                  "value": "test",
+                  "value": "",
                   "disabled": true
                 }
               ]
@@ -858,7 +857,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Test\",\n    \"group\": \"test\",\n    \"description\": \"Automatically switches off the LED strip at the office desk based on motion\",\n    \"trigger\": {\n        \"sources\": [\n            {\n                \"device\": {\n                    \"measurements\": {\n                        \"are\": {\n                            \"motion\": false\n                        }\n                    },\n                    \"externalId\": \"0a68df33-db7a-4db0-8226-5c4d357583cf\"\n                },\n                \"type\": \"device\"\n            }\n        ],\n        \"logic\": \"1\"\n    },\n    \"devices\": [\n        {\n            \"set\": {\n                \"controls\": {\n                    \"on\": false\n                }\n            },\n            \"externalId\": \"63554728-2b2e-461a-930a-bffa5394f5c4\"\n        }\n    ],\n    \"active\": true\n}",
+              "raw": "{\n    \"name\": \"test\",\n    \"description\": \"Switches on the main ceiling light off\",\n    \"trigger\": {\n        \"sources\": [\n            {\n                \"type\": \"device\",\n                \"device\": {\n                    \"externalId\": \"7662737f-400b-48c2-9719-45a4a14bad9c\",\n                    \"controls\": {\n                        \"are\": {\n                            \"on\": false\n                        }\n                    }\n                }\n            }\n        ],\n        \"logic\": \"1\"\n    },\n    \"devices\": [\n        {\n            \"externalId\": \"38a78ca6-dd90-43aa-a73a-9ad2edc6806a\",\n            \"set\": {\n                \"controls\": {\n                    \"on\": false\n                }\n            }\n        }\n    ],\n    \"group\": \"test\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1084,6 +1083,135 @@
           "response": []
         },
         {
+          "name": "Get Scenario Group By Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/scenarios/groups/:name",
+              "host": ["{{baseUrl}}"],
+              "path": ["scenarios", "groups", ":name"],
+              "variable": [
+                {
+                  "key": "name",
+                  "value": "test"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Scenario Group",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/scenarios/groups/:name",
+              "host": ["{{baseUrl}}"],
+              "path": ["scenarios", "groups", ":name"],
+              "variable": [
+                {
+                  "key": "name",
+                  "value": "test"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Delete Scenario Group",
           "event": [
             {
@@ -1130,19 +1258,20 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/scenarios/groups/:name?deleteScenarios=false",
+              "raw": "{{baseUrl}}/scenarios/groups/:name",
               "host": ["{{baseUrl}}"],
               "path": ["scenarios", "groups", ":name"],
               "query": [
                 {
                   "key": "deleteScenarios",
-                  "value": "false"
+                  "value": "true",
+                  "disabled": true
                 }
               ],
               "variable": [
                 {
                   "key": "name",
-                  "value": "test"
+                  "value": "1"
                 }
               ]
             }
