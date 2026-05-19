@@ -10,8 +10,9 @@ import {
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { DevicesService } from 'devices/devices.service';
-import { Device, DevicesPage, PairableDevicesPage, PairingModeStatus } from 'devices/interfaces';
+import { Device, DevicesPage, PairingModeStatus } from 'devices/interfaces';
 import { CreateDeviceDto, GetPairableDevicesDto, UpdateDeviceDto, GetDevicesDto, ToggleDevicesPairingModeDto } from 'devices/dto';
+import { PairableDevicesPage } from 'zigbee/interfaces';
 
 @ApiBearerAuth()
 @Controller('devices')
@@ -32,7 +33,7 @@ export class DevicesController {
     @ApiOkResponse()
     @ApiBadRequestResponse()
     @ApiUnauthorizedResponse()
-    toggleDevicesPairingMode(@Body() pairingModeDto: ToggleDevicesPairingModeDto): Promise<PairingModeStatus> {
+    toggleDevicesPairingMode(@Body() pairingModeDto: ToggleDevicesPairingModeDto): PairingModeStatus {
         return this.deviceService.toggleDevicePairingMode(pairingModeDto.enable, pairingModeDto.seconds);
     }
 

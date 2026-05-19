@@ -1,4 +1,4 @@
-import { PairableDevice } from 'devices/interfaces';
+import { PairableDevice } from 'zigbee/interfaces';
 import { RecordsPage } from 'common/interfaces';
 
 export interface PairableDevicesPage extends RecordsPage {

@@ -3,19 +3,15 @@ import { Ctx, MessagePattern, MqttContext, Payload } from '@nestjs/microservices
 import { MqttService } from 'mqtt/mqtt.service';
 import {
     CONTROLS_SYNC_TOPIC_NAME,
+    DEVICE_PAIR_REPLY_TOPIC_NAME,
     DEVICE_PAIR_REQUEST_TOPIC_NAME,
     MEASUREMENTS_UPDATE_TOPIC_NAME,
-    MQTT_TOPIC_PARTS_SEPARATOR,
-    MQTT_TOPIC_PARTS_WILDCARD,
-    ZIGBEE_BRIDGE_DEVICES_TOPIC,
-    ZIGBEE_DEVICE_STATE_TOPIC,
 } from 'mqtt/mqtt.constants';
 import { DevicesService } from 'devices/devices.service';
-import { PairRequestDto } from 'mqtt/dto';
+import { PairAcceptDto, PairRequestDto } from 'mqtt/dto';
 import { DeviceControlsDto, DevicePayloadDto, UpdateDeviceDto } from 'devices/dto';
 import { plainToInstance } from 'class-transformer';
-import { ZigbeeStateMapperService } from 'mqtt/zigbee-state-mapper.service';
-import { ZigbeeDevice } from 'mqtt/interfaces';
+import { Device } from 'devices/interfaces';
 
 @Controller()
 export class MqttController {
@@ -24,9 +20,9 @@ export class MqttController {
     constructor(
         private readonly mqttService: MqttService,
         private readonly devicesService: DevicesService,
-        private readonly zigbeeStateMapper: ZigbeeStateMapperService,
     ) {}
 
+    // TODO: Move these methods from here
     @MessagePattern(DEVICE_PAIR_REQUEST_TOPIC_NAME)
     async onHomeDevicePairRequest(@Ctx() context: MqttContext, @Payload() pairRequest: PairRequestDto): Promise<void> {
         this.logger.debug(`[${context.getTopic()}]: Pair request: ${JSON.stringify(pairRequest)}`);
@@ -52,10 +48,10 @@ export class MqttController {
                     }),
                 );
             }
-            this.mqttService.pairDevice(existingDevice);
+            this.pairDevice(existingDevice);
             this.logger.log(`Device (${existingDevice.externalId}) has been successfully paired`);
         } catch (error) {
-            this.mqttService.rejectDevice(`${error}`);
+            this.rejectDevice(`${error}`);
             this.logger.error(`Error while pairing a device (${pairRequest?.deviceName}) with IP "${pairRequest?.deviceIp}"`);
             this.logger.error(error);
         }
@@ -65,7 +61,7 @@ export class MqttController {
     async onHomeControlsSync(@Ctx() context: MqttContext, @Payload('controls') controls: DeviceControlsDto): Promise<void> {
         this.logger.debug(`[${context.getTopic()}]: Sync controls: ${JSON.stringify({ controls })}`);
 
-        const [deviceId] = this.extractTopicWildcards(CONTROLS_SYNC_TOPIC_NAME, context.getTopic());
+        const [deviceId] = this.mqttService.extractTopicWildcards(CONTROLS_SYNC_TOPIC_NAME, context.getTopic());
         try {
             this.logger.debug(`Syncing controls for a device with id "${deviceId}"`);
             await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ controls }));
@@ -79,7 +75,7 @@ export class MqttController {
     async onHomeMeasurementsUpdate(@Ctx() context: MqttContext, @Payload('measurements') measurements: DevicePayloadDto): Promise<void> {
         this.logger.debug(`[${context.getTopic()}]: Update measurements: ${JSON.stringify({ measurements })}`);
 
-        const [deviceId] = this.extractTopicWildcards(MEASUREMENTS_UPDATE_TOPIC_NAME, context.getTopic());
+        const [deviceId] = this.mqttService.extractTopicWildcards(MEASUREMENTS_UPDATE_TOPIC_NAME, context.getTopic());
         try {
             this.logger.debug(`Updating measurements for a device with id "${deviceId}": ${JSON.stringify(measurements)}`);
             await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ measurements }));
@@ -89,61 +85,14 @@ export class MqttController {
         }
     }
 
-    @MessagePattern(ZIGBEE_BRIDGE_DEVICES_TOPIC)
-    async onZigbeeDevicesChange(@Ctx() context: MqttContext, @Payload() devices: Array<ZigbeeDevice>): Promise<void> {
-        this.logger.debug(`[${context.getTopic()}]: Update ZigBee devices list: ${JSON.stringify(devices)}`);
-        await this.devicesService.savePairableDevices(devices ?? []);
+    private pairDevice(device: Device) {
+        this.mqttService.publish(
+            DEVICE_PAIR_REPLY_TOPIC_NAME,
+            PairAcceptDto.accept(device.externalId, device.controls, device.updateInterval),
+        );
     }
 
-    // TODO: Review the logic closely
-    @MessagePattern(ZIGBEE_DEVICE_STATE_TOPIC)
-    async onZigbeeDeviceStateChange(@Ctx() context: MqttContext, @Payload() state: Record<string, unknown>): Promise<void> {
-        this.logger.debug(`[${context.getTopic()}]: Update ZigBee device state: ${JSON.stringify(state)}`);
-
-        const [friendlyName] = this.extractTopicWildcards(ZIGBEE_DEVICE_STATE_TOPIC, context.getTopic());
-
-        if (friendlyName === 'bridge' || friendlyName.startsWith('bridge/')) {
-            this.logger.debug(`Bridge state update, skipping`);
-            return;
-        }
-
-        try {
-            const device = await this.devicesService.getDevice({ zigbeeFriendlyName: friendlyName }, { strict: false });
-            if (!device) {
-                this.logger.debug(`No device found with Zigbee friendly name "${friendlyName}", ignoring state update`);
-                return;
-            }
-
-            const { controls, measurements } = this.zigbeeStateMapper.mapState(state);
-
-            const hasControls = Object.keys(controls).length > 0;
-            const hasMeasurements = Object.keys(measurements).length > 0;
-
-            if (hasControls || hasMeasurements) {
-                await this.devicesService.updateDevice(
-                    device.externalId,
-                    new UpdateDeviceDto({
-                        ...(hasControls && { controls }),
-                        ...(hasMeasurements && { measurements }),
-                    }),
-                );
-                this.logger.debug(`Updated Zigbee device "${friendlyName}" state`);
-            }
-        } catch (error) {
-            this.logger.error(`Error while processing Zigbee device state for "${friendlyName}"`);
-            this.logger.error(error);
-        }
-    }
-
-    private extractTopicWildcards(pattern: string, topic: string): Array<string> {
-        const patternTopicParts = pattern.split(MQTT_TOPIC_PARTS_SEPARATOR);
-        const topicParts = topic.split(MQTT_TOPIC_PARTS_SEPARATOR);
-
-        return patternTopicParts.reduce((wildcardValues, part, i) => {
-            if (part === MQTT_TOPIC_PARTS_WILDCARD) {
-                wildcardValues.push(topicParts[i]);
-            }
-            return wildcardValues;
-        }, []);
+    private rejectDevice(reason: string) {
+        this.mqttService.publish(DEVICE_PAIR_REPLY_TOPIC_NAME, PairAcceptDto.reject(`Device pairing has been rejected: ${reason}`));
     }
 }
