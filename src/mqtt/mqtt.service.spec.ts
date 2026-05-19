@@ -1,23 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MqttService } from './mqtt.service';
-import { MQTT_CLIENT_PROVIDER_NAME, DEVICE_PAIR_REPLY_TOPIC_NAME, CONTROLS_UPDATE_TOPIC_NAME } from './mqtt.constants';
+import { CONTROLS_UPDATE_TOPIC_NAME, DEVICE_PAIR_REPLY_TOPIC_NAME, MQTT_CLIENT_PROVIDER_NAME } from './mqtt.constants';
 import { PairAcceptDto } from './dto';
-import { Device, DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 
 describe('MqttService', () => {
     let service: MqttService;
     let mockClient: { emit: jest.Mock };
-
-    const mockDevice: Partial<Device> = {
-        externalId: 'device-uuid-123',
-        name: 'Test Device',
-        type: DeviceType.LED,
-        brand: DeviceBrand.ESP32,
-        room: Room.LivingRoom,
-        ip: '192.168.1.100',
-        controls: { on: false, brightness: 100 },
-        updateInterval: 5000,
-    };
 
     beforeEach(async () => {
         mockClient = { emit: jest.fn() };
@@ -39,43 +27,49 @@ describe('MqttService', () => {
         jest.clearAllMocks();
     });
 
-    describe('pairDevice', () => {
-        it('should emit pair accept message with device details', () => {
-            service.pairDevice(mockDevice as Device);
+    describe('publish', () => {
+        it('should emit payload to the given topic when no wildcard params are passed', () => {
+            const payload = { hello: 'world' };
 
-            expect(mockClient.emit).toHaveBeenCalledWith(
-                DEVICE_PAIR_REPLY_TOPIC_NAME,
-                expect.objectContaining({
-                    accepted: true,
-                    deviceId: 'device-uuid-123',
-                    controls: { on: false, brightness: 100 },
-                    updateInterval: 5000,
-                }),
-            );
+            service.publish(DEVICE_PAIR_REPLY_TOPIC_NAME, payload);
+
+            expect(mockClient.emit).toHaveBeenCalledWith(DEVICE_PAIR_REPLY_TOPIC_NAME, payload);
         });
-    });
 
-    describe('rejectDevice', () => {
-        it('should emit rejection message with reason', () => {
-            service.rejectDevice('Invalid device configuration');
-
-            expect(mockClient.emit).toHaveBeenCalledWith(
-                DEVICE_PAIR_REPLY_TOPIC_NAME,
-                expect.objectContaining({
-                    accepted: false,
-                    message: expect.stringContaining('Invalid device configuration'),
-                }),
-            );
-        });
-    });
-
-    describe('updateDeviceControls', () => {
-        it('should emit controls update to device-specific topic', async () => {
+        it('should substitute wildcard segments with the provided params', () => {
             const controls = { on: true, brightness: 50 };
 
-            await service.updateDeviceControls('device-uuid-123', controls);
+            service.publish(CONTROLS_UPDATE_TOPIC_NAME, controls, 'device-uuid-123');
 
-            expect(mockClient.emit).toHaveBeenCalledWith(CONTROLS_UPDATE_TOPIC_NAME.replace('+', 'device-uuid-123'), controls);
+            expect(mockClient.emit).toHaveBeenCalledWith('home/devices/device-uuid-123/controls/update', controls);
+        });
+
+        it('should substitute multiple wildcard segments in order', () => {
+            const topic = 'home/+/devices/+/state';
+
+            service.publish(topic, { value: 1 }, 'living-room', 'device-uuid');
+
+            expect(mockClient.emit).toHaveBeenCalledWith('home/living-room/devices/device-uuid/state', { value: 1 });
+        });
+    });
+
+    describe('extractTopicWildcards', () => {
+        it('should return the values that matched wildcards', () => {
+            const result = service.extractTopicWildcards(CONTROLS_UPDATE_TOPIC_NAME, 'home/devices/device-uuid-123/controls/update');
+
+            expect(result).toEqual(['device-uuid-123']);
+        });
+
+        it('should return values for multiple wildcards in order', () => {
+            const result = service.extractTopicWildcards('home/+/devices/+/state', 'home/living-room/devices/device-uuid/state');
+
+            expect(result).toEqual(['living-room', 'device-uuid']);
+        });
+
+        it('should return an empty array when the pattern has no wildcards', () => {
+            const result = service.extractTopicWildcards(DEVICE_PAIR_REPLY_TOPIC_NAME, DEVICE_PAIR_REPLY_TOPIC_NAME);
+
+            expect(result).toEqual([]);
         });
     });
 });

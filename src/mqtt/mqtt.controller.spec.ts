@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MqttContext } from '@nestjs/microservices';
 import { MqttController } from './mqtt.controller';
 import { MqttService } from './mqtt.service';
-import { ZigbeeStateMapperService } from './zigbee-state-mapper.service';
+import { CONTROLS_SYNC_TOPIC_NAME, DEVICE_PAIR_REPLY_TOPIC_NAME, MEASUREMENTS_UPDATE_TOPIC_NAME } from './mqtt.constants';
 import { DevicesService } from 'devices/devices.service';
 import { PairRequestDto } from './dto';
 import { Device, DeviceBrand, DeviceType, Room } from 'devices/interfaces';
@@ -11,17 +11,14 @@ import { UpdateDeviceDto } from 'devices/dto';
 describe('MqttController', () => {
     let controller: MqttController;
     let mockMqttService: {
-        pairDevice: jest.Mock;
-        rejectDevice: jest.Mock;
+        publish: jest.Mock;
+        extractTopicWildcards: jest.Mock;
     };
     let mockDevicesService: {
         getDeviceByIp: jest.Mock;
         getDevice: jest.Mock;
         addDevice: jest.Mock;
         updateDevice: jest.Mock;
-    };
-    let mockZigbeeStateMapper: {
-        mapState: jest.Mock;
     };
 
     const mockDevice: Partial<Device> = {
@@ -34,21 +31,19 @@ describe('MqttController', () => {
         ip: '192.168.1.100',
         controls: { on: false },
         measurements: {},
+        updateInterval: 5000,
     };
 
     beforeEach(async () => {
         mockMqttService = {
-            pairDevice: jest.fn(),
-            rejectDevice: jest.fn(),
+            publish: jest.fn(),
+            extractTopicWildcards: jest.fn(),
         };
         mockDevicesService = {
             getDeviceByIp: jest.fn(),
             getDevice: jest.fn(),
             addDevice: jest.fn(),
             updateDevice: jest.fn(),
-        };
-        mockZigbeeStateMapper = {
-            mapState: jest.fn(),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -61,10 +56,6 @@ describe('MqttController', () => {
                 {
                     provide: DevicesService,
                     useValue: mockDevicesService,
-                },
-                {
-                    provide: ZigbeeStateMapperService,
-                    useValue: mockZigbeeStateMapper,
                 },
             ],
         }).compile();
@@ -86,13 +77,10 @@ describe('MqttController', () => {
             };
         });
 
-        it('should create new device if not exists', async () => {
+        it('should create new device if not exists and publish a pair accept', async () => {
             const pairRequest = {
                 deviceIp: '192.168.1.100',
                 deviceName: 'New ESP32 Device',
-                deviceType: DeviceType.Fans,
-                deviceBrand: DeviceBrand.ESP32,
-                deviceRoom: Room.LivingRoom,
                 controls: { on: false },
                 measurements: {},
                 toCreateDevice: jest.fn().mockReturnValue({
@@ -111,7 +99,15 @@ describe('MqttController', () => {
 
             expect(mockDevicesService.getDeviceByIp).toHaveBeenCalledWith('192.168.1.100', { strict: false });
             expect(mockDevicesService.addDevice).toHaveBeenCalled();
-            expect(mockMqttService.pairDevice).toHaveBeenCalledWith(mockDevice);
+            expect(mockMqttService.publish).toHaveBeenCalledWith(
+                DEVICE_PAIR_REPLY_TOPIC_NAME,
+                expect.objectContaining({
+                    accepted: true,
+                    deviceId: 'device-uuid-123',
+                    controls: mockDevice.controls,
+                    updateInterval: 5000,
+                }),
+            );
         });
 
         it('should update existing device if already exists', async () => {
@@ -129,11 +125,14 @@ describe('MqttController', () => {
             await controller.onHomeDevicePairRequest(mockContext as MqttContext, pairRequest);
 
             expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('device-uuid-123', expect.any(UpdateDeviceDto));
-            expect(mockMqttService.pairDevice).toHaveBeenCalledWith(mockDevice);
+            expect(mockMqttService.publish).toHaveBeenCalledWith(
+                DEVICE_PAIR_REPLY_TOPIC_NAME,
+                expect.objectContaining({ accepted: true, deviceId: 'device-uuid-123' }),
+            );
             expect(mockDevicesService.addDevice).not.toHaveBeenCalled();
         });
 
-        it('should reject device on error', async () => {
+        it('should publish a rejection message on error', async () => {
             const pairRequest = {
                 deviceIp: '192.168.1.100',
                 deviceName: 'Failing Device',
@@ -144,7 +143,13 @@ describe('MqttController', () => {
 
             await controller.onHomeDevicePairRequest(mockContext as MqttContext, pairRequest);
 
-            expect(mockMqttService.rejectDevice).toHaveBeenCalledWith(expect.stringContaining('Database error'));
+            expect(mockMqttService.publish).toHaveBeenCalledWith(
+                DEVICE_PAIR_REPLY_TOPIC_NAME,
+                expect.objectContaining({
+                    accepted: false,
+                    message: expect.stringContaining('Database error'),
+                }),
+            );
         });
 
         it('should ignore requests without deviceIp', async () => {
@@ -156,7 +161,7 @@ describe('MqttController', () => {
             await controller.onHomeDevicePairRequest(mockContext as MqttContext, pairRequest);
 
             expect(mockDevicesService.getDeviceByIp).not.toHaveBeenCalled();
-            expect(mockMqttService.pairDevice).not.toHaveBeenCalled();
+            expect(mockMqttService.publish).not.toHaveBeenCalled();
         });
     });
 
@@ -166,11 +171,15 @@ describe('MqttController', () => {
                 getTopic: jest.fn().mockReturnValue('home/devices/device-uuid-123/controls/sync'),
             } as unknown as MqttContext;
             const controls = { on: true, brightness: 50 };
-
+            mockMqttService.extractTopicWildcards.mockReturnValue(['device-uuid-123']);
             mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
 
             await controller.onHomeControlsSync(mockContext, controls);
 
+            expect(mockMqttService.extractTopicWildcards).toHaveBeenCalledWith(
+                CONTROLS_SYNC_TOPIC_NAME,
+                'home/devices/device-uuid-123/controls/sync',
+            );
             expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('device-uuid-123', expect.any(UpdateDeviceDto));
         });
 
@@ -179,7 +188,7 @@ describe('MqttController', () => {
                 getTopic: jest.fn().mockReturnValue('home/devices/device-uuid-123/controls/sync'),
             } as unknown as MqttContext;
             const controls = { on: true };
-
+            mockMqttService.extractTopicWildcards.mockReturnValue(['device-uuid-123']);
             mockDevicesService.updateDevice.mockRejectedValue(new Error('Device not found'));
 
             await expect(controller.onHomeControlsSync(mockContext, controls)).resolves.not.toThrow();
@@ -192,11 +201,15 @@ describe('MqttController', () => {
                 getTopic: jest.fn().mockReturnValue('home/devices/device-uuid-123/measurements/update'),
             } as unknown as MqttContext;
             const measurements = { temperature: 25, humidity: 60 };
-
+            mockMqttService.extractTopicWildcards.mockReturnValue(['device-uuid-123']);
             mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
 
             await controller.onHomeMeasurementsUpdate(mockContext, measurements);
 
+            expect(mockMqttService.extractTopicWildcards).toHaveBeenCalledWith(
+                MEASUREMENTS_UPDATE_TOPIC_NAME,
+                'home/devices/device-uuid-123/measurements/update',
+            );
             expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('device-uuid-123', expect.any(UpdateDeviceDto));
         });
 
@@ -205,75 +218,10 @@ describe('MqttController', () => {
                 getTopic: jest.fn().mockReturnValue('home/devices/device-uuid-123/measurements/update'),
             } as unknown as MqttContext;
             const measurements = { temperature: 25 };
-
+            mockMqttService.extractTopicWildcards.mockReturnValue(['device-uuid-123']);
             mockDevicesService.updateDevice.mockRejectedValue(new Error('Device not found'));
 
             await expect(controller.onHomeMeasurementsUpdate(mockContext, measurements)).resolves.not.toThrow();
-        });
-    });
-
-    describe('onZigbeeDeviceStateChange', () => {
-        const mockPhilipsDevice: Partial<Device> = {
-            _id: 'mongo-id-456',
-            externalId: 'philips-device-uuid',
-            name: 'Philips Bulb',
-            type: DeviceType.LED,
-            brand: DeviceBrand.Philips,
-            zigbeeFriendlyName: 'living_room_bulb',
-            zigbeeIeeeAddress: '0x00158d0001234567',
-            controls: { on: false },
-        };
-
-        it('should update Philips device state via Z2M', async () => {
-            const mockContext = {
-                getTopic: jest.fn().mockReturnValue('zigbee2mqtt/living_room_bulb'),
-            } as unknown as MqttContext;
-            const z2mState = { state: 'ON', brightness: 254 };
-
-            mockDevicesService.getDevice.mockResolvedValue(mockPhilipsDevice);
-            mockZigbeeStateMapper.mapState.mockReturnValue({
-                controls: { on: true, brightness: 100 },
-                measurements: {},
-            });
-            mockDevicesService.updateDevice.mockResolvedValue(mockPhilipsDevice);
-
-            await controller.onZigbeeDeviceStateChange(mockContext, z2mState);
-
-            expect(mockDevicesService.getDevice).toHaveBeenCalledWith({ zigbeeFriendlyName: 'living_room_bulb' }, { strict: false });
-            expect(mockZigbeeStateMapper.mapState).toHaveBeenCalledWith(z2mState);
-            expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('philips-device-uuid', expect.any(UpdateDeviceDto));
-        });
-
-        it('should ignore bridge messages', async () => {
-            const mockContext = {
-                getTopic: jest.fn().mockReturnValue('zigbee2mqtt/bridge'),
-            } as unknown as MqttContext;
-
-            await controller.onZigbeeDeviceStateChange(mockContext, { state: 'online' });
-
-            expect(mockDevicesService.getDevice).not.toHaveBeenCalled();
-        });
-
-        it('should ignore messages for unknown devices', async () => {
-            const mockContext = {
-                getTopic: jest.fn().mockReturnValue('zigbee2mqtt/unknown_device'),
-            } as unknown as MqttContext;
-
-            mockDevicesService.getDevice.mockResolvedValue(null);
-
-            await controller.onZigbeeDeviceStateChange(mockContext, { state: 'ON' });
-
-            expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
-        });
-
-        it('should handle errors gracefully', async () => {
-            const mockContext = {
-                getTopic: jest.fn().mockReturnValue('zigbee2mqtt/living_room_bulb'),
-            } as unknown as MqttContext;
-
-            mockDevicesService.getDevice.mockRejectedValue(new Error('Database error'));
-
-            await expect(controller.onZigbeeDeviceStateChange(mockContext, { state: 'ON' })).resolves.not.toThrow();
         });
     });
 });

@@ -1,15 +1,14 @@
-/* eslint-disable camelcase */
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DevicesService } from './devices.service';
 import { DEVICE_MODEL_PROVIDER_NAME } from './devices.constants';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
-import { Device, DeviceBrand, DeviceType, PairableDevice, Room } from './interfaces';
+import { Device, DeviceBrand, DeviceType, Room } from './interfaces';
 import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from './events';
 import { CreateDeviceDto, UpdateDeviceDto, GetDevicesDto, GetPairableDevicesDto } from './dto';
-import { MqttService } from 'mqtt/mqtt.service';
-import { ZigbeeDevice } from 'mqtt/interfaces';
+import { ZigbeeService } from 'zigbee/zigbee.service';
+import { PairableDevice } from 'zigbee/interfaces';
 
 describe('DevicesService', () => {
     let service: DevicesService;
@@ -22,17 +21,13 @@ describe('DevicesService', () => {
     };
     let mockControlServiceFactory: { getControlService: jest.Mock };
     let mockEventEmitter: { emit: jest.Mock };
-    let mockMqttService: {
-        setZigbeePermitJoin: jest.Mock;
-        renameZigbeeDevice: jest.Mock;
+    let mockZigbeeService: {
+        hasPairableDevice: jest.Mock;
+        getPairableDevice: jest.Mock;
+        getPairableDevices: jest.Mock;
+        setPermitJoin: jest.Mock;
+        renameDevice: jest.Mock;
         removeZigbeeDevice: jest.Mock;
-    };
-
-    const getStaticPairableCache = (): Map<string, PairableDevice> =>
-        (DevicesService as unknown as { pairableDevices: Map<string, PairableDevice> }).pairableDevices;
-
-    const setStaticPairableCache = (entries: Array<[string, PairableDevice]>): void => {
-        (DevicesService as unknown as { pairableDevices: Map<string, PairableDevice> }).pairableDevices = new Map(entries);
     };
 
     const mockDevice: Partial<Device> = {
@@ -74,13 +69,14 @@ describe('DevicesService', () => {
         mockDeviceModel = MockDeviceModel as unknown as typeof mockDeviceModel;
         mockControlServiceFactory = { getControlService: jest.fn().mockReturnValue(mockControlService) };
         mockEventEmitter = { emit: jest.fn() };
-        mockMqttService = {
-            setZigbeePermitJoin: jest.fn().mockResolvedValue(undefined),
-            renameZigbeeDevice: jest.fn().mockResolvedValue(undefined),
+        mockZigbeeService = {
+            hasPairableDevice: jest.fn().mockReturnValue(false),
+            getPairableDevice: jest.fn().mockReturnValue(null),
+            getPairableDevices: jest.fn().mockReturnValue([]),
+            setPermitJoin: jest.fn(),
+            renameDevice: jest.fn().mockResolvedValue(undefined),
             removeZigbeeDevice: jest.fn().mockResolvedValue(undefined),
         };
-
-        setStaticPairableCache([]);
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -98,8 +94,8 @@ describe('DevicesService', () => {
                     useValue: mockEventEmitter,
                 },
                 {
-                    provide: MqttService,
-                    useValue: mockMqttService,
+                    provide: ZigbeeService,
+                    useValue: mockZigbeeService,
                 },
             ],
         }).compile();
@@ -262,6 +258,7 @@ describe('DevicesService', () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(null),
             });
+            mockZigbeeService.hasPairableDevice.mockReturnValue(false);
 
             const createDto: CreateDeviceDto = {
                 name: 'Zigbee Device',
@@ -275,7 +272,7 @@ describe('DevicesService', () => {
             await expect(service.addDevice(createDto)).rejects.toThrow(
                 "Device with the provided zigbee Ieee ('0xnotpairable') is not discoverable. Make sure it's pairable first",
             );
-            expect(mockMqttService.renameZigbeeDevice).not.toHaveBeenCalled();
+            expect(mockZigbeeService.renameDevice).not.toHaveBeenCalled();
         });
 
         it('should rename zigbee device after creation when friendly name is set', async () => {
@@ -283,7 +280,7 @@ describe('DevicesService', () => {
                 exec: jest.fn().mockResolvedValue(null),
             });
             mockControlService.mergeValidateControls.mockResolvedValue({ on: true });
-            setStaticPairableCache([['0xpairable', { zigbeeIeeeAddress: '0xpairable', zigbeeFriendlyName: '0xpairable' }]]);
+            mockZigbeeService.hasPairableDevice.mockReturnValue(true);
 
             const createDto: CreateDeviceDto = {
                 name: 'Zigbee Bulb',
@@ -296,10 +293,11 @@ describe('DevicesService', () => {
 
             await service.addDevice(createDto);
 
-            expect(mockMqttService.renameZigbeeDevice).toHaveBeenCalledWith('0xpairable', 'living_room');
+            expect(mockZigbeeService.hasPairableDevice).toHaveBeenCalledWith('0xpairable');
+            expect(mockZigbeeService.renameDevice).toHaveBeenCalledWith('0xpairable', 'living_room');
         });
 
-        it('should not call mqttService.renameZigbeeDevice for non-zigbee devices', async () => {
+        it('should not call zigbeeService.renameDevice for non-zigbee devices', async () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(null),
             });
@@ -314,7 +312,7 @@ describe('DevicesService', () => {
 
             await service.addDevice(createDto);
 
-            expect(mockMqttService.renameZigbeeDevice).not.toHaveBeenCalled();
+            expect(mockZigbeeService.renameDevice).not.toHaveBeenCalled();
         });
     });
 
@@ -415,7 +413,10 @@ describe('DevicesService', () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(deviceWithSave),
             });
-            setStaticPairableCache([['0xpairable', { zigbeeIeeeAddress: '0xpairable', zigbeeFriendlyName: 'old_name' }]]);
+            mockZigbeeService.getPairableDevice.mockReturnValue({
+                zigbeeIeeeAddress: '0xpairable',
+                zigbeeFriendlyName: 'old_name',
+            });
 
             const updateDto = new UpdateDeviceDto({
                 zigbeeIeeeAddress: '0xpairable',
@@ -424,7 +425,7 @@ describe('DevicesService', () => {
 
             await service.updateDevice('device-uuid-123', updateDto);
 
-            expect(mockMqttService.renameZigbeeDevice).toHaveBeenCalledWith('0xpairable', 'new_name');
+            expect(mockZigbeeService.renameDevice).toHaveBeenCalledWith('0xpairable', 'new_name');
         });
 
         it('should not rename zigbee device when friendly name is unchanged', async () => {
@@ -441,7 +442,10 @@ describe('DevicesService', () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(deviceWithSave),
             });
-            setStaticPairableCache([['0xpairable', { zigbeeIeeeAddress: '0xpairable', zigbeeFriendlyName: 'same_name' }]]);
+            mockZigbeeService.getPairableDevice.mockReturnValue({
+                zigbeeIeeeAddress: '0xpairable',
+                zigbeeFriendlyName: 'same_name',
+            });
 
             const updateDto = new UpdateDeviceDto({
                 zigbeeIeeeAddress: '0xpairable',
@@ -450,7 +454,7 @@ describe('DevicesService', () => {
 
             await service.updateDevice('device-uuid-123', updateDto);
 
-            expect(mockMqttService.renameZigbeeDevice).not.toHaveBeenCalled();
+            expect(mockZigbeeService.renameDevice).not.toHaveBeenCalled();
         });
     });
 
@@ -477,7 +481,7 @@ describe('DevicesService', () => {
             await expect(service.removeDevice('nonexistent')).rejects.toThrow(NotFoundException);
         });
 
-        it('should remove zigbee device via mqtt when device has zigbeeIeeeAddress', async () => {
+        it('should remove zigbee device via zigbeeService when device has zigbeeIeeeAddress', async () => {
             const zigbeeDevice = { ...mockDevice, zigbeeIeeeAddress: '0xremoveme' };
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(zigbeeDevice),
@@ -488,10 +492,10 @@ describe('DevicesService', () => {
 
             await service.removeDevice('device-uuid-123');
 
-            expect(mockMqttService.removeZigbeeDevice).toHaveBeenCalledWith('0xremoveme');
+            expect(mockZigbeeService.removeZigbeeDevice).toHaveBeenCalledWith('0xremoveme');
         });
 
-        it('should not call mqttService.removeZigbeeDevice for non-zigbee devices', async () => {
+        it('should not call zigbeeService.removeZigbeeDevice for non-zigbee devices', async () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockDevice),
             });
@@ -501,102 +505,30 @@ describe('DevicesService', () => {
 
             await service.removeDevice('device-uuid-123');
 
-            expect(mockMqttService.removeZigbeeDevice).not.toHaveBeenCalled();
+            expect(mockZigbeeService.removeZigbeeDevice).not.toHaveBeenCalled();
         });
     });
 
     describe('toggleDevicePairingMode', () => {
-        it('should enable pairing mode with provided timeout', async () => {
-            const result = await service.toggleDevicePairingMode(true, 60);
+        it('should enable pairing mode with provided timeout', () => {
+            const result = service.toggleDevicePairingMode(true, 60);
 
-            expect(mockMqttService.setZigbeePermitJoin).toHaveBeenCalledWith(true, 60);
+            expect(mockZigbeeService.setPermitJoin).toHaveBeenCalledWith(true, 60);
             expect(result).toEqual({ enabled: true, timeout: 60 });
         });
 
-        it('should disable pairing mode and zero out the returned timeout', async () => {
-            const result = await service.toggleDevicePairingMode(false, 60);
+        it('should disable pairing mode and zero out the returned timeout', () => {
+            const result = service.toggleDevicePairingMode(false, 60);
 
-            expect(mockMqttService.setZigbeePermitJoin).toHaveBeenCalledWith(false, 60);
+            expect(mockZigbeeService.setPermitJoin).toHaveBeenCalledWith(false, 60);
             expect(result).toEqual({ enabled: false, timeout: 0 });
-        });
-    });
-
-    describe('savePairableDevices', () => {
-        const makeZigbeeDevice = (overrides: Partial<ZigbeeDevice> = {}): ZigbeeDevice => ({
-            ieee_address: '0x111',
-            friendly_name: 'bulb_1',
-            type: 'EndDevice',
-            supported: true,
-            disabled: false,
-            interview_completed: true,
-            interview_state: 'SUCCESSFUL',
-            definition: { model: 'M1', vendor: 'V', description: 'D' },
-            ...overrides,
-        });
-
-        it('should store eligible devices keyed by ieee address', async () => {
-            await service.savePairableDevices([
-                makeZigbeeDevice({ ieee_address: '0x001', friendly_name: 'bulb_a' }),
-                makeZigbeeDevice({ ieee_address: '0x002', friendly_name: 'bulb_b' }),
-            ]);
-
-            const cache = getStaticPairableCache();
-            expect(cache.size).toBe(2);
-            expect(cache.get('0x001')).toEqual({ zigbeeIeeeAddress: '0x001', zigbeeFriendlyName: 'bulb_a' });
-            expect(cache.get('0x002')).toEqual({ zigbeeIeeeAddress: '0x002', zigbeeFriendlyName: 'bulb_b' });
-        });
-
-        it('should filter out the Coordinator', async () => {
-            await service.savePairableDevices([
-                makeZigbeeDevice({ ieee_address: '0x001', type: 'Coordinator' }),
-                makeZigbeeDevice({ ieee_address: '0x002' }),
-            ]);
-
-            const cache = getStaticPairableCache();
-            expect(cache.has('0x001')).toBe(false);
-            expect(cache.has('0x002')).toBe(true);
-        });
-
-        it('should filter out unsupported devices', async () => {
-            await service.savePairableDevices([makeZigbeeDevice({ ieee_address: '0x001', supported: false })]);
-
-            expect(getStaticPairableCache().size).toBe(0);
-        });
-
-        it('should filter out disabled devices', async () => {
-            await service.savePairableDevices([makeZigbeeDevice({ ieee_address: '0x001', disabled: true })]);
-
-            expect(getStaticPairableCache().size).toBe(0);
-        });
-
-        it('should filter out devices whose interview has not completed', async () => {
-            await service.savePairableDevices([makeZigbeeDevice({ ieee_address: '0x001', interview_completed: false })]);
-
-            expect(getStaticPairableCache().size).toBe(0);
-        });
-
-        it('should filter out devices whose interview state is not SUCCESSFUL', async () => {
-            await service.savePairableDevices([
-                makeZigbeeDevice({ ieee_address: '0x001', interview_state: 'FAILED' }),
-                makeZigbeeDevice({ ieee_address: '0x002', interview_state: 'IN_PROGRESS' }),
-                makeZigbeeDevice({ ieee_address: '0x003', interview_state: 'PENDING' }),
-            ]);
-
-            expect(getStaticPairableCache().size).toBe(0);
-        });
-
-        it('should replace the previously cached devices', async () => {
-            await service.savePairableDevices([makeZigbeeDevice({ ieee_address: '0xold' })]);
-            await service.savePairableDevices([makeZigbeeDevice({ ieee_address: '0xnew' })]);
-
-            const cache = getStaticPairableCache();
-            expect(cache.has('0xold')).toBe(false);
-            expect(cache.has('0xnew')).toBe(true);
         });
     });
 
     describe('getPairableDevices', () => {
         it('should return an empty page when no devices are cached', async () => {
+            mockZigbeeService.getPairableDevices.mockReturnValue([]);
+
             const result = await service.getPairableDevices();
 
             expect(result.devices).toEqual([]);
@@ -605,10 +537,10 @@ describe('DevicesService', () => {
         });
 
         it('should exclude devices that are already registered', async () => {
-            setStaticPairableCache([
-                ['0x001', { zigbeeIeeeAddress: '0x001', zigbeeFriendlyName: 'bulb_a' }],
-                ['0x002', { zigbeeIeeeAddress: '0x002', zigbeeFriendlyName: 'bulb_b' }],
-                ['0x003', { zigbeeIeeeAddress: '0x003', zigbeeFriendlyName: 'bulb_c' }],
+            mockZigbeeService.getPairableDevices.mockReturnValue([
+                { zigbeeIeeeAddress: '0x001', zigbeeFriendlyName: 'bulb_a' },
+                { zigbeeIeeeAddress: '0x002', zigbeeFriendlyName: 'bulb_b' },
+                { zigbeeIeeeAddress: '0x003', zigbeeFriendlyName: 'bulb_c' },
             ]);
             mockDeviceModel.find.mockReturnValue({
                 lean: jest.fn().mockResolvedValue([{ zigbeeIeeeAddress: '0x002' }]),
@@ -625,11 +557,11 @@ describe('DevicesService', () => {
         });
 
         it('should paginate the pairable devices', async () => {
-            const entries: Array<[string, PairableDevice]> = Array.from({ length: 25 }, (_, i) => {
+            const entries: Array<PairableDevice> = Array.from({ length: 25 }, (_, i) => {
                 const ieee = `0x${i.toString().padStart(3, '0')}`;
-                return [ieee, { zigbeeIeeeAddress: ieee, zigbeeFriendlyName: `bulb_${i}` }];
+                return { zigbeeIeeeAddress: ieee, zigbeeFriendlyName: `bulb_${i}` };
             });
-            setStaticPairableCache(entries);
+            mockZigbeeService.getPairableDevices.mockReturnValue(entries);
             mockDeviceModel.find.mockReturnValue({
                 lean: jest.fn().mockResolvedValue([]),
             });

@@ -1,0 +1,102 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { MqttContext } from '@nestjs/microservices';
+import { ZigbeeController } from './zigbee.controller';
+import { ZigbeeService } from './zigbee.service';
+import { MqttService } from 'mqtt/mqtt.service';
+import { ZIGBEE_DEVICE_STATE_TOPIC } from './zigbee.constants';
+import { ZigbeeDevice } from './interfaces';
+
+describe('ZigbeeController', () => {
+    let controller: ZigbeeController;
+    let mockZigbeeService: {
+        savePairableDevices: jest.Mock;
+        updateDeviceState: jest.Mock;
+    };
+    let mockMqttService: { extractTopicWildcards: jest.Mock };
+
+    const makeContext = (topic: string): MqttContext =>
+        ({
+            getTopic: jest.fn().mockReturnValue(topic),
+            getPacket: jest.fn().mockReturnValue({ payload: {} }),
+        }) as unknown as MqttContext;
+
+    const sampleZigbeeDevice: ZigbeeDevice = {
+        ieee_address: '0x001',
+        friendly_name: 'living_room_bulb',
+        type: 'EndDevice',
+        supported: true,
+        disabled: false,
+        interview_completed: true,
+        interview_state: 'SUCCESSFUL',
+        definition: { model: 'M1', vendor: 'V', description: 'D' },
+    };
+
+    beforeEach(async () => {
+        mockZigbeeService = {
+            savePairableDevices: jest.fn(),
+            updateDeviceState: jest.fn().mockResolvedValue(undefined),
+        };
+        mockMqttService = { extractTopicWildcards: jest.fn() };
+
+        const module: TestingModule = await Test.createTestingModule({
+            controllers: [ZigbeeController],
+            providers: [
+                { provide: ZigbeeService, useValue: mockZigbeeService },
+                { provide: MqttService, useValue: mockMqttService },
+            ],
+        }).compile();
+
+        controller = module.get<ZigbeeController>(ZigbeeController);
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    describe('onConnectedDevicesListChange', () => {
+        it('should forward the device list to ZigbeeService.savePairableDevices', () => {
+            const devices = [sampleZigbeeDevice];
+
+            controller.onConnectedDevicesListChange(makeContext('zigbee2mqtt/bridge/devices'), devices);
+
+            expect(mockZigbeeService.savePairableDevices).toHaveBeenCalledWith(devices);
+        });
+
+        it('should default to an empty array when no payload is provided', () => {
+            controller.onConnectedDevicesListChange(makeContext('zigbee2mqtt/bridge/devices'), null as unknown as Array<ZigbeeDevice>);
+
+            expect(mockZigbeeService.savePairableDevices).toHaveBeenCalledWith([]);
+        });
+    });
+
+    describe('onDeviceStateChange', () => {
+        it('should update the device state for a real device', async () => {
+            mockMqttService.extractTopicWildcards.mockReturnValue(['living_room_bulb']);
+            const state = { action: 'on', battery: 90 };
+
+            await controller.onDeviceStateChange(makeContext('zigbee2mqtt/living_room_bulb'), state);
+
+            expect(mockMqttService.extractTopicWildcards).toHaveBeenCalledWith(ZIGBEE_DEVICE_STATE_TOPIC, 'zigbee2mqtt/living_room_bulb');
+            expect(mockZigbeeService.updateDeviceState).toHaveBeenCalledWith('living_room_bulb', state);
+        });
+
+        it('should ignore the bridge status topic', async () => {
+            mockMqttService.extractTopicWildcards.mockReturnValue(['bridge']);
+
+            await controller.onDeviceStateChange(makeContext('zigbee2mqtt/bridge'), { state: 'online' });
+
+            expect(mockZigbeeService.updateDeviceState).not.toHaveBeenCalled();
+        });
+
+        it('should ignore nested bridge topics', async () => {
+            mockMqttService.extractTopicWildcards.mockReturnValue(['bridge/devices']);
+
+            await controller.onDeviceStateChange(makeContext('zigbee2mqtt/bridge/devices'), [sampleZigbeeDevice] as unknown as Record<
+                string,
+                unknown
+            >);
+
+            expect(mockZigbeeService.updateDeviceState).not.toHaveBeenCalled();
+        });
+    });
+});

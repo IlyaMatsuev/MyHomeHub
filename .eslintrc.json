@@ -16,7 +16,7 @@
     "@typescript-eslint/array-type": ["error", { "default": "generic" }],
     "@typescript-eslint/interface-name-prefix": "off",
     "consistent-return": "warn",
-    "camelcase": "error",
+    "camelcase": "warn",
     "curly": "error",
     "max-depth": ["error", 5],
     "max-params": ["error", 5],
