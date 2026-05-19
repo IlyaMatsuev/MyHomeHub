@@ -70,18 +70,13 @@ export class DevicesService {
 
         const newDevice = await this.assignDtoValues(new this.deviceModel(deviceDto), deviceDto);
         if (newDevice.zigbeeFriendlyName) {
-            // TODO: This doesn't do anything for some reason
-            await this.zigbeeService.renameDevice(newDevice.zigbeeIeeeAddress, newDevice.zigbeeFriendlyName);
+            this.zigbeeService.renameDevice(newDevice.zigbeeIeeeAddress, newDevice.zigbeeFriendlyName);
         }
         return newDevice;
     }
 
     async updateDevice(externalId: string, updateDeviceInfoDto: UpdateDeviceDto): Promise<Device> {
         const device = await this.getDeviceByExternalId(externalId);
-        if (updateDeviceInfoDto.zigbeeIeeeAddress && device.zigbeeIeeeAddress !== updateDeviceInfoDto.zigbeeIeeeAddress) {
-            throw new BadRequestException(`Zigbee Ieee address cannot be changed, add a new device instead`);
-        }
-
         const updatedDevice = await this.assignDtoValues(device, updateDeviceInfoDto);
         if (updateDeviceInfoDto.controlsUpdated) {
             this.eventEmitter.emit(
@@ -96,7 +91,7 @@ export class DevicesService {
         if (device.zigbeeIeeeAddress) {
             const oldZigbeeFriendlyName = this.zigbeeService.getPairableDevice(device.zigbeeIeeeAddress)?.zigbeeFriendlyName;
             if (oldZigbeeFriendlyName !== updatedDevice.zigbeeFriendlyName) {
-                await this.zigbeeService.renameDevice(updatedDevice.zigbeeIeeeAddress, updatedDevice.zigbeeFriendlyName);
+                this.zigbeeService.renameDevice(updatedDevice.zigbeeIeeeAddress, updatedDevice.zigbeeFriendlyName);
             }
         }
         return updatedDevice;
@@ -106,7 +101,7 @@ export class DevicesService {
         const device = await this.getDeviceByExternalId(externalId);
         await this.deviceModel.deleteOne({ _id: device._id }).exec();
         if (device.zigbeeIeeeAddress) {
-            await this.zigbeeService.removeZigbeeDevice(device.zigbeeIeeeAddress);
+            this.zigbeeService.removeZigbeeDevice(device.zigbeeIeeeAddress);
         }
         return device;
     }

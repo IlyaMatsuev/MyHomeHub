@@ -65,11 +65,11 @@ export class ZigbeeService {
         this.mqttService.publish(ZIGBEE_BRIDGE_PERMIT_JOIN_TOPIC, payload);
     }
 
-    async renameDevice(ieeeAddress: string, newFriendlyName: string): Promise<void> {
+    renameDevice(ieeeAddress: string, newFriendlyName: string): void {
         this.mqttService.publish(ZIGBEE_BRIDGE_DEVICE_RENAME_TOPIC, { from: ieeeAddress, to: newFriendlyName });
     }
 
-    async removeZigbeeDevice(ieeeAddress: string, force = false): Promise<void> {
+    removeZigbeeDevice(ieeeAddress: string, force = false): void {
         this.mqttService.publish(ZIGBEE_BRIDGE_DEVICE_REMOVE_TOPIC, { id: ieeeAddress, force });
     }
 

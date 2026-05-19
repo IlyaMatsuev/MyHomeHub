@@ -9,6 +9,7 @@ import { MqttService } from 'mqtt/mqtt.service';
 export class ZigbeeController {
     private readonly logger = new Logger(ZigbeeController.name);
 
+    // TODO: Listen to friendly name rename topic
     constructor(
         private readonly mqttService: MqttService,
         private readonly zigbeeService: ZigbeeService,
