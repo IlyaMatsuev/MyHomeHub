@@ -44,7 +44,6 @@ services:
     networks:
       - smarthome-network
 
-  # TODO: Need to print a warning message or something, if z2m is not working on the host
   zigbee2mqtt:
     image: koenkk/zigbee2mqtt
     container_name: zigbee2mqtt

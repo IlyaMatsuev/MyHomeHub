@@ -4,17 +4,19 @@ import { ZigbeeController } from './zigbee.controller';
 import { ZigbeeService } from './zigbee.service';
 import { MqttService } from 'mqtt/mqtt.service';
 import { ZIGBEE_DEVICE_STATE_TOPIC } from './zigbee.constants';
-import { ZigbeeDevice } from './interfaces';
+import { ZigbeeBridgeHealth, ZigbeeDevice } from './interfaces';
 import { ZigbeePairableDevices } from './store';
+import { ZigbeeBridge } from './store/zigbee-bridge';
 
 describe('ZigbeeController', () => {
     let controller: ZigbeeController;
     let mockZigbeeService: {
-        updateDeviceState: jest.Mock;
+        handleDeviceStateUpdate: jest.Mock;
         handleDeviceExternalRename: jest.Mock;
     };
     let mockMqttService: { extractTopicWildcards: jest.Mock };
     let saveSpy: jest.SpyInstance;
+    let bridgeSaveSpy: jest.SpyInstance;
 
     const makeContext = (topic: string): MqttContext =>
         ({
@@ -35,11 +37,12 @@ describe('ZigbeeController', () => {
 
     beforeEach(async () => {
         mockZigbeeService = {
-            updateDeviceState: jest.fn().mockResolvedValue(undefined),
+            handleDeviceStateUpdate: jest.fn().mockResolvedValue(undefined),
             handleDeviceExternalRename: jest.fn().mockResolvedValue(undefined),
         };
         mockMqttService = { extractTopicWildcards: jest.fn() };
         saveSpy = jest.spyOn(ZigbeePairableDevices, 'save').mockImplementation(() => undefined);
+        bridgeSaveSpy = jest.spyOn(ZigbeeBridge, 'save').mockImplementation(() => undefined);
 
         const module: TestingModule = await Test.createTestingModule({
             controllers: [ZigbeeController],
@@ -54,6 +57,16 @@ describe('ZigbeeController', () => {
 
     afterEach(() => {
         jest.restoreAllMocks();
+    });
+
+    describe('onBridgeHealthCheck', () => {
+        it('should forward the health report to ZigbeeBridge.save', () => {
+            const health = { mqtt: { connected: true } } as ZigbeeBridgeHealth;
+
+            controller.onBridgeHealthCheck(makeContext('zigbee2mqtt/bridge/health'), health);
+
+            expect(bridgeSaveSpy).toHaveBeenCalledWith(health);
+        });
     });
 
     describe('onConnectedDevicesListChange', () => {
@@ -80,7 +93,7 @@ describe('ZigbeeController', () => {
             await controller.onDeviceStateChange(makeContext('zigbee2mqtt/living_room_bulb'), state);
 
             expect(mockMqttService.extractTopicWildcards).toHaveBeenCalledWith(ZIGBEE_DEVICE_STATE_TOPIC, 'zigbee2mqtt/living_room_bulb');
-            expect(mockZigbeeService.updateDeviceState).toHaveBeenCalledWith('living_room_bulb', state);
+            expect(mockZigbeeService.handleDeviceStateUpdate).toHaveBeenCalledWith('living_room_bulb', state);
         });
 
         it('should ignore the bridge status topic', async () => {
@@ -88,7 +101,7 @@ describe('ZigbeeController', () => {
 
             await controller.onDeviceStateChange(makeContext('zigbee2mqtt/bridge'), { state: 'online' });
 
-            expect(mockZigbeeService.updateDeviceState).not.toHaveBeenCalled();
+            expect(mockZigbeeService.handleDeviceStateUpdate).not.toHaveBeenCalled();
         });
 
         it('should ignore nested bridge topics', async () => {
@@ -99,7 +112,7 @@ describe('ZigbeeController', () => {
                 unknown
             >);
 
-            expect(mockZigbeeService.updateDeviceState).not.toHaveBeenCalled();
+            expect(mockZigbeeService.handleDeviceStateUpdate).not.toHaveBeenCalled();
         });
     });
 

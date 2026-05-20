@@ -10,6 +10,7 @@ import {
     ZIGBEE_BRIDGE_DEVICE_RENAME_TOPIC,
     ZIGBEE_BRIDGE_PERMIT_JOIN_TOPIC,
 } from 'zigbee/zigbee.constants';
+import { ZigbeeBridge } from 'zigbee/store/zigbee-bridge';
 
 @Injectable()
 export class ZigbeeService {
@@ -22,6 +23,10 @@ export class ZigbeeService {
     ) {}
 
     setPermitJoin(enable: boolean, seconds: number): void {
+        if (!ZigbeeBridge.connected()) {
+            return;
+        }
+
         const payload: { value: boolean; time?: number } = { value: enable };
         if (seconds !== undefined) {
             payload.time = seconds;
@@ -30,7 +35,15 @@ export class ZigbeeService {
     }
 
     renameDevice(ieeeAddress: string, newFriendlyName: string): void {
-        this.mqttService.publish(ZIGBEE_BRIDGE_DEVICE_RENAME_TOPIC, { from: ieeeAddress, to: newFriendlyName });
+        if (ZigbeeBridge.connected()) {
+            this.mqttService.publish(ZIGBEE_BRIDGE_DEVICE_RENAME_TOPIC, { from: ieeeAddress, to: newFriendlyName });
+        }
+    }
+
+    removeZigbeeDevice(ieeeAddress: string, force = false): void {
+        if (ZigbeeBridge.connected()) {
+            this.mqttService.publish(ZIGBEE_BRIDGE_DEVICE_REMOVE_TOPIC, { id: ieeeAddress, force });
+        }
     }
 
     async handleDeviceExternalRename(oldFriendlyName: string, newFriendlyName: string): Promise<void> {
@@ -48,11 +61,7 @@ export class ZigbeeService {
         }
     }
 
-    removeZigbeeDevice(ieeeAddress: string, force = false): void {
-        this.mqttService.publish(ZIGBEE_BRIDGE_DEVICE_REMOVE_TOPIC, { id: ieeeAddress, force });
-    }
-
-    async updateDeviceState(zigbeeFriendlyName: string, state: Record<string, unknown>): Promise<void> {
+    async handleDeviceStateUpdate(zigbeeFriendlyName: string, state: Record<string, unknown>): Promise<void> {
         try {
             const device = await this.devicesService.getDeviceByZigbeeFriendlyName(zigbeeFriendlyName);
             if (!device) {

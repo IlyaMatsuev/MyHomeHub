@@ -3,12 +3,14 @@ import { Ctx, MessagePattern, MqttContext, Payload } from '@nestjs/microservices
 import {
     ZIGBEE_BRIDGE_DEVICE_RENAME_RESPONSE_TOPIC,
     ZIGBEE_BRIDGE_DEVICES_TOPIC,
+    ZIGBEE_BRIDGE_HEALTH,
     ZIGBEE_DEVICE_STATE_TOPIC,
 } from 'zigbee/zigbee.constants';
-import { ZigbeeDevice } from 'zigbee/interfaces';
+import { ZigbeeBridgeHealth, ZigbeeDevice } from 'zigbee/interfaces';
 import { ZigbeePairableDevices } from 'zigbee/store';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { MqttService } from 'mqtt/mqtt.service';
+import { ZigbeeBridge } from 'zigbee/store/zigbee-bridge';
 
 /**
  * Docs: https://www.zigbee2mqtt.io/guide/usage/mqtt_topics_and_messages.html
@@ -22,6 +24,12 @@ export class ZigbeeController {
         private readonly zigbeeService: ZigbeeService,
     ) {}
 
+    @MessagePattern(ZIGBEE_BRIDGE_HEALTH)
+    onBridgeHealthCheck(@Ctx() context: MqttContext, @Payload() health: ZigbeeBridgeHealth): void {
+        this.logger.debug(`[${context.getTopic()}]: Update bridge health details: ${JSON.stringify(health)}`);
+        ZigbeeBridge.save(health);
+    }
+
     @MessagePattern(ZIGBEE_BRIDGE_DEVICES_TOPIC)
     onConnectedDevicesListChange(@Ctx() context: MqttContext, @Payload() devices: Array<ZigbeeDevice>): void {
         this.logger.debug(`[${context.getTopic()}]: Update ZigBee devices list: ${JSON.stringify(devices)}`);
@@ -34,7 +42,7 @@ export class ZigbeeController {
 
         const friendlyName = this.extractFriendlyName(ZIGBEE_DEVICE_STATE_TOPIC, context.getTopic());
         if (friendlyName) {
-            await this.zigbeeService.updateDeviceState(friendlyName, state);
+            await this.zigbeeService.handleDeviceStateUpdate(friendlyName, state);
         }
     }
 
