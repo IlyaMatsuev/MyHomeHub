@@ -10,6 +10,7 @@ import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from 'devi
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { PairableDevicesPage } from 'zigbee/interfaces';
+import { ZigbeePairableDevices } from 'zigbee/store';
 
 @Injectable()
 export class DevicesService {
@@ -66,7 +67,7 @@ export class DevicesService {
         if (existingDevice) {
             throw new BadRequestException(`Device with the same name ('${deviceDto.name}') already exists`);
         }
-        if (deviceDto.zigbeeIeeeAddress && !this.zigbeeService.hasPairableDevice(deviceDto.zigbeeIeeeAddress)) {
+        if (deviceDto.zigbeeIeeeAddress && !ZigbeePairableDevices.has(deviceDto.zigbeeIeeeAddress)) {
             throw new BadRequestException(
                 `Device with the provided zigbee Ieee ('${deviceDto.zigbeeIeeeAddress}') is not discoverable. Make sure it's pairable first`,
             );
@@ -93,7 +94,7 @@ export class DevicesService {
         }
 
         if (device.zigbeeIeeeAddress) {
-            const oldZigbeeFriendlyName = this.zigbeeService.getPairableDevice(device.zigbeeIeeeAddress)?.zigbeeFriendlyName;
+            const oldZigbeeFriendlyName = ZigbeePairableDevices.get(device.zigbeeIeeeAddress)?.zigbeeFriendlyName;
             if (oldZigbeeFriendlyName !== updatedDevice.zigbeeFriendlyName) {
                 this.zigbeeService.renameDevice(updatedDevice.zigbeeIeeeAddress, updatedDevice.zigbeeFriendlyName);
             }
@@ -116,7 +117,7 @@ export class DevicesService {
     }
 
     async getPairableDevices(options: GetPairableDevicesDto = new GetPairableDevicesDto()): Promise<PairableDevicesPage> {
-        const cachedZigbeeDevices = this.zigbeeService.getPairableDevices();
+        const cachedZigbeeDevices = ZigbeePairableDevices.getAll();
 
         if (!cachedZigbeeDevices.length) {
             return { devices: [], page: options.page, pageSize: options.pageSize, totalPages: 0 };

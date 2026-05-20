@@ -6,6 +6,7 @@ import {
     ZIGBEE_DEVICE_STATE_TOPIC,
 } from 'zigbee/zigbee.constants';
 import { ZigbeeDevice } from 'zigbee/interfaces';
+import { ZigbeePairableDevices } from 'zigbee/store';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { MqttService } from 'mqtt/mqtt.service';
 
@@ -24,7 +25,7 @@ export class ZigbeeController {
     @MessagePattern(ZIGBEE_BRIDGE_DEVICES_TOPIC)
     onConnectedDevicesListChange(@Ctx() context: MqttContext, @Payload() devices: Array<ZigbeeDevice>): void {
         this.logger.debug(`[${context.getTopic()}]: Update ZigBee devices list: ${JSON.stringify(devices)}`);
-        this.zigbeeService.savePairableDevices(devices ?? []);
+        ZigbeePairableDevices.save(devices ?? []);
     }
 
     @MessagePattern(ZIGBEE_DEVICE_STATE_TOPIC)

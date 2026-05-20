@@ -5,15 +5,16 @@ import { ZigbeeService } from './zigbee.service';
 import { MqttService } from 'mqtt/mqtt.service';
 import { ZIGBEE_DEVICE_STATE_TOPIC } from './zigbee.constants';
 import { ZigbeeDevice } from './interfaces';
+import { ZigbeePairableDevices } from './store';
 
 describe('ZigbeeController', () => {
     let controller: ZigbeeController;
     let mockZigbeeService: {
-        savePairableDevices: jest.Mock;
         updateDeviceState: jest.Mock;
         handleDeviceExternalRename: jest.Mock;
     };
     let mockMqttService: { extractTopicWildcards: jest.Mock };
+    let saveSpy: jest.SpyInstance;
 
     const makeContext = (topic: string): MqttContext =>
         ({
@@ -34,11 +35,11 @@ describe('ZigbeeController', () => {
 
     beforeEach(async () => {
         mockZigbeeService = {
-            savePairableDevices: jest.fn(),
             updateDeviceState: jest.fn().mockResolvedValue(undefined),
             handleDeviceExternalRename: jest.fn().mockResolvedValue(undefined),
         };
         mockMqttService = { extractTopicWildcards: jest.fn() };
+        saveSpy = jest.spyOn(ZigbeePairableDevices, 'save').mockImplementation(() => undefined);
 
         const module: TestingModule = await Test.createTestingModule({
             controllers: [ZigbeeController],
@@ -52,22 +53,22 @@ describe('ZigbeeController', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        jest.restoreAllMocks();
     });
 
     describe('onConnectedDevicesListChange', () => {
-        it('should forward the device list to ZigbeeService.savePairableDevices', () => {
+        it('should forward the device list to ZigbeePairableDevices.save', () => {
             const devices = [sampleZigbeeDevice];
 
             controller.onConnectedDevicesListChange(makeContext('zigbee2mqtt/bridge/devices'), devices);
 
-            expect(mockZigbeeService.savePairableDevices).toHaveBeenCalledWith(devices);
+            expect(saveSpy).toHaveBeenCalledWith(devices);
         });
 
         it('should default to an empty array when no payload is provided', () => {
             controller.onConnectedDevicesListChange(makeContext('zigbee2mqtt/bridge/devices'), null as unknown as Array<ZigbeeDevice>);
 
-            expect(mockZigbeeService.savePairableDevices).toHaveBeenCalledWith([]);
+            expect(saveSpy).toHaveBeenCalledWith([]);
         });
     });
 

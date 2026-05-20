@@ -1,6 +1,5 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { MqttService } from 'mqtt/mqtt.service';
-import { ZigbeeDevice, PairableDevice } from 'zigbee/interfaces';
 import { UpdateDeviceDto } from 'devices/dto';
 import { DevicesService } from 'devices/devices.service';
 import { DeviceControls, DevicePayload } from 'devices/interfaces';
@@ -16,46 +15,11 @@ import {
 export class ZigbeeService {
     private readonly logger = new Logger(ZigbeeService.name);
 
-    private static pairableDevices: Map<string, PairableDevice> = new Map<string, PairableDevice>();
-
     constructor(
         private readonly mqttService: MqttService,
         @Inject(forwardRef(() => DevicesService))
         private readonly devicesService: DevicesService,
     ) {}
-
-    hasPairableDevice(ieeeAddress: string): boolean {
-        return ZigbeeService.pairableDevices.has(ieeeAddress);
-    }
-
-    getPairableDevice(ieeeAddress: string): PairableDevice | null {
-        return ZigbeeService.pairableDevices.get(ieeeAddress) || null;
-    }
-
-    getPairableDevices(): Array<PairableDevice> {
-        return Array.from(ZigbeeService.pairableDevices.values());
-    }
-
-    savePairableDevices(zigbeeDevices: Array<ZigbeeDevice>): void {
-        const eligibleZigbeeDevices: Array<[string, PairableDevice]> = zigbeeDevices
-            .filter(
-                zd =>
-                    // "Coordinator" is a zigbee dongle itself
-                    zd.type !== 'Coordinator' &&
-                    zd.supported &&
-                    !zd.disabled &&
-                    zd.interview_completed &&
-                    zd.interview_state === 'SUCCESSFUL',
-            )
-            .map(zd => [
-                zd.ieee_address,
-                {
-                    zigbeeIeeeAddress: zd.ieee_address,
-                    zigbeeFriendlyName: zd.friendly_name,
-                },
-            ]);
-        ZigbeeService.pairableDevices = new Map<string, PairableDevice>(eligibleZigbeeDevices);
-    }
 
     setPermitJoin(enable: boolean, seconds: number): void {
         const payload: { value: boolean; time?: number } = { value: enable };

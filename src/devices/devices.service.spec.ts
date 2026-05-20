@@ -9,6 +9,7 @@ import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from './ev
 import { CreateDeviceDto, UpdateDeviceDto, GetDevicesDto, GetPairableDevicesDto } from './dto';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { PairableDevice } from 'zigbee/interfaces';
+import { ZigbeePairableDevices } from 'zigbee/store';
 
 describe('DevicesService', () => {
     let service: DevicesService;
@@ -22,13 +23,13 @@ describe('DevicesService', () => {
     let mockControlServiceFactory: { getControlService: jest.Mock };
     let mockEventEmitter: { emit: jest.Mock };
     let mockZigbeeService: {
-        hasPairableDevice: jest.Mock;
-        getPairableDevice: jest.Mock;
-        getPairableDevices: jest.Mock;
         setPermitJoin: jest.Mock;
         renameDevice: jest.Mock;
         removeZigbeeDevice: jest.Mock;
     };
+    let hasSpy: jest.SpyInstance;
+    let getSpy: jest.SpyInstance;
+    let getAllSpy: jest.SpyInstance;
 
     const mockDevice: Partial<Device> = {
         _id: 'mongo-id-123',
@@ -70,13 +71,13 @@ describe('DevicesService', () => {
         mockControlServiceFactory = { getControlService: jest.fn().mockReturnValue(mockControlService) };
         mockEventEmitter = { emit: jest.fn() };
         mockZigbeeService = {
-            hasPairableDevice: jest.fn().mockReturnValue(false),
-            getPairableDevice: jest.fn().mockReturnValue(null),
-            getPairableDevices: jest.fn().mockReturnValue([]),
             setPermitJoin: jest.fn(),
             renameDevice: jest.fn().mockResolvedValue(undefined),
             removeZigbeeDevice: jest.fn().mockResolvedValue(undefined),
         };
+        hasSpy = jest.spyOn(ZigbeePairableDevices, 'has').mockReturnValue(false);
+        getSpy = jest.spyOn(ZigbeePairableDevices, 'get').mockReturnValue(null);
+        getAllSpy = jest.spyOn(ZigbeePairableDevices, 'getAll').mockReturnValue([]);
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -104,7 +105,7 @@ describe('DevicesService', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        jest.restoreAllMocks();
     });
 
     describe('getControlService', () => {
@@ -279,7 +280,7 @@ describe('DevicesService', () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(null),
             });
-            mockZigbeeService.hasPairableDevice.mockReturnValue(false);
+            hasSpy.mockReturnValue(false);
 
             const createDto: CreateDeviceDto = {
                 name: 'Zigbee Device',
@@ -301,7 +302,7 @@ describe('DevicesService', () => {
                 exec: jest.fn().mockResolvedValue(null),
             });
             mockControlService.mergeValidateControls.mockResolvedValue({ on: true });
-            mockZigbeeService.hasPairableDevice.mockReturnValue(true);
+            hasSpy.mockReturnValue(true);
 
             const createDto: CreateDeviceDto = {
                 name: 'Zigbee Bulb',
@@ -314,7 +315,7 @@ describe('DevicesService', () => {
 
             await service.addDevice(createDto);
 
-            expect(mockZigbeeService.hasPairableDevice).toHaveBeenCalledWith('0xpairable');
+            expect(hasSpy).toHaveBeenCalledWith('0xpairable');
             expect(mockZigbeeService.renameDevice).toHaveBeenCalledWith('0xpairable', 'living_room');
         });
 
@@ -415,7 +416,7 @@ describe('DevicesService', () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(deviceWithSave),
             });
-            mockZigbeeService.getPairableDevice.mockReturnValue({
+            getSpy.mockReturnValue({
                 zigbeeIeeeAddress: '0xpairable',
                 zigbeeFriendlyName: 'old_name',
             });
@@ -443,7 +444,7 @@ describe('DevicesService', () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(deviceWithSave),
             });
-            mockZigbeeService.getPairableDevice.mockReturnValue({
+            getSpy.mockReturnValue({
                 zigbeeIeeeAddress: '0xpairable',
                 zigbeeFriendlyName: 'same_name',
             });
@@ -527,7 +528,7 @@ describe('DevicesService', () => {
 
     describe('getPairableDevices', () => {
         it('should return an empty page when no devices are cached', async () => {
-            mockZigbeeService.getPairableDevices.mockReturnValue([]);
+            getAllSpy.mockReturnValue([]);
 
             const result = await service.getPairableDevices();
 
@@ -537,7 +538,7 @@ describe('DevicesService', () => {
         });
 
         it('should exclude devices that are already registered', async () => {
-            mockZigbeeService.getPairableDevices.mockReturnValue([
+            getAllSpy.mockReturnValue([
                 { zigbeeIeeeAddress: '0x001', zigbeeFriendlyName: 'bulb_a' },
                 { zigbeeIeeeAddress: '0x002', zigbeeFriendlyName: 'bulb_b' },
                 { zigbeeIeeeAddress: '0x003', zigbeeFriendlyName: 'bulb_c' },
@@ -561,7 +562,7 @@ describe('DevicesService', () => {
                 const ieee = `0x${i.toString().padStart(3, '0')}`;
                 return { zigbeeIeeeAddress: ieee, zigbeeFriendlyName: `bulb_${i}` };
             });
-            mockZigbeeService.getPairableDevices.mockReturnValue(entries);
+            getAllSpy.mockReturnValue(entries);
             mockDeviceModel.find.mockReturnValue({
                 lean: jest.fn().mockResolvedValue([]),
             });
