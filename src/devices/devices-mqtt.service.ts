@@ -1,0 +1,95 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { PairAcceptDto, PairRequestDto, DeviceControlsDto, DevicePayloadDto, UpdateDeviceDto } from 'devices/dto';
+import { DevicesService } from 'devices/devices.service';
+import { Device } from 'devices/interfaces';
+import { MqttService } from 'mqtt/mqtt.service';
+import { ESP32_DEVICE_PAIR_REQUEST_REPLY_TOPIC } from 'devices/devices.constants';
+
+@Injectable()
+export class DevicesMqttService {
+    private readonly logger = new Logger(DevicesMqttService.name);
+
+    constructor(
+        private readonly mqttService: MqttService,
+        private readonly devicesService: DevicesService,
+    ) {}
+
+    async handleEsp32DevicePairRequest(pairRequest: PairRequestDto): Promise<void> {
+        try {
+            this.logger.log(`Received a device (${pairRequest?.deviceName}) pairing request with IP "${pairRequest?.deviceIp}"`);
+
+            if (!pairRequest?.deviceIp || !pairRequest?.deviceName) {
+                this.logger.debug(`No device ip and name provided: ${JSON.stringify(pairRequest)}`);
+                return;
+            }
+
+            let existingDevice = await this.devicesService.getDeviceByIp(pairRequest.deviceIp);
+            if (!existingDevice) {
+                // TODO: Need to pair devices only if the secret token matches
+                existingDevice = await this.devicesService.addDevice(pairRequest.toCreateDevice());
+            } else {
+                await this.devicesService.updateDevice(
+                    existingDevice.externalId,
+                    new UpdateDeviceDto({
+                        controls: pairRequest.controls,
+                        measurements: pairRequest.measurements,
+                    }),
+                );
+            }
+            this.pairEsp32Device(existingDevice);
+            this.logger.log(`Device (${existingDevice.externalId}) has been successfully paired`);
+        } catch (error) {
+            this.rejectEsp32Device(`${error}`);
+            this.logger.error(`Error while pairing a device (${pairRequest?.deviceName}) with IP "${pairRequest?.deviceIp}"`);
+            this.logger.error(error);
+        }
+    }
+
+    async handleEsp32DeviceControlsSync(deviceId: string, controls: DeviceControlsDto): Promise<void> {
+        const device = await this.devicesService.getDeviceByExternalId(deviceId, { strict: false });
+        if (!device) {
+            this.logger.warn(`No device found to sync controls for device "${deviceId}"`);
+            return;
+        }
+
+        try {
+            // TODO: Need to verify the secret before updating
+            this.logger.debug(`Syncing controls for a device with id "${deviceId}"`);
+            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ controls }));
+        } catch (error) {
+            this.logger.error(`Error while syncing controls for a device with id "${deviceId}"`);
+            this.logger.error(error);
+        }
+    }
+
+    async handleEsp32DeviceMeasurementsUpdate(deviceId: string, measurements: DevicePayloadDto): Promise<void> {
+        const device = await this.devicesService.getDeviceByExternalId(deviceId, { strict: false });
+        if (!device) {
+            this.logger.warn(`No device found to update measurements for device "${deviceId}"`);
+            return;
+        }
+
+        try {
+            // TODO: Need to verify the secret before updating
+            this.logger.debug(`Updating measurements for a device with id "${deviceId}": ${JSON.stringify(measurements)}`);
+            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ measurements }));
+        } catch (error) {
+            this.logger.error(`Error while retrieving measurements for a device with id "${deviceId}"`);
+            this.logger.error(error);
+        }
+    }
+
+    private pairEsp32Device(device: Device) {
+        this.mqttService.publish(
+            ESP32_DEVICE_PAIR_REQUEST_REPLY_TOPIC,
+            PairAcceptDto.accept(device.externalId, device.controls, device.updateInterval),
+        );
+    }
+
+    private rejectEsp32Device(reason: string) {
+        this.mqttService.publish(
+            ESP32_DEVICE_PAIR_REQUEST_REPLY_TOPIC,
+            PairAcceptDto.reject(`Device pairing has been rejected: ${reason}`),
+        );
+    }
+}

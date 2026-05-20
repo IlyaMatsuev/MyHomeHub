@@ -4,13 +4,15 @@ import { DevicesControlModule } from 'devices-control/devices-control.module';
 import { DevicesController } from 'devices/devices.controller';
 import { DevicesService } from 'devices/devices.service';
 import { devicesProviders } from 'devices/devices.providers';
+import { DevicesMqttController } from 'devices/devices-mqtt.controller';
+import { DevicesMqttService } from 'devices/devices-mqtt.service';
 import { ZigbeeModule } from 'zigbee/zigbee.module';
+import { MqttModule } from 'mqtt/mqtt.module';
 
 @Module({
-    // TODO: Remove Zigbee/MQTT module from here
-    imports: [DatabaseModule, DevicesControlModule, forwardRef(() => ZigbeeModule)],
-    controllers: [DevicesController],
-    providers: [DevicesService, ...devicesProviders],
+    imports: [DatabaseModule, DevicesControlModule, MqttModule, forwardRef(() => ZigbeeModule)],
+    controllers: [DevicesController, DevicesMqttController],
+    providers: [DevicesService, DevicesMqttService, ...devicesProviders],
     exports: [DevicesService],
 })
 export class DevicesModule {}

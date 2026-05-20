@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MqttService } from './mqtt.service';
-import { CONTROLS_UPDATE_TOPIC_NAME, DEVICE_PAIR_REPLY_TOPIC_NAME, MQTT_CLIENT_PROVIDER_NAME } from './mqtt.constants';
-import { PairAcceptDto } from './dto';
+import { MQTT_CLIENT_PROVIDER_NAME } from './mqtt.constants';
+
+// Generic topics used to exercise the topic-mechanics of MqttService.
+const NO_WILDCARD_TOPIC = 'home/devices/pair/reply';
+const SINGLE_WILDCARD_TOPIC = 'home/devices/+/controls/update';
 
 describe('MqttService', () => {
     let service: MqttService;
@@ -31,15 +34,15 @@ describe('MqttService', () => {
         it('should emit payload to the given topic when no wildcard params are passed', () => {
             const payload = { hello: 'world' };
 
-            service.publish(DEVICE_PAIR_REPLY_TOPIC_NAME, payload);
+            service.publish(NO_WILDCARD_TOPIC, payload);
 
-            expect(mockClient.emit).toHaveBeenCalledWith(DEVICE_PAIR_REPLY_TOPIC_NAME, payload);
+            expect(mockClient.emit).toHaveBeenCalledWith(NO_WILDCARD_TOPIC, payload);
         });
 
         it('should substitute wildcard segments with the provided params', () => {
             const controls = { on: true, brightness: 50 };
 
-            service.publish(CONTROLS_UPDATE_TOPIC_NAME, controls, 'device-uuid-123');
+            service.publish(SINGLE_WILDCARD_TOPIC, controls, 'device-uuid-123');
 
             expect(mockClient.emit).toHaveBeenCalledWith('home/devices/device-uuid-123/controls/update', controls);
         });
@@ -55,7 +58,7 @@ describe('MqttService', () => {
 
     describe('extractTopicWildcards', () => {
         it('should return the values that matched wildcards', () => {
-            const result = service.extractTopicWildcards(CONTROLS_UPDATE_TOPIC_NAME, 'home/devices/device-uuid-123/controls/update');
+            const result = service.extractTopicWildcards(SINGLE_WILDCARD_TOPIC, 'home/devices/device-uuid-123/controls/update');
 
             expect(result).toEqual(['device-uuid-123']);
         });
@@ -67,35 +70,9 @@ describe('MqttService', () => {
         });
 
         it('should return an empty array when the pattern has no wildcards', () => {
-            const result = service.extractTopicWildcards(DEVICE_PAIR_REPLY_TOPIC_NAME, DEVICE_PAIR_REPLY_TOPIC_NAME);
+            const result = service.extractTopicWildcards(NO_WILDCARD_TOPIC, NO_WILDCARD_TOPIC);
 
             expect(result).toEqual([]);
-        });
-    });
-});
-
-describe('PairAcceptDto', () => {
-    describe('accept', () => {
-        it('should create accept response with device details', () => {
-            const result = PairAcceptDto.accept('device-id', { on: true }, 3000);
-
-            expect(result).toEqual({
-                accepted: true,
-                deviceId: 'device-id',
-                controls: { on: true },
-                updateInterval: 3000,
-            });
-        });
-    });
-
-    describe('reject', () => {
-        it('should create rejection response with error message', () => {
-            const result = PairAcceptDto.reject('Error message');
-
-            expect(result).toEqual({
-                accepted: false,
-                message: 'Error message',
-            });
         });
     });
 });

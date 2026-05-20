@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { MqttService } from 'mqtt/mqtt.service';
-import { CONTROLS_UPDATE_TOPIC_NAME } from 'mqtt/mqtt.constants';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
+import { ESP32_DEVICE_CONTROLS_UPDATE_TOPIC } from 'devices/devices.constants';
 import { Device } from 'devices/interfaces';
 import { DevicesControlService } from 'devices-control/devices-control.service';
 import { Esp32ControlsDto } from 'devices-control/providers';
@@ -24,6 +24,6 @@ export class Esp32ControlService extends DevicesControlService {
     }
 
     protected async setDeviceControls(controls: Esp32ControlsDto): Promise<void | never> {
-        this.mqttService.publish(CONTROLS_UPDATE_TOPIC_NAME, controls, this.device.externalId);
+        this.mqttService.publish(ESP32_DEVICE_CONTROLS_UPDATE_TOPIC, controls, this.device.externalId);
     }
 }

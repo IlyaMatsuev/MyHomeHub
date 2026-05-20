@@ -46,8 +46,8 @@ export class DevicesService {
         return this.getDevice({ externalId }, options);
     }
 
-    getDeviceByIp(ip: string, options: GetDeviceOptions = { strict: true }): Promise<Device> {
-        return this.getDevice({ ip }, options);
+    getDeviceByIp(ip: string): Promise<Device> {
+        return this.getDevice({ ip }, { strict: false });
     }
 
     getDeviceByZigbeeFriendlyName(friendlyName: string): Promise<Device> {

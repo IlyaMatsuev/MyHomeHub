@@ -1,6 +1,6 @@
 import { CreateDeviceDto } from 'devices/dto';
 import { DeviceBrand, DevicePayload, DeviceType } from 'devices/interfaces';
-import { MEASUREMENTS_DEFAULT_UPDATE_INTERVAL } from 'mqtt/mqtt.constants';
+import { ESP32_DEVICE_MEASUREMENTS_DEFAULT_UPDATE_INTERVAL } from 'devices/devices.constants';
 
 export class PairRequestDto {
     deviceIp: string;
@@ -15,7 +15,7 @@ export class PairRequestDto {
             name: this.deviceName,
             type: this.deviceType,
             brand: DeviceBrand.ESP32,
-            updateInterval: this.updateInterval ?? MEASUREMENTS_DEFAULT_UPDATE_INTERVAL,
+            updateInterval: this.updateInterval ?? ESP32_DEVICE_MEASUREMENTS_DEFAULT_UPDATE_INTERVAL,
             ip: this.deviceIp,
             controls: this.controls ?? {},
             measurements: this.measurements ?? {},
