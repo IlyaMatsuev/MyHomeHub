@@ -26,14 +26,13 @@ const CREATE_MQTT_USER_NPM_SCRIPT = 'mqtt:user:new';
 const REQUIRED_VARS = [
     'MQTT_DOMAIN',
     'MQTT_PORT',
-    'Z2M_MQTT_BASE_TOPIC',
     'Z2M_MQTT_USERNAME',
     'Z2M_MQTT_PASSWORD',
     'Z2M_NETWORK_KEY',
     'Z2M_PAN_ID',
     'Z2M_EXT_PAN_ID',
 ];
-const STRING_VARS = new Set(['Z2M_MQTT_BASE_TOPIC', 'Z2M_MQTT_USERNAME', 'Z2M_MQTT_PASSWORD']);
+const STRING_VARS = new Set(['Z2M_MQTT_USERNAME', 'Z2M_MQTT_PASSWORD']);
 const RESERVED_PAN_IDS = [0, 0xffff];
 
 main();
