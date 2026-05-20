@@ -50,8 +50,8 @@ export class ZigbeeController {
     async onDeviceFriendlyNameChange(@Ctx() context: MqttContext, @Payload() response: Record<string, unknown>): Promise<void> {
         this.logger.debug(`[${context.getTopic()}]: Update ZigBee device friendly name response: ${JSON.stringify(response)}`);
 
-        const { from, to } = response.data as { from: string; to: string };
-        if (response.status === 'ok') {
+        const { from, to } = response as { from: string; to: string };
+        if (from && to) {
             await this.zigbeeService.handleDeviceExternalRename(from, to);
         } else {
             this.logger.warn(`Failed to rename a Zigbee device from "${from}" to "${to}"`);

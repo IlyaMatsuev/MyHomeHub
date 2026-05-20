@@ -117,16 +117,24 @@ describe('ZigbeeController', () => {
     });
 
     describe('onDeviceFriendlyNameChange', () => {
-        it('should handle a successful rename response', async () => {
-            const response = { status: 'ok', data: { from: 'old_name', to: 'new_name' } };
+        it('should handle a rename response carrying both from and to', async () => {
+            const response = { from: 'MainLightRemote', to: 'MainLightRemoteTest', homeassistant_rename: false };
 
             await controller.onDeviceFriendlyNameChange(makeContext('zigbee2mqtt/bridge/response/device/rename'), response);
 
-            expect(mockZigbeeService.handleDeviceExternalRename).toHaveBeenCalledWith('old_name', 'new_name');
+            expect(mockZigbeeService.handleDeviceExternalRename).toHaveBeenCalledWith('MainLightRemote', 'MainLightRemoteTest');
         });
 
-        it('should not handle the rename when the response status is not ok', async () => {
-            const response = { status: 'error', data: { from: 'old_name', to: 'new_name' } };
+        it('should not handle the rename when "to" is missing', async () => {
+            const response = { from: 'MainLightRemote' };
+
+            await controller.onDeviceFriendlyNameChange(makeContext('zigbee2mqtt/bridge/response/device/rename'), response);
+
+            expect(mockZigbeeService.handleDeviceExternalRename).not.toHaveBeenCalled();
+        });
+
+        it('should not handle the rename when "from" is missing', async () => {
+            const response = { to: 'MainLightRemoteTest' };
 
             await controller.onDeviceFriendlyNameChange(makeContext('zigbee2mqtt/bridge/response/device/rename'), response);
 
