@@ -1,5 +1,5 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { IsBoolean, IsInt, IsOptional, Min } from 'class-validator';
+import { IsBoolean, IsOptional } from 'class-validator';
 import { DeviceControls, DevicePayload } from 'devices/interfaces';
 
 @ApiSchema({ name: 'DevicePayload', description: 'DTO describing the structure of controls or measurements payloads' })
@@ -17,16 +17,6 @@ export class DevicePayloadDto implements DevicePayload {
 
 @ApiSchema({ name: 'DeviceControls', description: 'DTO describing the structure of a generic controls payload' })
 export class DeviceControlsDto extends DevicePayloadDto implements DeviceControls {
-    // TODO: Need to implement "$onSwitchDelay" option?
-    @IsOptional()
-    @IsInt()
-    @Min(0)
-    @ApiProperty({
-        required: false,
-        description: `Specifies the amount of ms before the device's "on" state is switched`,
-    })
-    $onSwitchDelay?: number;
-
     @IsBoolean()
     @IsOptional()
     @ApiProperty({

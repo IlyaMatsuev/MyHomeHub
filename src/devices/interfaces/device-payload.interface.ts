@@ -5,5 +5,4 @@ export interface DevicePayload {
 
 export interface DeviceControls extends DevicePayload {
     on?: boolean;
-    onSwitchDelay?: number;
 }
