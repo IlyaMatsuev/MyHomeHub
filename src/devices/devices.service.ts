@@ -49,6 +49,10 @@ export class DevicesService {
         return this.getDevice({ ip }, options);
     }
 
+    getDeviceByZigbeeFriendlyName(friendlyName: string): Promise<Device> {
+        return this.getDevice({ zigbeeFriendlyName: friendlyName }, { strict: false });
+    }
+
     async getDevice(filter: DeviceFilter, options: GetDeviceOptions = { strict: true }): Promise<Device> {
         const device = await this.deviceModel.findOne(filter).exec();
         if (!device && options.strict) {

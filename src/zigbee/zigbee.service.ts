@@ -69,13 +69,28 @@ export class ZigbeeService {
         this.mqttService.publish(ZIGBEE_BRIDGE_DEVICE_RENAME_TOPIC, { from: ieeeAddress, to: newFriendlyName });
     }
 
+    async handleDeviceExternalRename(oldFriendlyName: string, newFriendlyName: string): Promise<void> {
+        const device = await this.devicesService.getDeviceByZigbeeFriendlyName(oldFriendlyName);
+        if (!device) {
+            this.logger.warn(`No device found to rename with Zigbee friendly name "${oldFriendlyName}". Updated to "${newFriendlyName}"`);
+            return;
+        }
+
+        if (oldFriendlyName !== newFriendlyName) {
+            await this.devicesService.updateDevice(
+                device.externalId,
+                new UpdateDeviceDto({ zigbeeFriendlyName: newFriendlyName ?? device.zigbeeIeeeAddress }),
+            );
+        }
+    }
+
     removeZigbeeDevice(ieeeAddress: string, force = false): void {
         this.mqttService.publish(ZIGBEE_BRIDGE_DEVICE_REMOVE_TOPIC, { id: ieeeAddress, force });
     }
 
     async updateDeviceState(zigbeeFriendlyName: string, state: Record<string, unknown>): Promise<void> {
         try {
-            const device = await this.devicesService.getDevice({ zigbeeFriendlyName }, { strict: false });
+            const device = await this.devicesService.getDeviceByZigbeeFriendlyName(zigbeeFriendlyName);
             if (!device) {
                 this.logger.debug(`No device found with Zigbee friendly name "${zigbeeFriendlyName}", ignoring state update`);
                 return;

@@ -219,6 +219,27 @@ describe('DevicesService', () => {
         });
     });
 
+    describe('getDeviceByZigbeeFriendlyName', () => {
+        it('should return device by zigbee friendly name', async () => {
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockDevice),
+            });
+
+            const result = await service.getDeviceByZigbeeFriendlyName('living_room_bulb');
+
+            expect(result).toEqual(mockDevice);
+            expect(mockDeviceModel.findOne).toHaveBeenCalledWith({ zigbeeFriendlyName: 'living_room_bulb' });
+        });
+
+        it('should return null without throwing when no device matches', async () => {
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            await expect(service.getDeviceByZigbeeFriendlyName('unknown')).resolves.toBeNull();
+        });
+    });
+
     describe('addDevice', () => {
         it('should create new device when name does not exist', async () => {
             mockDeviceModel.findOne.mockReturnValue({

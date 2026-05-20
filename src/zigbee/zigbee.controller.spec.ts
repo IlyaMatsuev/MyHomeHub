@@ -11,6 +11,7 @@ describe('ZigbeeController', () => {
     let mockZigbeeService: {
         savePairableDevices: jest.Mock;
         updateDeviceState: jest.Mock;
+        handleDeviceExternalRename: jest.Mock;
     };
     let mockMqttService: { extractTopicWildcards: jest.Mock };
 
@@ -35,6 +36,7 @@ describe('ZigbeeController', () => {
         mockZigbeeService = {
             savePairableDevices: jest.fn(),
             updateDeviceState: jest.fn().mockResolvedValue(undefined),
+            handleDeviceExternalRename: jest.fn().mockResolvedValue(undefined),
         };
         mockMqttService = { extractTopicWildcards: jest.fn() };
 
@@ -97,6 +99,24 @@ describe('ZigbeeController', () => {
             >);
 
             expect(mockZigbeeService.updateDeviceState).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('onDeviceFriendlyNameChange', () => {
+        it('should handle a successful rename response', async () => {
+            const response = { status: 'ok', data: { from: 'old_name', to: 'new_name' } };
+
+            await controller.onDeviceFriendlyNameChange(makeContext('zigbee2mqtt/bridge/response/device/rename'), response);
+
+            expect(mockZigbeeService.handleDeviceExternalRename).toHaveBeenCalledWith('old_name', 'new_name');
+        });
+
+        it('should not handle the rename when the response status is not ok', async () => {
+            const response = { status: 'error', data: { from: 'old_name', to: 'new_name' } };
+
+            await controller.onDeviceFriendlyNameChange(makeContext('zigbee2mqtt/bridge/response/device/rename'), response);
+
+            expect(mockZigbeeService.handleDeviceExternalRename).not.toHaveBeenCalled();
         });
     });
 });
