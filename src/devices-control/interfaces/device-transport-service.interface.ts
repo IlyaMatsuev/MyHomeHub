@@ -1,6 +1,7 @@
 export enum TransportProtocol {
     Mqtt = 'mqtt',
     Http = 'http',
+    Zigbee = 'zigbee',
 }
 
 export interface MqttMessage {

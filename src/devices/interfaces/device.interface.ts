@@ -1,5 +1,6 @@
 import { Document } from 'mongodb';
 import { DeviceBrand, DevicePayload, DeviceType, Room } from 'devices/interfaces';
+import { TransportProtocol } from 'devices-control/interfaces';
 
 export interface Device extends Document {
     externalId: string;
@@ -7,6 +8,7 @@ export interface Device extends Document {
     type: DeviceType;
     room: Room;
     brand: DeviceBrand;
+    transportProtocol: TransportProtocol;
     ip: string;
     tuyaDeviceId: string;
     tuyaDeviceLocalKey: string;

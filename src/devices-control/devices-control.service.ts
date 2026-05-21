@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { Device, DeviceControls } from 'devices/interfaces';
 import { ConfigService } from '@nestjs/config';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
@@ -6,7 +6,6 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { CustomValidationException } from 'common/exceptions';
 
-@Injectable()
 export abstract class DevicesControlService {
     protected readonly logger: Logger;
 

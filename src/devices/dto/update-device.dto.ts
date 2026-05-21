@@ -27,6 +27,7 @@ import {
     DEVICE_NAME_MIN_LENGTH,
 } from 'devices/devices.constants';
 import { DeviceControlsDto, DevicePayloadDto } from 'devices/dto';
+import { TransportProtocol } from 'devices-control/interfaces';
 
 @ApiSchema({
     name: 'UpdateDeviceRequest',
@@ -70,6 +71,14 @@ export class UpdateDeviceDto {
         enum: Room,
     })
     room?: Room;
+
+    @IsEnum(TransportProtocol)
+    @ApiProperty({
+        required: false,
+        description: 'The protocol to use for communicating with the device',
+        enum: TransportProtocol,
+    })
+    transportProtocol?: TransportProtocol;
 
     @IsOptional()
     @IsInt()

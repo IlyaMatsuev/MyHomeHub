@@ -13,6 +13,7 @@ export enum Room {
 export enum DeviceType {
     Speaker = 'speaker',
     Plug = 'plug',
+    Switch = 'switch',
     LED = 'led',
     Fans = 'fans',
     MotionSensor = 'motion-sensor',

@@ -3,6 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { ZIGBEE_FRIENDLY_NAME_MAX_LENGTH, ZIGBEE_FRIENDLY_NAME_MIN_LENGTH, ZIGBEE_IEEE_ADDRESS_REGEX } from 'common/common.constants';
 import { DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import { DEVICE_DEFAULT_UPDATE_INTERVAL, DEVICE_NAME_MAX_LENGTH, DEVICE_NAME_MIN_LENGTH } from 'devices/devices.constants';
+import { TransportProtocol } from 'devices-control/interfaces';
 
 export const DeviceSchema = new Schema(
     {
@@ -65,7 +66,11 @@ export const DeviceSchema = new Schema(
                 message: `Tuya device local key can be specified only for a device of brand "${DeviceBrand.Tuya}"`,
             },
         },
-        // TODO: Introduce "communicationType": 'http' | 'mqtt' | 'zigbee' and add validations
+        transportProtocol: {
+            type: String,
+            required: true,
+            enum: Object.values(TransportProtocol) as Array<string>,
+        },
         zigbeeFriendlyName: {
             type: String,
             index: true,
@@ -88,7 +93,16 @@ export const DeviceSchema = new Schema(
         zigbeeIeeeAddress: {
             type: String,
             index: true,
+            required: function () {
+                return this.transportProtocol === TransportProtocol.Zigbee;
+            },
             validate: [
+                {
+                    validator: function (): boolean {
+                        return this.transportProtocol === TransportProtocol.Zigbee;
+                    },
+                    message: 'Zigbee IEEE address cannot be assign to a non-Zigbee device',
+                },
                 {
                     validator: (value: string): boolean => ZIGBEE_IEEE_ADDRESS_REGEX.test(value),
                     message: 'Zigbee IEEE address must match the format 0x followed by 16 hex characters',

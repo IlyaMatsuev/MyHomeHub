@@ -9,7 +9,6 @@ import {
     IsIP,
     IsNotEmptyObject,
     Matches,
-    ValidateIf,
     ValidateNested,
     MinLength,
     MaxLength,
@@ -31,6 +30,7 @@ import {
     DEVICE_NAME_MIN_LENGTH,
 } from 'devices/devices.constants';
 import { DeviceControlsDto, DevicePayloadDto } from 'devices/dto';
+import { TransportProtocol } from 'devices-control/interfaces';
 
 @ApiSchema({ name: 'CreateDeviceRequest', description: 'DTO used to add a new device to the hub control' })
 export class CreateDeviceDto {
@@ -72,6 +72,14 @@ export class CreateDeviceDto {
     })
     room?: Room;
 
+    @IsEnum(TransportProtocol)
+    @ApiProperty({
+        required: true,
+        description: 'The protocol to use for communicating with the device',
+        enum: TransportProtocol,
+    })
+    transportProtocol: TransportProtocol;
+
     @IsOptional()
     @IsInt()
     @Min(DEVICE_DEFAULT_UPDATE_INTERVAL)
@@ -94,7 +102,6 @@ export class CreateDeviceDto {
 
     @IsNotEmpty()
     @IsString()
-    @ValidateIf(d => d.brand === DeviceBrand.Tuya)
     @ApiProperty({
         required: false,
         description: 'The device ID of the Tuya smart device',
@@ -103,7 +110,6 @@ export class CreateDeviceDto {
 
     @IsNotEmpty()
     @IsString()
-    @ValidateIf(d => d.brand === DeviceBrand.Tuya)
     @ApiProperty({
         required: false,
         description: 'The device local key of the Tuya smart device',
