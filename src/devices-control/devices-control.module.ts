@@ -10,6 +10,7 @@ import {
 } from 'devices-control/providers';
 import { providers } from 'devices-control/devices-control.providers';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
+import { HttpTransportService, MqttTransportService } from 'devices-control/transport';
 
 @Module({
     imports: [CommonModule, MqttModule],
@@ -19,6 +20,10 @@ import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-contro
         ShellyControlServiceFactory,
         Esp32ControlServiceFactory,
         PhilipsControlServiceFactory,
+
+        HttpTransportService,
+        MqttTransportService,
+
         ...providers,
     ],
     exports: [DEVICES_CONTROL_FACTORY_PROVIDER],

@@ -1,5 +1,5 @@
-import { DeviceControlServiceFactory } from 'devices-control/interfaces';
-import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
+import { DeviceControlServiceFactory, DeviceTransportService } from 'devices-control/interfaces';
+import { DEVICES_CONTROL_FACTORY_PROVIDER, DEVICE_TRANSPORT_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { DevicesControlServiceFactory } from 'devices-control/devices-control-service.factory';
 import {
     GoogleSpeakerControlServiceFactory,
@@ -8,6 +8,7 @@ import {
     Esp32ControlServiceFactory,
     PhilipsControlServiceFactory,
 } from 'devices-control/providers';
+import { DeviceTransportServiceResolver, HttpTransportService, MqttTransportService } from 'devices-control/transport';
 
 export const providers = [
     {
@@ -21,5 +22,10 @@ export const providers = [
             Esp32ControlServiceFactory,
             PhilipsControlServiceFactory,
         ],
+    },
+    {
+        provide: DEVICE_TRANSPORT_FACTORY_PROVIDER,
+        useFactory: (...transportServices: Array<DeviceTransportService>) => new DeviceTransportServiceResolver(transportServices),
+        inject: [HttpTransportService, MqttTransportService],
     },
 ];
