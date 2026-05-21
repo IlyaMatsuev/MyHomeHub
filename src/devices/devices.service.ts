@@ -1,12 +1,12 @@
-import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { Model } from 'mongoose';
 import { DevicesControlServiceFactory } from 'devices-control/devices-control-service.factory';
 import { DevicesControlService } from 'devices-control/devices-control.service';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { Device, DeviceFilter, DevicesPage, GetDeviceOptions, PairingModeStatus } from 'devices/interfaces';
 import { GetDevicesDto, CreateDeviceDto, UpdateDeviceDto, GetPairableDevicesDto } from 'devices/dto';
-import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from 'devices/events';
+import { DeviceUpdatedEvent, DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from 'devices/events';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { PairableDevicesPage } from 'zigbee/interfaces';
@@ -14,6 +14,8 @@ import { ZigbeePairableDevices } from 'zigbee/store';
 
 @Injectable()
 export class DevicesService {
+    private readonly logger = new Logger(DevicesService.name);
+
     constructor(
         @Inject(DEVICE_MODEL_PROVIDER_NAME)
         private readonly deviceModel: Model<Device>,
@@ -23,6 +25,18 @@ export class DevicesService {
         @Inject(forwardRef(() => ZigbeeService))
         private readonly zigbeeService: ZigbeeService,
     ) {}
+
+    @OnEvent(DeviceUpdatedEvent.eventName)
+    async onDeviceUpdated(event: DeviceUpdatedEvent): Promise<void> {
+        this.logger.debug(`[${DeviceUpdatedEvent.eventName}] Event: ${JSON.stringify(event)}`);
+
+        const device = await this.getDevice(event.selector, { strict: false });
+        if (device) {
+            await this.updateDevice(device.externalId, event.update);
+        } else {
+            this.logger.warn(`No device matched DeviceUpdatedEvent selector ${JSON.stringify(event.selector)}`);
+        }
+    }
 
     getControlService(device: Device): DevicesControlService {
         return this.deviceControlServiceFactory.getControlService(device);

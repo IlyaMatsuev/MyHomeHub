@@ -1,4 +1,6 @@
-// TODO: Move them to mongodb documents
+// Ideally these enums need to be available as mongodb documents, so that they can be changed whenever I add a new device type/brand
+// However, adding a new type/brand always requires additional development anyway.
+// If I want to make it configurable, I need to provide a way of configuring the communication between devices via API instead of code
 
 export enum Room {
     Bathroom = 'bathroom',
