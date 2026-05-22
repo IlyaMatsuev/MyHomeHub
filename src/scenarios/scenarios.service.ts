@@ -1,5 +1,6 @@
 import {
     BadRequestException,
+    forwardRef,
     Inject,
     Injectable,
     InternalServerErrorException,
@@ -8,6 +9,7 @@ import {
     OnModuleInit,
 } from '@nestjs/common';
 import { Model, RootFilterQuery } from 'mongoose';
+import { DevicesService } from 'devices/devices.service';
 import {
     GetScenarioOptions,
     Scenario,
@@ -32,6 +34,8 @@ export class ScenariosService implements OnModuleInit {
         private readonly schedulerService: SchedulerService,
         private readonly scenariosExecutionService: ScenariosExecutionService,
         private readonly scenarioGroupsService: ScenarioGroupsService,
+        @Inject(forwardRef(() => DevicesService))
+        private readonly devicesService: DevicesService,
     ) {}
 
     async onModuleInit(): Promise<void> {
@@ -42,6 +46,10 @@ export class ScenariosService implements OnModuleInit {
         const conditions: RootFilterQuery<Scenario> = options.includeInactive ? {} : { active: true };
         if (options.group) {
             conditions.group = options.group;
+        }
+        if (options.room || options.allowEmptyRoom) {
+            const deviceExternalIds = await this.devicesService.getDeviceExternalIdsByRoom(options.room ?? null);
+            conditions['devices.externalId'] = { $in: deviceExternalIds };
         }
         const [scenarios, total] = await Promise.all([
             this.scenarioModel.find(conditions).skip(options.skipRecords).limit(options.pageSize).lean(),
