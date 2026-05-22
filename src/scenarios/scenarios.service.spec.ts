@@ -133,6 +133,29 @@ describe('ScenariosService', () => {
         });
     });
 
+    describe('scheduled job handler', () => {
+        it('should re-fetch the latest scenario state and execute it when the cron fires', async () => {
+            mockScenarioModel.find.mockReturnValue({
+                exec: jest.fn().mockResolvedValue([mockScenario]),
+            });
+
+            await service.onModuleInit();
+
+            const { handler } = mockSchedulerService.scheduleJob.mock.calls[0][0];
+
+            // The fresh state the handler should pick up at fire time (not the stale closure scenario).
+            const freshScenario = { ...mockScenario, active: false };
+            mockScenarioModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(freshScenario),
+            });
+
+            await handler();
+
+            expect(mockScenarioModel.findOne).toHaveBeenCalledWith({ externalId: mockScenario.externalId });
+            expect(mockScenariosExecutionService.execute).toHaveBeenCalledWith(freshScenario, true);
+        });
+    });
+
     describe('getScenarios', () => {
         it('should return paginated active scenarios by default', async () => {
             const scenarios = [mockScenario];

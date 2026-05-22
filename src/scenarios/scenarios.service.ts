@@ -174,7 +174,10 @@ export class ScenariosService implements OnModuleInit {
             this.schedulerService.scheduleJob({
                 name: scenario.name,
                 cron: cronTriggerSource.cron,
-                handler: () => this.scenariosExecutionService.execute(scenario.externalId, true),
+                handler: async () => {
+                    const actualScenario = await this.getScenarioByExternalId(scenario.externalId);
+                    await this.scenariosExecutionService.execute(actualScenario, true);
+                },
             });
         } catch (ex) {
             this.logger.error(`Failed to schedule a scenario on "${cronTriggerSource.cron}: ${ex.message}"`);

@@ -19,10 +19,17 @@ export class ScenariosExecutionService {
         private readonly conditionsEvaluatorService: ConditionsEvaluatorService,
     ) {}
 
-    async execute(scenarioExternalId: string, wasScheduled: boolean): Promise<void> {
-        let scenario: Scenario;
+    @OnEvent(DeviceUpdateCompletedEvent.eventName)
+    async onDeviceUpdateCompleted(event: DeviceUpdateCompletedEvent): Promise<void> {
+        if (event.controlsUpdated || event.measurementsUpdated) {
+            await this.triggerDeviceRelatedScenarios(event.deviceExternalId);
+        }
+    }
+
+    // TODO: Probably need to introduce something like "commands": DevicePayloadDto
+    //  to allow setting controls and triggering scenarios without saving the state (like for remotes)
+    async execute(scenario: Scenario, wasScheduled: boolean): Promise<void> {
         try {
-            scenario = await this.scenariosService.getScenarioByExternalId(scenarioExternalId);
             const conditions = await this.extractConditions(scenario.trigger.sources, wasScheduled);
             const shouldExecuteScenario = this.conditionsEvaluatorService.evaluateTriggerExpression(scenario.trigger.logic, conditions);
 
@@ -32,16 +39,20 @@ export class ScenariosExecutionService {
                 await this.executeScenario(scenario);
             }
         } catch (error) {
-            this.logger.error(`Error during cron job execution for scenario: ${scenarioExternalId}`);
+            this.logger.error(`Error during cron job execution for scenario: ${scenario.externalId}`);
             this.logger.error(error);
         } finally {
         }
     }
 
-    @OnEvent(DeviceUpdateCompletedEvent.eventName)
-    private async onDeviceUpdateCompleted(event: DeviceUpdateCompletedEvent): Promise<void> {
-        if (event.controlsUpdated || event.measurementsUpdated) {
-            await this.triggerDeviceRelatedScenarios(event.deviceExternalId);
+    private async triggerDeviceRelatedScenarios(deviceExternalId: string): Promise<void> {
+        this.logger.debug(`Received controls/measurements update for a device "${deviceExternalId}"`);
+        const triggeredScenarios = await this.scenariosService.getDeviceTriggeredScenarios(deviceExternalId);
+
+        this.logger.debug(`Triggered scenarios: "${triggeredScenarios.length}"`);
+
+        for (const triggeredScenario of triggeredScenarios) {
+            await this.execute(triggeredScenario, false);
         }
     }
 
@@ -58,17 +69,6 @@ export class ScenariosExecutionService {
             }
         }
         return conditions;
-    }
-
-    private async triggerDeviceRelatedScenarios(deviceExternalId: string): Promise<void> {
-        this.logger.debug(`Received controls/measurements update for a device "${deviceExternalId}"`);
-        const triggeredScenarios = await this.scenariosService.getDeviceTriggeredScenarios(deviceExternalId);
-
-        this.logger.debug(`Triggered scenarios: "${triggeredScenarios.length}"`);
-
-        for (const triggeredScenario of triggeredScenarios) {
-            await this.execute(triggeredScenario.externalId, false);
-        }
     }
 
     private async executeScenario(scenario: Scenario): Promise<void> {
