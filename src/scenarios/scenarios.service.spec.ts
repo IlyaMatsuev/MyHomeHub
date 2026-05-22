@@ -5,8 +5,10 @@ import { ScenarioGroupsService } from './scenario-groups.service';
 import { SCENARIO_MODEL_PROVIDER_NAME } from './scenarios.constants';
 import { SchedulerService } from 'scheduler/scheduler.service';
 import { ScenariosExecutionService } from './scenarios-execution.service';
+import { DevicesService } from 'devices/devices.service';
 import { Scenario, ScenarioCronTriggerSource, ScenarioTriggerSourceType } from './interfaces';
 import { CreateScenarioDto, GetScenariosDto, UpdateScenarioDto } from './dto';
+import { Room } from 'devices/interfaces';
 
 describe('ScenariosService', () => {
     let service: ScenariosService;
@@ -29,6 +31,7 @@ describe('ScenariosService', () => {
         syncGroupOnUpdate: jest.Mock;
         syncGroupOnDelete: jest.Mock;
     };
+    let mockDevicesService: { getDeviceExternalIdsByRoom: jest.Mock };
 
     const mockScenario: Partial<Scenario> = {
         _id: 'mongo-id-123',
@@ -86,6 +89,9 @@ describe('ScenariosService', () => {
             syncGroupOnUpdate: jest.fn().mockResolvedValue(undefined),
             syncGroupOnDelete: jest.fn().mockResolvedValue(undefined),
         };
+        mockDevicesService = {
+            getDeviceExternalIdsByRoom: jest.fn().mockResolvedValue([]),
+        };
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -105,6 +111,10 @@ describe('ScenariosService', () => {
                 {
                     provide: ScenarioGroupsService,
                     useValue: mockScenarioGroupsService,
+                },
+                {
+                    provide: DevicesService,
+                    useValue: mockDevicesService,
                 },
             ],
         }).compile();
@@ -213,6 +223,52 @@ describe('ScenariosService', () => {
             await service.getScenarios(options);
 
             expect(mockScenarioModel.find).toHaveBeenCalledWith({ active: true, group: 'test_group' });
+        });
+
+        it('should filter scenarios by room when provided', async () => {
+            mockScenarioModel.find.mockReturnValue({
+                skip: jest.fn().mockReturnValue({
+                    limit: jest.fn().mockReturnValue({
+                        lean: jest.fn().mockResolvedValue([]),
+                    }),
+                }),
+            });
+            mockScenarioModel.countDocuments.mockResolvedValue(0);
+            mockDevicesService.getDeviceExternalIdsByRoom.mockResolvedValue(['device-1', 'device-2']);
+
+            const options = new GetScenariosDto();
+            options.room = Room.LivingRoom;
+
+            await service.getScenarios(options);
+
+            expect(mockDevicesService.getDeviceExternalIdsByRoom).toHaveBeenCalledWith(Room.LivingRoom);
+            expect(mockScenarioModel.find).toHaveBeenCalledWith({
+                active: true,
+                'devices.externalId': { $in: ['device-1', 'device-2'] },
+            });
+        });
+
+        it('should filter scenarios for devices without room when allowEmptyRoom is true', async () => {
+            mockScenarioModel.find.mockReturnValue({
+                skip: jest.fn().mockReturnValue({
+                    limit: jest.fn().mockReturnValue({
+                        lean: jest.fn().mockResolvedValue([]),
+                    }),
+                }),
+            });
+            mockScenarioModel.countDocuments.mockResolvedValue(0);
+            mockDevicesService.getDeviceExternalIdsByRoom.mockResolvedValue(['device-no-room']);
+
+            const options = new GetScenariosDto();
+            options.allowEmptyRoom = true;
+
+            await service.getScenarios(options);
+
+            expect(mockDevicesService.getDeviceExternalIdsByRoom).toHaveBeenCalledWith(null);
+            expect(mockScenarioModel.find).toHaveBeenCalledWith({
+                active: true,
+                'devices.externalId': { $in: ['device-no-room'] },
+            });
         });
     });
 
