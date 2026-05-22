@@ -49,7 +49,7 @@ export function validateCronExpression(value: string): boolean | never {
 
 export function validateDeviceExternalId(): boolean | never {
     const device = this.device;
-    return !objectIsEmpty(device.controls?.are) || !objectIsEmpty(device.measurements?.are);
+    return !objectIsEmpty(device.controls?.are) || !objectIsEmpty(device.measurements?.are) || !objectIsEmpty(device.commands?.are);
 }
 
 export function validateTriggerLogic(value: string): boolean | never {

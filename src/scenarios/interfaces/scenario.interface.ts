@@ -21,6 +21,7 @@ export interface ScenarioDeviceTriggerSource extends ScenarioTriggerSource {
         externalId: string;
         controls?: ScenarioDeviceTriggerSourceConditions;
         measurements?: ScenarioDeviceTriggerSourceConditions;
+        commands?: ScenarioDeviceTriggerSourceConditions;
     };
 }
 

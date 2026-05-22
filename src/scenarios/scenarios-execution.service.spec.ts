@@ -5,7 +5,7 @@ import { DevicesService } from 'devices/devices.service';
 import { ConditionsEvaluatorService } from 'common/services/conditions-evaluator.service';
 import { Scenario, ScenarioCronTriggerSource, ScenarioTriggerSourceType } from './interfaces';
 import { Device, DeviceBrand, DeviceType, Room } from 'devices/interfaces';
-import { DeviceUpdateCompletedEvent } from 'devices/events';
+import { DeviceCommandExecutedEvent, DeviceUpdateCompletedEvent } from 'devices/events';
 
 describe('ScenariosExecutionService', () => {
     let service: ScenariosExecutionService;
@@ -270,6 +270,77 @@ describe('ScenariosExecutionService', () => {
             await service.onDeviceUpdateCompleted(event);
 
             expect(mockScenariosService.getDeviceTriggeredScenarios).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('onDeviceCommandExecuted', () => {
+        it('should trigger related scenarios with command payload', async () => {
+            const command = { action: 'on_press' };
+            const event = new DeviceCommandExecutedEvent('device-1', command);
+            mockScenariosService.getDeviceTriggeredScenarios.mockResolvedValue([mockScenario]);
+            mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(false);
+
+            await service.onDeviceCommandExecuted(event);
+
+            expect(mockScenariosService.getDeviceTriggeredScenarios).toHaveBeenCalledWith('device-1');
+        });
+
+        it('should pass command to condition evaluator', async () => {
+            const scenarioWithCommandTrigger = {
+                ...mockScenario,
+                trigger: {
+                    sources: [
+                        {
+                            type: ScenarioTriggerSourceType.Device,
+                            device: { externalId: 'device-1', commands: { are: { action: 'on_press' } } },
+                        },
+                    ],
+                    logic: '1',
+                },
+            } as unknown as Scenario;
+            const command = { action: 'on_press' };
+            const event = new DeviceCommandExecutedEvent('device-1', command);
+            mockScenariosService.getDeviceTriggeredScenarios.mockResolvedValue([scenarioWithCommandTrigger]);
+            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
+            mockConditionsEvaluatorService.deviceConditionIsMet.mockReturnValue(true);
+            mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
+            mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
+
+            await service.onDeviceCommandExecuted(event);
+
+            expect(mockConditionsEvaluatorService.deviceConditionIsMet).toHaveBeenCalledWith(
+                scenarioWithCommandTrigger.trigger.sources[0],
+                expect.objectContaining({
+                    device: mockDevice,
+                    command: command,
+                }),
+            );
+        });
+
+        it('should execute scenario actions when command conditions are met', async () => {
+            const scenarioWithCommandTrigger = {
+                ...mockScenario,
+                trigger: {
+                    sources: [
+                        {
+                            type: ScenarioTriggerSourceType.Device,
+                            device: { externalId: 'device-1', commands: { are: { action: 'on_press' } } },
+                        },
+                    ],
+                    logic: '1',
+                },
+            } as unknown as Scenario;
+            const command = { action: 'on_press' };
+            const event = new DeviceCommandExecutedEvent('device-1', command);
+            mockScenariosService.getDeviceTriggeredScenarios.mockResolvedValue([scenarioWithCommandTrigger]);
+            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
+            mockConditionsEvaluatorService.deviceConditionIsMet.mockReturnValue(true);
+            mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
+            mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
+
+            await service.onDeviceCommandExecuted(event);
+
+            expect(mockDevicesService.updateDevice).toHaveBeenCalled();
         });
     });
 });

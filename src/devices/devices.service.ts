@@ -4,9 +4,9 @@ import { Model } from 'mongoose';
 import { DevicesControlServiceFactory } from 'devices-control/devices-control-service.factory';
 import { DevicesControlService } from 'devices-control/devices-control.service';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
-import { Device, DeviceFilter, DevicesPage, GetDeviceOptions, PairingModeStatus } from 'devices/interfaces';
-import { GetDevicesDto, CreateDeviceDto, UpdateDeviceDto, GetPairableDevicesDto } from 'devices/dto';
-import { DeviceUpdateRequestedEvent, DeviceUpdateCompletedEvent } from 'devices/events';
+import { Device, DeviceFilter, DevicePayload, DevicesPage, GetDeviceOptions, PairingModeStatus } from 'devices/interfaces';
+import { GetDevicesDto, CreateDeviceDto, UpdateDeviceDto, GetPairableDevicesDto, DevicePayloadDto } from 'devices/dto';
+import { DeviceUpdateRequestedEvent, DeviceUpdateCompletedEvent, DeviceCommandExecutedEvent } from 'devices/events';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { PairableDevicesPage } from 'zigbee/interfaces';
@@ -119,6 +119,15 @@ export class DevicesService {
             new DeviceUpdateCompletedEvent(externalId, updateDeviceDto.controlsUpdated, updateDeviceDto.measurementsUpdated),
         );
         return updatedDevice;
+    }
+
+    async sendCommand(externalId: string, command: DevicePayloadDto): Promise<DevicePayload> {
+        const device = await this.getDeviceByExternalId(externalId);
+        const controlService = this.getControlService(device);
+        const validatedCommand = await controlService.validateControls(command);
+        await controlService.setControls(validatedCommand);
+        this.eventEmitter.emit(DeviceCommandExecutedEvent.eventName, new DeviceCommandExecutedEvent(externalId, validatedCommand));
+        return validatedCommand;
     }
 
     async removeDevice(externalId: string): Promise<Device> {

@@ -34,7 +34,7 @@ export const TriggerSourceSchema = {
             required: false,
             validate: {
                 validator: validateDeviceExternalId,
-                message: 'Either one of "controls.are" or "measurements.are" conditions needs to be set',
+                message: 'Either one of "controls.are", "measurements.are" or "commands.are" conditions needs to be set',
             },
         },
         controls: {
@@ -44,6 +44,12 @@ export const TriggerSourceSchema = {
             },
         },
         measurements: {
+            are: {
+                type: Object,
+                required: false,
+            },
+        },
+        commands: {
             are: {
                 type: Object,
                 required: false,
