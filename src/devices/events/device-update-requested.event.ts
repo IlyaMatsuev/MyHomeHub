@@ -7,8 +7,8 @@ export type UpdatedDeviceSelector = {
 }[DeviceIdKeys];
 
 // TODO: Use this event from MQTT and Zigbee services
-export class DeviceUpdatedEvent {
-    static readonly eventName = 'device.updated';
+export class DeviceUpdateRequestedEvent {
+    static readonly eventName = 'device.update.requested';
 
     constructor(
         readonly selector: UpdatedDeviceSelector,

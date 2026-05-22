@@ -6,7 +6,7 @@ import { DevicesControlService } from 'devices-control/devices-control.service';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { Device, DeviceFilter, DevicesPage, GetDeviceOptions, PairingModeStatus } from 'devices/interfaces';
 import { GetDevicesDto, CreateDeviceDto, UpdateDeviceDto, GetPairableDevicesDto } from 'devices/dto';
-import { DeviceUpdatedEvent, DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from 'devices/events';
+import { DeviceUpdateRequestedEvent, DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from 'devices/events';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { PairableDevicesPage } from 'zigbee/interfaces';
@@ -26,9 +26,9 @@ export class DevicesService {
         private readonly zigbeeService: ZigbeeService,
     ) {}
 
-    @OnEvent(DeviceUpdatedEvent.eventName)
-    async onDeviceUpdated(event: DeviceUpdatedEvent): Promise<void> {
-        this.logger.debug(`[${DeviceUpdatedEvent.eventName}] Event: ${JSON.stringify(event)}`);
+    @OnEvent(DeviceUpdateRequestedEvent.eventName)
+    async onDeviceUpdated(event: DeviceUpdateRequestedEvent): Promise<void> {
+        this.logger.debug(`[${DeviceUpdateRequestedEvent.eventName}] Event: ${JSON.stringify(event)}`);
 
         const device = await this.getDevice(event.selector, { strict: false });
         if (device) {
@@ -102,8 +102,12 @@ export class DevicesService {
                 DeviceControlsUpdatedEvent.eventName,
                 new DeviceControlsUpdatedEvent(externalId, updatedDevice.controls),
             );
-        }
-        if (updateDeviceInfoDto.measurementsUpdated) {
+        } else if (updateDeviceInfoDto.measurementsUpdated) {
+            // TODO: 2 separate events trigger scenario 2 times if both fields updated at the same time
+            // Only emit the measurements event for measurement-only updates. When controls also changed
+            // (e.g. a Zigbee remote reports `action` together with `battery`/`linkquality` in one message),
+            // the controls event already drives scenario evaluation against the full updated device, so
+            // emitting both would trigger every related scenario twice.
             this.eventEmitter.emit(DeviceMeasurementsUpdatedEvent.eventName, new DeviceMeasurementsUpdatedEvent(externalId));
         }
 

@@ -5,7 +5,7 @@ import { DevicesService } from './devices.service';
 import { DEVICE_MODEL_PROVIDER_NAME } from './devices.constants';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { Device, DeviceBrand, DeviceType, Room } from './interfaces';
-import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent, DeviceUpdatedEvent } from './events';
+import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent, DeviceUpdateRequestedEvent } from './events';
 import { CreateDeviceDto, UpdateDeviceDto, GetDevicesDto, GetPairableDevicesDto } from './dto';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { PairableDevice } from 'zigbee/interfaces';
@@ -123,7 +123,7 @@ describe('DevicesService', () => {
             const getDeviceSpy = jest.spyOn(service, 'getDevice').mockResolvedValue(matchedDevice);
             const updateDeviceSpy = jest.spyOn(service, 'updateDevice').mockResolvedValue(matchedDevice);
 
-            const event = new DeviceUpdatedEvent({ ip: '192.168.1.100' }, new UpdateDeviceDto({ controls: { on: true } }));
+            const event = new DeviceUpdateRequestedEvent({ ip: '192.168.1.100' }, new UpdateDeviceDto({ controls: { on: true } }));
             await service.onDeviceUpdated(event);
 
             expect(getDeviceSpy).toHaveBeenCalledWith({ ip: '192.168.1.100' }, { strict: false });
@@ -135,7 +135,7 @@ describe('DevicesService', () => {
             const updateDeviceSpy = jest.spyOn(service, 'updateDevice');
             const warnSpy = jest.spyOn(service['logger'], 'warn').mockImplementation();
 
-            await service.onDeviceUpdated(new DeviceUpdatedEvent({ externalId: 'missing' }, new UpdateDeviceDto({})));
+            await service.onDeviceUpdated(new DeviceUpdateRequestedEvent({ externalId: 'missing' }, new UpdateDeviceDto({})));
 
             expect(updateDeviceSpy).not.toHaveBeenCalled();
             expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('No device matched DeviceUpdatedEvent selector'));
