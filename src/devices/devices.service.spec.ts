@@ -5,7 +5,7 @@ import { DevicesService } from './devices.service';
 import { DEVICE_MODEL_PROVIDER_NAME } from './devices.constants';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { Device, DeviceBrand, DeviceType, Room } from './interfaces';
-import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent, DeviceUpdateRequestedEvent } from './events';
+import { DeviceUpdateCompletedEvent, DeviceUpdateRequestedEvent } from './events';
 import { CreateDeviceDto, UpdateDeviceDto, GetDevicesDto, GetPairableDevicesDto } from './dto';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { PairableDevice } from 'zigbee/interfaces';
@@ -364,59 +364,103 @@ describe('DevicesService', () => {
     });
 
     describe('updateDevice', () => {
-        it('should update device and emit controls event when controls updated', async () => {
-            const deviceWithSave = {
-                ...mockDevice,
-                save: jest.fn().mockResolvedValue({ ...mockDevice, controls: { on: true } }),
-            };
+        it('should push the merged controls to the device and persist the update', async () => {
+            const save = jest.fn().mockResolvedValue(undefined);
+            const deviceWithSave = { ...mockDevice, save };
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(deviceWithSave),
             });
             mockControlService.mergeValidateControls.mockResolvedValue({ on: true });
 
-            const updateDto = new UpdateDeviceDto({ controls: { on: true } });
+            await service.updateDevice('device-uuid-123', new UpdateDeviceDto({ controls: { on: true } }));
 
-            await service.updateDevice('device-uuid-123', updateDto);
+            expect(mockControlService.setControls).toHaveBeenCalledWith({ on: true });
+            expect(save).toHaveBeenCalledWith({ validateBeforeSave: true });
+        });
 
+        it('should emit a single DeviceUpdateCompletedEvent flagging controls as updated', async () => {
+            const deviceWithSave = { ...mockDevice, save: jest.fn().mockResolvedValue(undefined) };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithSave),
+            });
+            mockControlService.mergeValidateControls.mockResolvedValue({ on: true });
+
+            await service.updateDevice('device-uuid-123', new UpdateDeviceDto({ controls: { on: true } }));
+
+            // A single Zigbee message can carry both a control and measurements; emitting one event
+            // (instead of separate controls/measurements events) is what prevents scenarios from
+            // being triggered twice per update.
+            expect(mockEventEmitter.emit).toHaveBeenCalledTimes(1);
             expect(mockEventEmitter.emit).toHaveBeenCalledWith(
-                DeviceControlsUpdatedEvent.eventName,
-                expect.any(DeviceControlsUpdatedEvent),
+                DeviceUpdateCompletedEvent.eventName,
+                expect.objectContaining({
+                    deviceExternalId: 'device-uuid-123',
+                    controlsUpdated: true,
+                    measurementsUpdated: false,
+                }),
             );
         });
 
-        it('should update device and emit measurements event when measurements updated', async () => {
-            const deviceWithSave = {
-                ...mockDevice,
-                save: jest.fn().mockResolvedValue({ ...mockDevice, measurements: { temperature: 25 } }),
-            };
+        it('should not push controls to the device for measurement-only updates', async () => {
+            const deviceWithSave = { ...mockDevice, save: jest.fn().mockResolvedValue(undefined) };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithSave),
+            });
+            mockControlService.setControls.mockClear();
+
+            await service.updateDevice('device-uuid-123', new UpdateDeviceDto({ measurements: { temperature: 25 } }));
+
+            expect(mockControlService.setControls).not.toHaveBeenCalled();
+        });
+
+        it('should emit DeviceUpdateCompletedEvent flagging measurements as updated', async () => {
+            const deviceWithSave = { ...mockDevice, save: jest.fn().mockResolvedValue(undefined) };
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(deviceWithSave),
             });
 
-            const updateDto = new UpdateDeviceDto({ measurements: { temperature: 25 } });
+            await service.updateDevice('device-uuid-123', new UpdateDeviceDto({ measurements: { temperature: 25 } }));
 
-            await service.updateDevice('device-uuid-123', updateDto);
-
+            expect(mockEventEmitter.emit).toHaveBeenCalledTimes(1);
             expect(mockEventEmitter.emit).toHaveBeenCalledWith(
-                DeviceMeasurementsUpdatedEvent.eventName,
-                expect.any(DeviceMeasurementsUpdatedEvent),
+                DeviceUpdateCompletedEvent.eventName,
+                expect.objectContaining({
+                    deviceExternalId: 'device-uuid-123',
+                    controlsUpdated: false,
+                    measurementsUpdated: true,
+                }),
             );
         });
 
-        it('should not emit events when controls/measurements not marked as updated', async () => {
-            const deviceWithSave = {
-                ...mockDevice,
-                save: jest.fn().mockResolvedValue(mockDevice),
-            };
+        it('should flag both controls and measurements as updated when both change in one update', async () => {
+            const deviceWithSave = { ...mockDevice, save: jest.fn().mockResolvedValue(undefined) };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithSave),
+            });
+            mockControlService.mergeValidateControls.mockResolvedValue({ action: 'off_press' });
+
+            const updateDto = new UpdateDeviceDto({ controls: { action: 'off_press' }, measurements: { battery: 100 } });
+            await service.updateDevice('device-uuid-123', updateDto);
+
+            expect(mockEventEmitter.emit).toHaveBeenCalledTimes(1);
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                DeviceUpdateCompletedEvent.eventName,
+                expect.objectContaining({ controlsUpdated: true, measurementsUpdated: true }),
+            );
+        });
+
+        it('should still emit DeviceUpdateCompletedEvent with both flags false for metadata-only updates', async () => {
+            const deviceWithSave = { ...mockDevice, save: jest.fn().mockResolvedValue(undefined) };
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(deviceWithSave),
             });
 
-            const updateDto = new UpdateDeviceDto({ name: 'Updated Name' });
+            await service.updateDevice('device-uuid-123', new UpdateDeviceDto({ name: 'Updated Name' }));
 
-            await service.updateDevice('device-uuid-123', updateDto);
-
-            expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                DeviceUpdateCompletedEvent.eventName,
+                expect.objectContaining({ controlsUpdated: false, measurementsUpdated: false }),
+            );
         });
 
         it('should throw NotFoundException when device not found', async () => {

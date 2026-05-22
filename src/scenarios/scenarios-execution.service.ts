@@ -2,7 +2,7 @@ import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { ConditionsEvaluatorService } from 'common/services/conditions-evaluator.service';
 import { UpdateDeviceDto } from 'devices/dto';
-import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from 'devices/events';
+import { DeviceUpdateCompletedEvent } from 'devices/events';
 import { DevicesService } from 'devices/devices.service';
 import { Scenario, ScenarioDeviceTriggerSource, ScenarioTriggerSource, ScenarioTriggerSourceType } from 'scenarios/interfaces';
 import { ScenariosService } from 'scenarios/scenarios.service';
@@ -38,16 +38,11 @@ export class ScenariosExecutionService {
         }
     }
 
-    @OnEvent(DeviceControlsUpdatedEvent.eventName)
-    private async onDeviceControlsUpdated(event: DeviceControlsUpdatedEvent): Promise<void> {
-        const device = await this.devicesService.getDeviceByExternalId(event.deviceExternalId);
-        await this.devicesService.getControlService(device).setControls(event.controls);
-        return this.triggerDeviceRelatedScenarios(event.deviceExternalId);
-    }
-
-    @OnEvent(DeviceMeasurementsUpdatedEvent.eventName)
-    private async onDeviceMeasurementsUpdated(event: DeviceMeasurementsUpdatedEvent): Promise<void> {
-        return this.triggerDeviceRelatedScenarios(event.deviceExternalId);
+    @OnEvent(DeviceUpdateCompletedEvent.eventName)
+    private async onDeviceUpdateCompleted(event: DeviceUpdateCompletedEvent): Promise<void> {
+        if (event.controlsUpdated || event.measurementsUpdated) {
+            await this.triggerDeviceRelatedScenarios(event.deviceExternalId);
+        }
     }
 
     private async extractConditions(triggerSources: Array<ScenarioTriggerSource>, wasScheduled: boolean): Promise<Array<boolean>> {

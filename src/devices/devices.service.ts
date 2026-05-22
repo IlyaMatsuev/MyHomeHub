@@ -6,7 +6,7 @@ import { DevicesControlService } from 'devices-control/devices-control.service';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { Device, DeviceFilter, DevicesPage, GetDeviceOptions, PairingModeStatus } from 'devices/interfaces';
 import { GetDevicesDto, CreateDeviceDto, UpdateDeviceDto, GetPairableDevicesDto } from 'devices/dto';
-import { DeviceUpdateRequestedEvent, DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from 'devices/events';
+import { DeviceUpdateRequestedEvent, DeviceUpdateCompletedEvent } from 'devices/events';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { PairableDevicesPage } from 'zigbee/interfaces';
@@ -88,28 +88,24 @@ export class DevicesService {
         }
 
         const newDevice = await this.assignDtoValues(new this.deviceModel(deviceDto), deviceDto);
+
+        await newDevice.save({ validateBeforeSave: true });
+
         if (newDevice.zigbeeFriendlyName) {
             this.zigbeeService.renameDevice(newDevice.zigbeeIeeeAddress, newDevice.zigbeeFriendlyName);
         }
         return newDevice;
     }
 
-    async updateDevice(externalId: string, updateDeviceInfoDto: UpdateDeviceDto): Promise<Device> {
+    async updateDevice(externalId: string, updateDeviceDto: UpdateDeviceDto): Promise<Device> {
         const device = await this.getDeviceByExternalId(externalId);
-        const updatedDevice = await this.assignDtoValues(device, updateDeviceInfoDto);
-        if (updateDeviceInfoDto.controlsUpdated) {
-            this.eventEmitter.emit(
-                DeviceControlsUpdatedEvent.eventName,
-                new DeviceControlsUpdatedEvent(externalId, updatedDevice.controls),
-            );
-        } else if (updateDeviceInfoDto.measurementsUpdated) {
-            // TODO: 2 separate events trigger scenario 2 times if both fields updated at the same time
-            // Only emit the measurements event for measurement-only updates. When controls also changed
-            // (e.g. a Zigbee remote reports `action` together with `battery`/`linkquality` in one message),
-            // the controls event already drives scenario evaluation against the full updated device, so
-            // emitting both would trigger every related scenario twice.
-            this.eventEmitter.emit(DeviceMeasurementsUpdatedEvent.eventName, new DeviceMeasurementsUpdatedEvent(externalId));
+        const updatedDevice = await this.assignDtoValues(device, updateDeviceDto);
+
+        if (updateDeviceDto.controlsUpdated) {
+            await this.getControlService(updatedDevice).setControls(updatedDevice.controls);
         }
+
+        await updatedDevice.save({ validateBeforeSave: true });
 
         if (device.zigbeeIeeeAddress) {
             const oldZigbeeFriendlyName = ZigbeePairableDevices.get(device.zigbeeIeeeAddress)?.zigbeeFriendlyName;
@@ -117,6 +113,11 @@ export class DevicesService {
                 this.zigbeeService.renameDevice(updatedDevice.zigbeeIeeeAddress, updatedDevice.zigbeeFriendlyName);
             }
         }
+
+        this.eventEmitter.emit(
+            DeviceUpdateCompletedEvent.eventName,
+            new DeviceUpdateCompletedEvent(externalId, updateDeviceDto.controlsUpdated, updateDeviceDto.measurementsUpdated),
+        );
         return updatedDevice;
     }
 
@@ -169,6 +170,6 @@ export class DevicesService {
                 device[field] = updatedDevice[field];
             }
         }
-        return device.save({ validateBeforeSave: true });
+        return device;
     }
 }
