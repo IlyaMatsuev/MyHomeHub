@@ -1,18 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Device, DeviceBrand, DeviceType } from 'devices/interfaces';
+import { Device, DeviceBrand } from 'devices/interfaces';
 import { TuyaControlService } from 'devices-control/providers';
 import { DeviceControlServiceFactory } from 'devices-control/interfaces';
+import { DEVICE_TRANSPORT_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
+import { DeviceTransportServiceResolver } from 'devices-control/transport';
 
 @Injectable()
 export class TuyaControlServiceFactory implements DeviceControlServiceFactory {
-    constructor(private readonly configService: ConfigService) {}
+    constructor(
+        @Inject(DEVICE_TRANSPORT_FACTORY_PROVIDER)
+        protected readonly transportServiceResolver: DeviceTransportServiceResolver,
+        private readonly configService: ConfigService,
+    ) {}
 
     eligible(device: Device): boolean {
-        return device.type == DeviceType.LED && device.brand == DeviceBrand.Tuya;
+        return device.brand == DeviceBrand.Tuya;
     }
 
     createService(device: Device): TuyaControlService {
-        return new TuyaControlService(device, this.configService);
+        return new TuyaControlService(device, this.transportServiceResolver, this.configService);
     }
 }

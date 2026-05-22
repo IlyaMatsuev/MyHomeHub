@@ -1,10 +1,8 @@
-import TuyaDevice from 'tuyapi';
 import Color from 'color';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { DevicesControlService } from 'devices-control/devices-control.service';
+import { TransportMessage, TuyaDeviceControls } from 'devices-control/interfaces';
 import { TuyaControlsDto } from 'devices-control/providers';
-
-const TUYA_DEVICE_PROTOCOL_VERSION = '3.3';
 
 const DEFAULT_MODE = 'colour';
 const DEFAULT_COLOR = '#FFFFFF';
@@ -15,8 +13,6 @@ enum TuyaControlsDps {
     Mode = 21,
     Color = 24,
 }
-
-type TuyaDeviceControls = { [key: number]: boolean | string | number };
 
 export class TuyaControlService extends DevicesControlService {
     private get tuyaDeviceId() {
@@ -41,34 +37,16 @@ export class TuyaControlService extends DevicesControlService {
         return TuyaControlsDto as ClassConstructor<T>;
     }
 
-    protected async setDeviceControls(controls: object): Promise<void | never> {
-        const controlsDto = controls as TuyaControlsDto;
-        const tuyaDevice = new TuyaDevice({
-            id: this.tuyaDeviceId,
+    protected async getControlsPayload(controls: object): Promise<TransportMessage> {
+        return {
+            tuyaId: this.tuyaDeviceId,
             ip: this.getDeviceIP(),
-            key: this.tuyaDeviceLocalKey,
-            version: TUYA_DEVICE_PROTOCOL_VERSION,
-        });
-        const tuyaControls = this.mapTuyaControls(controlsDto);
-
-        try {
-            await this.connectTuyaDevice(tuyaDevice);
-            await tuyaDevice.set({ multiple: true, data: tuyaControls });
-        } finally {
-            tuyaDevice.disconnect();
-        }
+            localKey: this.tuyaDeviceLocalKey,
+            payload: this.mapTuyaControls(controls as TuyaControlsDto),
+        };
     }
 
-    private connectTuyaDevice(tuyaDevice: TuyaDevice): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            tuyaDevice.on('error', reject);
-            tuyaDevice
-                .connect()
-                .then(() => resolve())
-                .catch(reject);
-        });
-    }
-
+    // TODO: Think how to map it more generically in some kind of config like yaml files
     private mapTuyaControls(controls: TuyaControlsDto): TuyaDeviceControls {
         const tuyaControls: TuyaDeviceControls = {
             [TuyaControlsDps.Mode]: DEFAULT_MODE,

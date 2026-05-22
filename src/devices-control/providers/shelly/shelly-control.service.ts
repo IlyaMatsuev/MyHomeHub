@@ -1,7 +1,8 @@
-import { request } from 'gaxios';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { DevicesControlService } from 'devices-control/devices-control.service';
 import { ShellyControlsDto } from 'devices-control/providers';
+import { DeviceControls } from 'devices/interfaces';
+import { TransportMessage } from 'devices-control/interfaces';
 
 enum ShellyMethod {
     SwitchSet = 'Switch.Set',
@@ -16,12 +17,11 @@ export class ShellyControlService extends DevicesControlService {
         return ShellyControlsDto as ClassConstructor<T>;
     }
 
-    protected async setDeviceControls<T>(controls: ShellyControlsDto): Promise<T> {
-        const response = await request<T>({
+    protected async getControlsPayload<T extends DeviceControls>(controls: T): Promise<TransportMessage> {
+        return {
             url: `http://${this.getDeviceIP()}/rpc`,
             method: 'POST',
-            headers: {},
-            data: {
+            payload: {
                 id: 1,
                 method: ShellyMethod.SwitchSet,
                 params: {
@@ -29,7 +29,6 @@ export class ShellyControlService extends DevicesControlService {
                     ...controls,
                 },
             },
-        });
-        return response.data;
+        };
     }
 }

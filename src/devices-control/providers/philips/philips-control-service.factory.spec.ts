@@ -1,13 +1,13 @@
 import { ConfigService } from '@nestjs/config';
-import { MqttService } from 'mqtt/mqtt.service';
 import { Device, DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import { PhilipsControlServiceFactory } from './philips-control-service.factory';
 import { PhilipsControlService } from './philips-control.service';
+import { DeviceTransportServiceResolver } from 'devices-control/transport';
 
 describe('PhilipsControlServiceFactory', () => {
     let factory: PhilipsControlServiceFactory;
     let mockConfigService: jest.Mocked<ConfigService>;
-    let mockMqttService: jest.Mocked<MqttService>;
+    let mockResolver: jest.Mocked<DeviceTransportServiceResolver>;
 
     const mockPhilipsDevice: Partial<Device> = {
         externalId: 'device-uuid-123',
@@ -29,11 +29,9 @@ describe('PhilipsControlServiceFactory', () => {
 
     beforeEach(() => {
         mockConfigService = {} as jest.Mocked<ConfigService>;
-        mockMqttService = {
-            publishZigbeeCommand: jest.fn(),
-        } as unknown as jest.Mocked<MqttService>;
+        mockResolver = { send: jest.fn() } as unknown as jest.Mocked<DeviceTransportServiceResolver>;
 
-        factory = new PhilipsControlServiceFactory(mockConfigService, mockMqttService);
+        factory = new PhilipsControlServiceFactory(mockResolver, mockConfigService);
     });
 
     afterEach(() => {

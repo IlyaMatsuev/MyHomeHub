@@ -5,7 +5,7 @@ import { DevicesService } from './devices.service';
 import { DEVICE_MODEL_PROVIDER_NAME } from './devices.constants';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { Device, DeviceBrand, DeviceType, Room } from './interfaces';
-import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent } from './events';
+import { DeviceControlsUpdatedEvent, DeviceMeasurementsUpdatedEvent, DeviceUpdatedEvent } from './events';
 import { CreateDeviceDto, UpdateDeviceDto, GetDevicesDto, GetPairableDevicesDto } from './dto';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { PairableDevice } from 'zigbee/interfaces';
@@ -114,6 +114,31 @@ describe('DevicesService', () => {
 
             expect(result).toBe(mockControlService);
             expect(mockControlServiceFactory.getControlService).toHaveBeenCalledWith(mockDevice);
+        });
+    });
+
+    describe('onDeviceUpdated', () => {
+        it('should update the matched device with the event payload', async () => {
+            const matchedDevice = { ...mockDevice } as Device;
+            const getDeviceSpy = jest.spyOn(service, 'getDevice').mockResolvedValue(matchedDevice);
+            const updateDeviceSpy = jest.spyOn(service, 'updateDevice').mockResolvedValue(matchedDevice);
+
+            const event = new DeviceUpdatedEvent({ ip: '192.168.1.100' }, new UpdateDeviceDto({ controls: { on: true } }));
+            await service.onDeviceUpdated(event);
+
+            expect(getDeviceSpy).toHaveBeenCalledWith({ ip: '192.168.1.100' }, { strict: false });
+            expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update);
+        });
+
+        it('should warn and not update when no device matches the selector', async () => {
+            jest.spyOn(service, 'getDevice').mockResolvedValue(null);
+            const updateDeviceSpy = jest.spyOn(service, 'updateDevice');
+            const warnSpy = jest.spyOn(service['logger'], 'warn').mockImplementation();
+
+            await service.onDeviceUpdated(new DeviceUpdatedEvent({ externalId: 'missing' }, new UpdateDeviceDto({})));
+
+            expect(updateDeviceSpy).not.toHaveBeenCalled();
+            expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('No device matched DeviceUpdatedEvent selector'));
         });
     });
 

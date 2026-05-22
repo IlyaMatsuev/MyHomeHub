@@ -1,19 +1,19 @@
 import { ConfigService } from '@nestjs/config';
-import { MqttService } from 'mqtt/mqtt.service';
 import { Device, DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import { PhilipsControlService } from './philips-control.service';
+import { DeviceTransportServiceResolver } from 'devices-control/transport';
+import { TransportProtocol } from 'devices-control/interfaces';
 
 describe('PhilipsControlService', () => {
-    let mockConfigService: jest.Mocked<ConfigService>;
-    let mockMqttService: {
-        publishZigbeeCommand: jest.Mock;
-    };
+    let service: PhilipsControlService;
+    let mockResolver: { send: jest.Mock };
 
     const mockDevice: Partial<Device> = {
         externalId: 'device-uuid-123',
         name: 'Philips Bulb',
         type: DeviceType.LED,
         brand: DeviceBrand.Philips,
+        transportProtocol: TransportProtocol.Zigbee,
         zigbeeFriendlyName: 'living_room_bulb',
         zigbeeIeeeAddress: '0x00158d0001234567',
         room: Room.LivingRoom,
@@ -21,30 +21,24 @@ describe('PhilipsControlService', () => {
     };
 
     beforeEach(() => {
-        mockConfigService = {} as jest.Mocked<ConfigService>;
-        mockMqttService = {
-            publishZigbeeCommand: jest.fn().mockResolvedValue(undefined),
-        };
+        mockResolver = { send: jest.fn().mockResolvedValue(undefined) };
+        service = new PhilipsControlService(
+            mockDevice as Device,
+            mockResolver as unknown as DeviceTransportServiceResolver,
+            {} as ConfigService,
+        );
+        jest.spyOn(service['logger'], 'log').mockImplementation();
     });
 
     afterEach(() => {
         jest.clearAllMocks();
     });
 
-    describe('setControls with missing friendlyName', () => {
-        it('should throw error when device has no friendly name', async () => {
-            const deviceWithoutFriendlyName = {
-                ...mockDevice,
-                zigbeeFriendlyName: undefined,
-            };
-            const serviceWithoutFriendlyName = new PhilipsControlService(
-                deviceWithoutFriendlyName as Device,
-                mockConfigService,
-                mockMqttService as unknown as MqttService,
-            );
+    describe('setControls', () => {
+        it('should not send anything since Philips control is not implemented yet', async () => {
+            await service.setControls({ on: true });
 
-            await expect(serviceWithoutFriendlyName.setControls({ on: true })).rejects.toThrow('does not have a Zigbee friendly name');
-            expect(mockMqttService.publishZigbeeCommand).not.toHaveBeenCalled();
+            expect(mockResolver.send).not.toHaveBeenCalled();
         });
     });
 });

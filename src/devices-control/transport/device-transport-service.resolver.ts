@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { DeviceTransportService, TransportMessage } from 'devices-control/interfaces';
+import { DeviceTransportService, TransportMessage, TransportProtocol } from 'devices-control/interfaces';
 
 @Injectable()
 export class DeviceTransportServiceResolver {
     constructor(private readonly transportServices: Array<DeviceTransportService>) {}
 
-    send(message: TransportMessage): Promise<void> {
-        const transport = this.transportServices.find(t => t.protocol === message.protocol);
+    send(protocol: TransportProtocol, message: TransportMessage): Promise<void> {
+        const transport = this.transportServices.find(t => t.protocol === protocol);
         if (!transport) {
-            throw new Error(`No transport service registered for protocol "${message.protocol}"`);
+            throw new Error(`No transport service registered for protocol "${protocol}"`);
         }
         return transport.send(message);
     }

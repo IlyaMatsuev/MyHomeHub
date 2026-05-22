@@ -5,12 +5,15 @@ import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { CustomValidationException } from 'common/exceptions';
+import { DeviceTransportServiceResolver } from 'devices-control/transport';
+import { TransportMessage } from 'devices-control/interfaces';
 
 export abstract class DevicesControlService {
     protected readonly logger: Logger;
 
     constructor(
         protected readonly device: Device,
+        protected readonly transportServiceResolver: DeviceTransportServiceResolver,
         protected readonly configService: ConfigService,
     ) {
         this.logger = new Logger(this.getServiceName());
@@ -18,7 +21,7 @@ export abstract class DevicesControlService {
 
     protected abstract getServiceName(): string;
     protected abstract getControlsDtoType<T extends object>(): ClassConstructor<T>;
-    protected abstract setDeviceControls<T extends DeviceControls, V>(controls: T): Promise<V | void | never>;
+    protected abstract getControlsPayload<T extends DeviceControls>(controls: T): Promise<TransportMessage | null>;
 
     mergeValidateControls(controls: DeviceControls, oldControls?: DeviceControls): Promise<DeviceControls | never> {
         const { $override, ...otherControls } = controls ?? {};
@@ -35,9 +38,14 @@ export abstract class DevicesControlService {
         return controls;
     }
 
-    setControls<T extends DeviceControls>(controls: DeviceControls): Promise<T | void | never> {
+    async setControls<T extends DeviceControls>(controls: T): Promise<void | never> {
         try {
-            return this.setDeviceControls(this.getControlsDto<T>(controls));
+            const payload = await this.getControlsPayload(this.getControlsDto<T>(controls));
+            if (payload) {
+                await this.transportServiceResolver.send(this.device.transportProtocol, payload);
+            } else {
+                this.logger.log(`No payload for setting controls/measurements for the device "${this.device.externalId}"`);
+            }
         } catch (error) {
             this.logger.error(`Failed to set controls: ${error}`);
         }

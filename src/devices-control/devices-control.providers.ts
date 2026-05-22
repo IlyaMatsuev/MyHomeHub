@@ -8,7 +8,12 @@ import {
     Esp32ControlServiceFactory,
     PhilipsControlServiceFactory,
 } from 'devices-control/providers';
-import { DeviceTransportServiceResolver, HttpTransportService, MqttTransportService } from 'devices-control/transport';
+import {
+    DeviceTransportServiceResolver,
+    HttpTransportService,
+    MqttTransportService,
+    TuyaTransportService,
+} from 'devices-control/transport';
 
 export const providers = [
     {
@@ -26,6 +31,6 @@ export const providers = [
     {
         provide: DEVICE_TRANSPORT_FACTORY_PROVIDER,
         useFactory: (...transportServices: Array<DeviceTransportService>) => new DeviceTransportServiceResolver(transportServices),
-        inject: [HttpTransportService, MqttTransportService],
+        inject: [HttpTransportService, MqttTransportService, TuyaTransportService],
     },
 ];
