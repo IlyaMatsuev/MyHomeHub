@@ -10,7 +10,7 @@ import {
 } from 'devices-control/providers';
 import { providers } from 'devices-control/devices-control.providers';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
-import { HttpTransportService, MqttTransportService, TuyaTransportService } from 'devices-control/transport';
+import { HttpTransportService, MqttTransportService, TuyaTransportService, ZigbeeTransportService } from 'devices-control/transport';
 
 @Module({
     imports: [CommonModule, MqttModule],
@@ -24,6 +24,7 @@ import { HttpTransportService, MqttTransportService, TuyaTransportService } from
         HttpTransportService,
         MqttTransportService,
         TuyaTransportService,
+        ZigbeeTransportService,
 
         ...providers,
     ],

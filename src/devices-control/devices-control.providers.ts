@@ -13,6 +13,7 @@ import {
     HttpTransportService,
     MqttTransportService,
     TuyaTransportService,
+    ZigbeeTransportService,
 } from 'devices-control/transport';
 
 export const providers = [
@@ -31,6 +32,6 @@ export const providers = [
     {
         provide: DEVICE_TRANSPORT_FACTORY_PROVIDER,
         useFactory: (...transportServices: Array<DeviceTransportService>) => new DeviceTransportServiceResolver(transportServices),
-        inject: [HttpTransportService, MqttTransportService, TuyaTransportService],
+        inject: [HttpTransportService, MqttTransportService, TuyaTransportService, ZigbeeTransportService],
     },
 ];
