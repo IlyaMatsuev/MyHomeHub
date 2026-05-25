@@ -5,7 +5,7 @@ import { DevicesService } from './devices.service';
 import { DEVICE_MODEL_PROVIDER_NAME } from './devices.constants';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { Device, DeviceBrand, DeviceType, Room } from './interfaces';
-import { DeviceUpdateCompletedEvent, DeviceUpdateRequestedEvent } from './events';
+import { DeviceCommandExecutedEvent, DeviceUpdateCompletedEvent, DeviceUpdateRequestedEvent } from './events';
 import { CreateDeviceDto, UpdateDeviceDto, GetDevicesDto, GetPairableDevicesDto } from './dto';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { PairableDevice } from 'zigbee/interfaces';
@@ -46,6 +46,7 @@ describe('DevicesService', () => {
 
     const mockControlService = {
         mergeValidateControls: jest.fn(),
+        validateControls: jest.fn(),
         setControls: jest.fn(),
     };
 
@@ -525,6 +526,59 @@ describe('DevicesService', () => {
             await service.updateDevice('device-uuid-123', updateDto);
 
             expect(mockZigbeeService.renameDevice).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('sendCommand', () => {
+        it('should send command to device without saving state', async () => {
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockDevice),
+            });
+            mockControlService.validateControls.mockResolvedValue({ action: 'on_press' });
+
+            const command = { action: 'on_press' };
+            const result = await service.sendCommand('device-uuid-123', command);
+
+            expect(result).toEqual(mockDevice);
+            expect(mockControlService.validateControls).toHaveBeenCalledWith(command);
+            expect(mockControlService.setControls).toHaveBeenCalledWith({ action: 'on_press' });
+        });
+
+        it('should emit DeviceCommandExecutedEvent with command payload', async () => {
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockDevice),
+            });
+            mockControlService.validateControls.mockResolvedValue({ action: 'on_press' });
+
+            await service.sendCommand('device-uuid-123', { action: 'on_press' });
+
+            expect(mockEventEmitter.emit).toHaveBeenCalledTimes(1);
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                DeviceCommandExecutedEvent.eventName,
+                expect.objectContaining({
+                    deviceExternalId: 'device-uuid-123',
+                    commands: { action: 'on_press' },
+                }),
+            );
+        });
+
+        it('should not emit DeviceUpdateCompletedEvent', async () => {
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockDevice),
+            });
+            mockControlService.validateControls.mockResolvedValue({ action: 'on_press' });
+
+            await service.sendCommand('device-uuid-123', { action: 'on_press' });
+
+            expect(mockEventEmitter.emit).not.toHaveBeenCalledWith(DeviceUpdateCompletedEvent.eventName, expect.anything());
+        });
+
+        it('should throw NotFoundException when device not found', async () => {
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            await expect(service.sendCommand('nonexistent', { action: 'on_press' })).rejects.toThrow(NotFoundException);
         });
     });
 

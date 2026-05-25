@@ -176,7 +176,7 @@ export class ScenariosService implements OnModuleInit {
                 cron: cronTriggerSource.cron,
                 handler: async () => {
                     const actualScenario = await this.getScenarioByExternalId(scenario.externalId);
-                    await this.scenariosExecutionService.execute(actualScenario, true);
+                    await this.scenariosExecutionService.execute(actualScenario, { scheduled: true });
                 },
             });
         } catch (ex) {

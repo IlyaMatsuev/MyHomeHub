@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ScenarioDeviceTriggerSource } from 'scenarios/interfaces';
-import { Device } from 'devices/interfaces';
+import { Device, DevicePayload } from 'devices/interfaces';
 
 const OPERATOR_OR = 'OR';
 const OPERATOR_AND = 'AND';
@@ -8,19 +8,32 @@ const OPERATOR_AND = 'AND';
 type TriggerExpressionToken = typeof OPERATOR_OR | typeof OPERATOR_AND | number | Array<TriggerExpressionToken>;
 type TriggerExpression = Array<TriggerExpressionToken>;
 
+export interface DeviceConditionContext {
+    device: Device;
+    commands?: DevicePayload;
+}
+
 @Injectable()
 export class ConditionsEvaluatorService {
-    deviceConditionIsMet(triggerSource: ScenarioDeviceTriggerSource, device: Device): boolean {
+    deviceConditionIsMet(triggerSource: ScenarioDeviceTriggerSource, context: DeviceConditionContext): boolean {
         const controlsConditions = triggerSource.device.controls?.are;
         const measurementsConditions = triggerSource.device.measurements?.are;
+        const commandsConditions = triggerSource.device.commands?.are;
 
-        const meetsConditions = (conditions: Record<string, object>, controllingField: 'controls' | 'measurements') => {
+        const meetsConditions = (conditions: Record<string, object>, payload: DevicePayload) => {
             if (!conditions) {
                 return true;
             }
-            return Object.keys(conditions).reduce((res, field) => res && device[controllingField][field] === conditions[field], true);
+            if (!payload) {
+                return false;
+            }
+            return Object.keys(conditions).reduce((res, field) => res && payload[field] === conditions[field], true);
         };
-        return meetsConditions(controlsConditions, 'controls') && meetsConditions(measurementsConditions, 'measurements');
+        return (
+            meetsConditions(controlsConditions, context.device.controls) &&
+            meetsConditions(measurementsConditions, context.device.measurements) &&
+            meetsConditions(commandsConditions, context.commands)
+        );
     }
 
     evaluateTriggerExpression(expressionLogic: string, conditions: Array<boolean>): boolean {

@@ -1,6 +1,6 @@
-import { ConditionsEvaluatorService } from './conditions-evaluator.service';
+import { ConditionsEvaluatorService, DeviceConditionContext } from './conditions-evaluator.service';
 import { ScenarioDeviceTriggerSource, ScenarioTriggerSourceType } from 'scenarios/interfaces';
-import { Device, DeviceBrand, DeviceType, Room } from 'devices/interfaces';
+import { Device, DeviceBrand, DevicePayload, DeviceType, Room } from 'devices/interfaces';
 
 describe('ConditionsEvaluatorService', () => {
     let service: ConditionsEvaluatorService;
@@ -21,15 +21,22 @@ describe('ConditionsEvaluatorService', () => {
                 measurements,
             }) as Device;
 
+        const createContext = (device: Device, commands?: DevicePayload): DeviceConditionContext => ({
+            device,
+            commands,
+        });
+
         const createTriggerSource = (
             controlsConditions?: Record<string, unknown>,
             measurementsConditions?: Record<string, unknown>,
+            commandsConditions?: Record<string, unknown>,
         ): ScenarioDeviceTriggerSource => ({
             type: ScenarioTriggerSourceType.Device,
             device: {
                 externalId: 'device-1',
                 controls: controlsConditions ? { are: controlsConditions as Record<string, object> } : undefined,
                 measurements: measurementsConditions ? { are: measurementsConditions as Record<string, object> } : undefined,
+                commands: commandsConditions ? { are: commandsConditions as Record<string, object> } : undefined,
             },
         });
 
@@ -37,63 +44,102 @@ describe('ConditionsEvaluatorService', () => {
             const device = createMockDevice({ on: true }, { temperature: 25 });
             const triggerSource = createTriggerSource(undefined, undefined);
 
-            expect(service.deviceConditionIsMet(triggerSource, device)).toBe(true);
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device))).toBe(true);
         });
 
         it('should return true when controls condition matches', () => {
             const device = createMockDevice({ on: true, brightness: 100 }, {});
             const triggerSource = createTriggerSource({ on: true });
 
-            expect(service.deviceConditionIsMet(triggerSource, device)).toBe(true);
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device))).toBe(true);
         });
 
         it('should return false when controls condition does not match', () => {
             const device = createMockDevice({ on: false, brightness: 100 }, {});
             const triggerSource = createTriggerSource({ on: true });
 
-            expect(service.deviceConditionIsMet(triggerSource, device)).toBe(false);
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device))).toBe(false);
         });
 
         it('should return true when measurements condition matches', () => {
             const device = createMockDevice({}, { temperature: 25, humidity: 60 });
             const triggerSource = createTriggerSource(undefined, { temperature: 25 });
 
-            expect(service.deviceConditionIsMet(triggerSource, device)).toBe(true);
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device))).toBe(true);
         });
 
         it('should return false when measurements condition does not match', () => {
             const device = createMockDevice({}, { temperature: 30, humidity: 60 });
             const triggerSource = createTriggerSource(undefined, { temperature: 25 });
 
-            expect(service.deviceConditionIsMet(triggerSource, device)).toBe(false);
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device))).toBe(false);
         });
 
         it('should return true when both controls and measurements conditions match', () => {
             const device = createMockDevice({ on: true }, { temperature: 25 });
             const triggerSource = createTriggerSource({ on: true }, { temperature: 25 });
 
-            expect(service.deviceConditionIsMet(triggerSource, device)).toBe(true);
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device))).toBe(true);
         });
 
         it('should return false when controls match but measurements do not', () => {
             const device = createMockDevice({ on: true }, { temperature: 30 });
             const triggerSource = createTriggerSource({ on: true }, { temperature: 25 });
 
-            expect(service.deviceConditionIsMet(triggerSource, device)).toBe(false);
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device))).toBe(false);
         });
 
         it('should check multiple control conditions', () => {
             const device = createMockDevice({ on: true, brightness: 100 }, {});
             const triggerSource = createTriggerSource({ on: true, brightness: 100 });
 
-            expect(service.deviceConditionIsMet(triggerSource, device)).toBe(true);
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device))).toBe(true);
         });
 
         it('should return false when one of multiple control conditions fails', () => {
             const device = createMockDevice({ on: true, brightness: 50 }, {});
             const triggerSource = createTriggerSource({ on: true, brightness: 100 });
 
-            expect(service.deviceConditionIsMet(triggerSource, device)).toBe(false);
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device))).toBe(false);
+        });
+
+        it('should return true when commands condition matches', () => {
+            const device = createMockDevice({}, {});
+            const command = { action: 'on_press' };
+            const triggerSource = createTriggerSource(undefined, undefined, { action: 'on_press' });
+
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device, command))).toBe(true);
+        });
+
+        it('should return false when commands condition does not match', () => {
+            const device = createMockDevice({}, {});
+            const command = { action: 'off_press' };
+            const triggerSource = createTriggerSource(undefined, undefined, { action: 'on_press' });
+
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device, command))).toBe(false);
+        });
+
+        it('should return false when commands condition is set but no command is provided', () => {
+            const device = createMockDevice({}, {});
+            const triggerSource = createTriggerSource(undefined, undefined, { action: 'on_press' });
+
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device))).toBe(false);
+        });
+
+        it('should return true when controls, measurements and commands conditions all match', () => {
+            const device = createMockDevice({ on: true }, { temperature: 25 });
+            const command = { action: 'on_press' };
+            const triggerSource = createTriggerSource({ on: true }, { temperature: 25 }, { action: 'on_press' });
+
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device, command))).toBe(true);
+        });
+
+        it('should return false when commands condition does not match even if others do', () => {
+            const device = createMockDevice({ on: true }, { temperature: 25 });
+            const command = { action: 'off_press' };
+            const triggerSource = createTriggerSource({ on: true }, { temperature: 25 }, { action: 'on_press' });
+
+            expect(service.deviceConditionIsMet(triggerSource, createContext(device, command))).toBe(false);
         });
     });
 

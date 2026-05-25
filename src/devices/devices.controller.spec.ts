@@ -11,6 +11,7 @@ describe('DevicesController', () => {
         getDeviceByExternalId: jest.Mock;
         addDevice: jest.Mock;
         updateDevice: jest.Mock;
+        sendCommand: jest.Mock;
         removeDevice: jest.Mock;
         getPairableDevices: jest.Mock;
         toggleDevicePairingMode: jest.Mock;
@@ -32,6 +33,7 @@ describe('DevicesController', () => {
             getDeviceByExternalId: jest.fn(),
             addDevice: jest.fn(),
             updateDevice: jest.fn(),
+            sendCommand: jest.fn(),
             removeDevice: jest.fn(),
             getPairableDevices: jest.fn(),
             toggleDevicePairingMode: jest.fn(),
@@ -111,6 +113,18 @@ describe('DevicesController', () => {
 
             expect(result).toEqual(updatedDevice);
             expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('device-uuid-123', updateDto);
+        });
+    });
+
+    describe('sendCommand', () => {
+        it('should send command and return the validated command', async () => {
+            const command = { action: 'on_press' };
+            mockDevicesService.sendCommand.mockResolvedValue(command);
+
+            const result = await controller.sendCommand('device-uuid-123', command);
+
+            expect(result).toEqual(command);
+            expect(mockDevicesService.sendCommand).toHaveBeenCalledWith('device-uuid-123', command);
         });
     });
 

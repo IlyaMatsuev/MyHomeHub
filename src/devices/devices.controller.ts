@@ -11,7 +11,14 @@ import {
 } from '@nestjs/swagger';
 import { DevicesService } from 'devices/devices.service';
 import { Device, DevicesPage, PairingModeStatus } from 'devices/interfaces';
-import { CreateDeviceDto, GetPairableDevicesDto, UpdateDeviceDto, GetDevicesDto, ToggleDevicesPairingModeDto } from 'devices/dto';
+import {
+    CreateDeviceDto,
+    DevicePayloadDto,
+    GetPairableDevicesDto,
+    UpdateDeviceDto,
+    GetDevicesDto,
+    ToggleDevicesPairingModeDto,
+} from 'devices/dto';
 import { PairableDevicesPage } from 'zigbee/interfaces';
 
 @ApiBearerAuth()
@@ -73,6 +80,23 @@ export class DevicesController {
     @ApiUnauthorizedResponse()
     async updateDevice(@Param('externalId') externalId: string, @Body() updateDeviceDto: UpdateDeviceDto): Promise<Device> {
         return this.deviceService.updateDevice(externalId, updateDeviceDto);
+    }
+
+    @Post('/:externalId/command')
+    @ApiParam({
+        name: 'externalId',
+        description: 'External ID of the device to send the command to',
+        example: 'f3cec07c-9834-4a02-990d-28b0d99534ab',
+    })
+    @ApiOperation({
+        summary: 'Send a stateless command to a device. Similar to controls/measurements but does not save the state on device',
+    })
+    @ApiOkResponse()
+    @ApiNotFoundResponse()
+    @ApiBadRequestResponse()
+    @ApiUnauthorizedResponse()
+    async sendCommand(@Param('externalId') externalId: string, @Body() commandDto: DevicePayloadDto): Promise<Device> {
+        return this.deviceService.sendCommand(externalId, commandDto);
     }
 
     @Delete('/:externalId')
