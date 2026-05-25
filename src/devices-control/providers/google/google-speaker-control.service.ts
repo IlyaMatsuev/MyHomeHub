@@ -1,9 +1,11 @@
-import * as CastClient from 'castv2-promise';
+import CastClient from 'castv2-promise';
 import TextToSpeech from 'google-tts-api';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { DevicesControlService } from 'devices-control/devices-control.service';
 import { GoogleSpeakerControlsDto } from 'devices-control/providers';
 import { TransportMessage } from 'devices-control/interfaces';
+
+const GOOGLE_CAST_PORT = 8009;
 
 export class GoogleSpeakerControlService extends DevicesControlService {
     protected getServiceName(): string {
@@ -19,13 +21,12 @@ export class GoogleSpeakerControlService extends DevicesControlService {
             return null;
         }
 
-        // This is the only one exception and probably the only smart google device I'll ever have
-        let castClient: CastClient;
+        // Avoid `CastClient.find()` because it relies on mDNS, which won't work inside a docker container. Construct a device manually instead
+        const castClient = new CastClient(this.getDeviceIP(), GOOGLE_CAST_PORT);
         try {
-            castClient = await CastClient.find(this.getDeviceIP());
             await castClient.play(await TextToSpeech(controls.text));
         } finally {
-            await castClient?.close();
+            await castClient.close();
         }
 
         // I don't want anything else to be sent, so return null message
