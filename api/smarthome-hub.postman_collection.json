@@ -388,6 +388,11 @@
                 {
                   "key": "pageSize",
                   "value": "10"
+                },
+                {
+                  "key": "room",
+                  "value": "office",
+                  "disabled": true
                 }
               ]
             }
@@ -523,6 +528,75 @@
           "response": []
         },
         {
+          "name": "Send Command",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"text\": \"Hello world\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/devices/:deviceId/command",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", ":deviceId", "command"],
+              "variable": [
+                {
+                  "key": "deviceId",
+                  "value": "{{lastQueriedDeviceId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Update Device",
           "event": [
             {
@@ -575,7 +649,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n            \"zigbeeFriendlyName\": \"MainLightRemote\"\n}",
+              "raw": "{\n    \"controls\": {\n        \"$override\": true\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -736,7 +810,12 @@
                 },
                 {
                   "key": "group",
-                  "value": "",
+                  "value": "living_room",
+                  "disabled": true
+                },
+                {
+                  "key": "room",
+                  "value": "living-room",
                   "disabled": true
                 }
               ]
@@ -857,7 +936,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"test\",\n    \"description\": \"Switches on the main ceiling light off\",\n    \"trigger\": {\n        \"sources\": [\n            {\n                \"type\": \"device\",\n                \"device\": {\n                    \"externalId\": \"7662737f-400b-48c2-9719-45a4a14bad9c\",\n                    \"controls\": {\n                        \"are\": {\n                            \"on\": false\n                        }\n                    }\n                }\n            }\n        ],\n        \"logic\": \"1\"\n    },\n    \"devices\": [\n        {\n            \"externalId\": \"38a78ca6-dd90-43aa-a73a-9ad2edc6806a\",\n            \"set\": {\n                \"controls\": {\n                    \"on\": false\n                }\n            }\n        }\n    ],\n    \"group\": \"test\"\n}",
+              "raw": "{\n    \"name\": \"Main ceiling light On\",\n    \"description\": \"Switches on the main ceiling light on\",\n    \"group\": \"living_room\",\n    \"active\": true,\n    \"trigger\": {\n        \"sources\": [\n            {\n                \"type\": \"device\",\n                \"device\": {\n                    \"externalId\": \"7662737f-400b-48c2-9719-45a4a14bad9c\",\n                    \"commands\": {\n                        \"are\": {\n                            \"action\": \"on_press\"\n                        }\n                    }\n                }\n            }\n        ],\n        \"logic\": \"1\"\n    },\n    \"devices\": [\n        {\n            \"externalId\": \"38a78ca6-dd90-43aa-a73a-9ad2edc6806a\",\n            \"set\": {\n                \"controls\": {\n                    \"on\": true\n                }\n            }\n        }\n    ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -925,7 +1004,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"active\": false\n}",
+              "raw": "{\n    \"trigger\": {\n        \"sources\": [\n            {\n                \"type\": \"cron\",\n                \"cron\": \"30 0 * * *\"\n            },\n            {\n                \"type\": \"device\",\n                \"device\": {\n                    \"externalId\": \"7662737f-400b-48c2-9719-45a4a14bad9c\",\n                    \"commands\": {\n                        \"are\": {\n                            \"action\": \"down_press\"\n                        }\n                    }\n                }\n            },\n            {\n                \"type\": \"device\",\n                \"device\": {\n                    \"externalId\": \"5f9ffdce-bf7b-4fdf-9a3e-7c62edf77ca0\",\n                    \"controls\": {\n                        \"are\": {\n                            \"on\": true\n                        }\n                    }\n                }\n            }\n        ],\n        \"logic\": \"(1 OR 2) AND 3\"\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
