@@ -72,6 +72,7 @@ export class UpdateDeviceDto {
     })
     room?: Room;
 
+    @IsOptional()
     @IsEnum(TransportProtocol)
     @ApiProperty({
         required: false,
