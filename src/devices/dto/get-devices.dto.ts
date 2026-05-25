@@ -1,6 +1,5 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsOptional } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { IsEnum, IsOptional } from 'class-validator';
 import { PaginationDto } from 'common/dto';
 import { Room } from 'devices/interfaces';
 
@@ -14,14 +13,4 @@ export class GetDevicesDto extends PaginationDto {
         enum: Room,
     })
     room?: Room;
-
-    @IsBoolean()
-    @Type(() => String)
-    @Transform(({ value }) => value === 'true' || value === '1' || value === true)
-    @ApiProperty({
-        required: false,
-        default: false,
-        description: 'When true, shows only devices without an assigned room (room is null/undefined)',
-    })
-    allowEmptyRoom: boolean = false;
 }

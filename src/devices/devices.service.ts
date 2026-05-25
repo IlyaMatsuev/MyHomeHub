@@ -4,7 +4,7 @@ import { Model, RootFilterQuery } from 'mongoose';
 import { DevicesControlServiceFactory } from 'devices-control/devices-control-service.factory';
 import { DevicesControlService } from 'devices-control/devices-control.service';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
-import { Device, DeviceFilter, DevicesPage, GetDeviceOptions, PairingModeStatus, Room } from 'devices/interfaces';
+import { Device, DeviceFilter, DevicesPage, GetDeviceOptions, PairingModeStatus } from 'devices/interfaces';
 import { GetDevicesDto, CreateDeviceDto, UpdateDeviceDto, GetPairableDevicesDto } from 'devices/dto';
 import { DeviceUpdateRequestedEvent, DeviceUpdateCompletedEvent } from 'devices/events';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
@@ -42,12 +42,10 @@ export class DevicesService {
         return this.deviceControlServiceFactory.getControlService(device);
     }
 
-    async getDevices(options: GetDevicesDto = new GetDevicesDto()): Promise<DevicesPage> {
-        const conditions: RootFilterQuery<Device> = {};
+    async getDevices(filter: DeviceFilter = {}, options: GetDevicesDto = new GetDevicesDto()): Promise<DevicesPage> {
+        const conditions: RootFilterQuery<Device> = { ...filter };
         if (options.room) {
             conditions.room = options.room;
-        } else if (options.allowEmptyRoom) {
-            conditions.room = { $exists: false };
         }
 
         const [devices, total] = await Promise.all([
@@ -61,12 +59,6 @@ export class DevicesService {
             pageSize: options.pageSize,
             totalPages: Math.ceil(total / options.pageSize),
         };
-    }
-
-    async getDeviceExternalIdsByRoom(room: Room | null): Promise<Array<string>> {
-        const conditions: RootFilterQuery<Device> = room ? { room } : { room: { $exists: false } };
-        const devices = await this.deviceModel.find(conditions, { externalId: 1 }).lean();
-        return devices.map(d => d.externalId);
     }
 
     getDeviceByExternalId(externalId: string, options: GetDeviceOptions = { strict: true }): Promise<Device> {

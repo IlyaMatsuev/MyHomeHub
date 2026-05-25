@@ -3,6 +3,7 @@
 // If I want to make it configurable, I need to provide a way of configuring the communication between devices via API instead of code
 
 export enum Room {
+    None = 'none',
     Bathroom = 'bathroom',
     Bedroom = 'bedroom',
     Kitchen = 'kitchen',

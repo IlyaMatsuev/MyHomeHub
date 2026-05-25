@@ -41,14 +41,4 @@ export class GetScenariosDto extends PaginationDto {
         enum: Room,
     })
     room?: Room;
-
-    @IsBoolean()
-    @Type(() => String)
-    @Transform(({ value }) => value === 'true' || value === '1' || value === true)
-    @ApiProperty({
-        required: false,
-        default: false,
-        description: 'When true, shows only scenarios where the triggered devices have no assigned room',
-    })
-    allowEmptyRoom: boolean = false;
 }

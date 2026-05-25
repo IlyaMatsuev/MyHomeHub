@@ -42,7 +42,7 @@ export class DevicesController {
     @ApiOkResponse()
     @ApiUnauthorizedResponse()
     async getDevices(@Query() query: GetDevicesDto): Promise<DevicesPage> {
-        return this.deviceService.getDevices(query);
+        return this.deviceService.getDevices({}, query);
     }
 
     @Get('/:externalId')

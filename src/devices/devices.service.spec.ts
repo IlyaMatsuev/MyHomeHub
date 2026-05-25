@@ -158,7 +158,7 @@ describe('DevicesService', () => {
             options.page = 1;
             options.pageSize = 10;
 
-            const result = await service.getDevices(options);
+            const result = await service.getDevices({}, options);
 
             expect(result.devices).toEqual(devices);
             expect(result.page).toBe(1);
@@ -180,7 +180,7 @@ describe('DevicesService', () => {
             options.page = 1;
             options.pageSize = 10;
 
-            const result = await service.getDevices(options);
+            const result = await service.getDevices({}, options);
 
             expect(result.totalPages).toBe(3);
         });
@@ -200,7 +200,7 @@ describe('DevicesService', () => {
             expect(result.devices).toEqual([]);
         });
 
-        it('should filter devices by room when provided', async () => {
+        it('should filter devices by room from options when provided', async () => {
             const devices = [mockDevice];
             mockDeviceModel.find.mockReturnValue({
                 skip: jest.fn().mockReturnValue({
@@ -214,64 +214,28 @@ describe('DevicesService', () => {
             const options = new GetDevicesDto();
             options.room = Room.LivingRoom;
 
-            const result = await service.getDevices(options);
+            const result = await service.getDevices({}, options);
 
             expect(result.devices).toEqual(devices);
             expect(mockDeviceModel.find).toHaveBeenCalledWith({ room: Room.LivingRoom });
             expect(mockDeviceModel.countDocuments).toHaveBeenCalledWith({ room: Room.LivingRoom });
         });
 
-        it('should filter devices without room when allowEmptyRoom is true', async () => {
+        it('should filter devices by filter parameter', async () => {
+            const devices = [mockDevice];
             mockDeviceModel.find.mockReturnValue({
                 skip: jest.fn().mockReturnValue({
                     limit: jest.fn().mockReturnValue({
-                        lean: jest.fn().mockResolvedValue([]),
+                        lean: jest.fn().mockResolvedValue(devices),
                     }),
                 }),
             });
-            mockDeviceModel.countDocuments.mockResolvedValue(0);
+            mockDeviceModel.countDocuments.mockResolvedValue(1);
 
-            const options = new GetDevicesDto();
-            options.allowEmptyRoom = true;
+            const result = await service.getDevices({ room: Room.LivingRoom });
 
-            await service.getDevices(options);
-
-            expect(mockDeviceModel.find).toHaveBeenCalledWith({ room: { $exists: false } });
-            expect(mockDeviceModel.countDocuments).toHaveBeenCalledWith({ room: { $exists: false } });
-        });
-    });
-
-    describe('getDeviceExternalIdsByRoom', () => {
-        it('should return device external IDs for a specific room', async () => {
-            mockDeviceModel.find.mockReturnValue({
-                lean: jest.fn().mockResolvedValue([{ externalId: 'device-1' }, { externalId: 'device-2' }]),
-            });
-
-            const result = await service.getDeviceExternalIdsByRoom(Room.LivingRoom);
-
-            expect(result).toEqual(['device-1', 'device-2']);
-            expect(mockDeviceModel.find).toHaveBeenCalledWith({ room: Room.LivingRoom }, { externalId: 1 });
-        });
-
-        it('should return device external IDs for devices without room when room is null', async () => {
-            mockDeviceModel.find.mockReturnValue({
-                lean: jest.fn().mockResolvedValue([{ externalId: 'device-no-room' }]),
-            });
-
-            const result = await service.getDeviceExternalIdsByRoom(null);
-
-            expect(result).toEqual(['device-no-room']);
-            expect(mockDeviceModel.find).toHaveBeenCalledWith({ room: { $exists: false } }, { externalId: 1 });
-        });
-
-        it('should return empty array when no devices match', async () => {
-            mockDeviceModel.find.mockReturnValue({
-                lean: jest.fn().mockResolvedValue([]),
-            });
-
-            const result = await service.getDeviceExternalIdsByRoom(Room.Kitchen);
-
-            expect(result).toEqual([]);
+            expect(result.devices).toEqual(devices);
+            expect(mockDeviceModel.find).toHaveBeenCalledWith({ room: Room.LivingRoom });
         });
     });
 

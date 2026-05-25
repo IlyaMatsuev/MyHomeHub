@@ -47,8 +47,9 @@ export class ScenariosService implements OnModuleInit {
         if (options.group) {
             conditions.group = options.group;
         }
-        if (options.room || options.allowEmptyRoom) {
-            const deviceExternalIds = await this.devicesService.getDeviceExternalIdsByRoom(options.room ?? null);
+        if (options.room) {
+            const devicesPage = await this.devicesService.getDevices({ room: options.room });
+            const deviceExternalIds = devicesPage.devices.map(d => d.externalId);
             conditions['devices.externalId'] = { $in: deviceExternalIds };
         }
         const [scenarios, total] = await Promise.all([
