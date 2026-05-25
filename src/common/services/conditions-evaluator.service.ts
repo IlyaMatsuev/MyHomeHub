@@ -10,7 +10,7 @@ type TriggerExpression = Array<TriggerExpressionToken>;
 
 export interface DeviceConditionContext {
     device: Device;
-    command?: DevicePayload;
+    commands?: DevicePayload;
 }
 
 @Injectable()
@@ -32,7 +32,7 @@ export class ConditionsEvaluatorService {
         return (
             meetsConditions(controlsConditions, context.device.controls) &&
             meetsConditions(measurementsConditions, context.device.measurements) &&
-            meetsConditions(commandsConditions, context.command)
+            meetsConditions(commandsConditions, context.commands)
         );
     }
 

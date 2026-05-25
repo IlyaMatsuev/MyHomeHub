@@ -3,9 +3,14 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { ConditionsEvaluatorService, DeviceConditionContext } from 'common/services/conditions-evaluator.service';
 import { UpdateDeviceDto } from 'devices/dto';
 import { DeviceUpdateCompletedEvent, DeviceCommandExecutedEvent } from 'devices/events';
-import { DevicePayload } from 'devices/interfaces';
 import { DevicesService } from 'devices/devices.service';
-import { Scenario, ScenarioDeviceTriggerSource, ScenarioTriggerSource, ScenarioTriggerSourceType } from 'scenarios/interfaces';
+import {
+    Scenario,
+    ScenarioDeviceTriggerSource,
+    ScenarioExecutionContext,
+    ScenarioTriggerSource,
+    ScenarioTriggerSourceType,
+} from 'scenarios/interfaces';
 import { ScenariosService } from 'scenarios/scenarios.service';
 import { UpdateScenarioDto } from 'scenarios/dto';
 
@@ -29,12 +34,12 @@ export class ScenariosExecutionService {
 
     @OnEvent(DeviceCommandExecutedEvent.eventName)
     async onDeviceCommandExecuted(event: DeviceCommandExecutedEvent): Promise<void> {
-        await this.triggerDeviceRelatedScenarios(event.deviceExternalId, event.command);
+        await this.triggerDeviceRelatedScenarios(event.deviceExternalId, { commands: event.commands });
     }
 
-    async execute(scenario: Scenario, wasScheduled: boolean, command?: DevicePayload): Promise<void> {
+    async execute(scenario: Scenario, context: ScenarioExecutionContext): Promise<void> {
         try {
-            const conditions = await this.extractConditions(scenario.trigger.sources, wasScheduled, command);
+            const conditions = await this.extractConditions(scenario.trigger.sources, context);
             const shouldExecuteScenario = this.conditionsEvaluatorService.evaluateTriggerExpression(scenario.trigger.logic, conditions);
 
             this.logger.debug(`Executing scenario ${scenario.externalId}. Conditions met: ${shouldExecuteScenario}`);
@@ -49,32 +54,31 @@ export class ScenariosExecutionService {
         }
     }
 
-    private async triggerDeviceRelatedScenarios(deviceExternalId: string, command?: DevicePayload): Promise<void> {
+    private async triggerDeviceRelatedScenarios(deviceExternalId: string, context: ScenarioExecutionContext = {}): Promise<void> {
         this.logger.debug(`Received controls/measurements update for a device "${deviceExternalId}"`);
         const triggeredScenarios = await this.scenariosService.getDeviceTriggeredScenarios(deviceExternalId);
 
         this.logger.debug(`Triggered scenarios: "${triggeredScenarios.length}"`);
 
         for (const triggeredScenario of triggeredScenarios) {
-            await this.execute(triggeredScenario, false, command);
+            await this.execute(triggeredScenario, context);
         }
     }
 
     private async extractConditions(
         triggerSources: Array<ScenarioTriggerSource>,
-        wasScheduled: boolean,
-        command?: DevicePayload,
+        context: ScenarioExecutionContext,
     ): Promise<Array<boolean>> {
         const conditions: Array<boolean> = [];
         for (const source of triggerSources) {
             if (source.type === ScenarioTriggerSourceType.Cron) {
-                conditions.push(wasScheduled);
+                conditions.push(context.scheduled ?? false);
             }
             if (source.type === ScenarioTriggerSourceType.Device) {
                 const deviceSource = source as ScenarioDeviceTriggerSource;
                 const device = await this.devicesService.getDeviceByExternalId(deviceSource.device.externalId);
-                const context: DeviceConditionContext = { device, command };
-                conditions.push(this.conditionsEvaluatorService.deviceConditionIsMet(deviceSource, context));
+                const deviceContext: DeviceConditionContext = { device, commands: context.commands };
+                conditions.push(this.conditionsEvaluatorService.deviceConditionIsMet(deviceSource, deviceContext));
             }
         }
         return conditions;

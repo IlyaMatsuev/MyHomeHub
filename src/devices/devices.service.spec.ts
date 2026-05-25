@@ -539,7 +539,7 @@ describe('DevicesService', () => {
             const command = { action: 'on_press' };
             const result = await service.sendCommand('device-uuid-123', command);
 
-            expect(result).toEqual({ action: 'on_press' });
+            expect(result).toEqual(mockDevice);
             expect(mockControlService.validateControls).toHaveBeenCalledWith(command);
             expect(mockControlService.setControls).toHaveBeenCalledWith({ action: 'on_press' });
         });
@@ -557,7 +557,7 @@ describe('DevicesService', () => {
                 DeviceCommandExecutedEvent.eventName,
                 expect.objectContaining({
                     deviceExternalId: 'device-uuid-123',
-                    command: { action: 'on_press' },
+                    commands: { action: 'on_press' },
                 }),
             );
         });

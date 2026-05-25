@@ -21,9 +21,9 @@ describe('ConditionsEvaluatorService', () => {
                 measurements,
             }) as Device;
 
-        const createContext = (device: Device, command?: DevicePayload): DeviceConditionContext => ({
+        const createContext = (device: Device, commands?: DevicePayload): DeviceConditionContext => ({
             device,
-            command,
+            commands,
         });
 
         const createTriggerSource = (

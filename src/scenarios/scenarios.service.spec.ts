@@ -152,7 +152,7 @@ describe('ScenariosService', () => {
             await handler();
 
             expect(mockScenarioModel.findOne).toHaveBeenCalledWith({ externalId: mockScenario.externalId });
-            expect(mockScenariosExecutionService.execute).toHaveBeenCalledWith(freshScenario, true);
+            expect(mockScenariosExecutionService.execute).toHaveBeenCalledWith(freshScenario, { scheduled: true });
         });
     });
 

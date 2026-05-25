@@ -10,7 +10,7 @@ import {
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { DevicesService } from 'devices/devices.service';
-import { Device, DevicePayload, DevicesPage, PairingModeStatus } from 'devices/interfaces';
+import { Device, DevicesPage, PairingModeStatus } from 'devices/interfaces';
 import {
     CreateDeviceDto,
     DevicePayloadDto,
@@ -88,12 +88,14 @@ export class DevicesController {
         description: 'External ID of the device to send the command to',
         example: 'f3cec07c-9834-4a02-990d-28b0d99534ab',
     })
-    @ApiOperation({ summary: 'Send a stateless command to a device without saving the state' })
+    @ApiOperation({
+        summary: 'Send a stateless command to a device. Similar to controls/measurements but does not save the state on device',
+    })
     @ApiOkResponse()
     @ApiNotFoundResponse()
     @ApiBadRequestResponse()
     @ApiUnauthorizedResponse()
-    async sendCommand(@Param('externalId') externalId: string, @Body() commandDto: DevicePayloadDto): Promise<DevicePayload> {
+    async sendCommand(@Param('externalId') externalId: string, @Body() commandDto: DevicePayloadDto): Promise<Device> {
         return this.deviceService.sendCommand(externalId, commandDto);
     }
 

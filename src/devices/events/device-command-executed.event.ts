@@ -5,6 +5,6 @@ export class DeviceCommandExecutedEvent {
 
     constructor(
         readonly deviceExternalId: string,
-        readonly command: DevicePayload,
+        readonly commands: DevicePayload,
     ) {}
 }
