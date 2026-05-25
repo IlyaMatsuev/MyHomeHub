@@ -159,7 +159,7 @@ describe('DevicesService', () => {
             options.page = 1;
             options.pageSize = 10;
 
-            const result = await service.getDevices(options);
+            const result = await service.getDevices({}, options);
 
             expect(result.devices).toEqual(devices);
             expect(result.page).toBe(1);
@@ -181,7 +181,7 @@ describe('DevicesService', () => {
             options.page = 1;
             options.pageSize = 10;
 
-            const result = await service.getDevices(options);
+            const result = await service.getDevices({}, options);
 
             expect(result.totalPages).toBe(3);
         });
@@ -199,6 +199,44 @@ describe('DevicesService', () => {
             const result = await service.getDevices();
 
             expect(result.devices).toEqual([]);
+        });
+
+        it('should filter devices by room from options when provided', async () => {
+            const devices = [mockDevice];
+            mockDeviceModel.find.mockReturnValue({
+                skip: jest.fn().mockReturnValue({
+                    limit: jest.fn().mockReturnValue({
+                        lean: jest.fn().mockResolvedValue(devices),
+                    }),
+                }),
+            });
+            mockDeviceModel.countDocuments.mockResolvedValue(1);
+
+            const options = new GetDevicesDto();
+            options.room = Room.LivingRoom;
+
+            const result = await service.getDevices({}, options);
+
+            expect(result.devices).toEqual(devices);
+            expect(mockDeviceModel.find).toHaveBeenCalledWith({ room: Room.LivingRoom });
+            expect(mockDeviceModel.countDocuments).toHaveBeenCalledWith({ room: Room.LivingRoom });
+        });
+
+        it('should filter devices by filter parameter', async () => {
+            const devices = [mockDevice];
+            mockDeviceModel.find.mockReturnValue({
+                skip: jest.fn().mockReturnValue({
+                    limit: jest.fn().mockReturnValue({
+                        lean: jest.fn().mockResolvedValue(devices),
+                    }),
+                }),
+            });
+            mockDeviceModel.countDocuments.mockResolvedValue(1);
+
+            const result = await service.getDevices({ room: Room.LivingRoom });
+
+            expect(result.devices).toEqual(devices);
+            expect(mockDeviceModel.find).toHaveBeenCalledWith({ room: Room.LivingRoom });
         });
     });
 

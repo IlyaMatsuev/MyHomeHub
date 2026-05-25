@@ -1,6 +1,6 @@
 import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { Model } from 'mongoose';
+import { Model, RootFilterQuery } from 'mongoose';
 import { DevicesControlServiceFactory } from 'devices-control/devices-control-service.factory';
 import { DevicesControlService } from 'devices-control/devices-control.service';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
@@ -42,10 +42,15 @@ export class DevicesService {
         return this.deviceControlServiceFactory.getControlService(device);
     }
 
-    async getDevices(options: GetDevicesDto = new GetDevicesDto()): Promise<DevicesPage> {
+    async getDevices(filter: DeviceFilter = {}, options: GetDevicesDto = new GetDevicesDto()): Promise<DevicesPage> {
+        const conditions: RootFilterQuery<Device> = { ...filter };
+        if (options.room) {
+            conditions.room = options.room;
+        }
+
         const [devices, total] = await Promise.all([
-            this.deviceModel.find().skip(options.skipRecords).limit(options.pageSize).lean(),
-            this.deviceModel.countDocuments(),
+            this.deviceModel.find(conditions).skip(options.skipRecords).limit(options.pageSize).lean(),
+            this.deviceModel.countDocuments(conditions),
         ]);
 
         return {

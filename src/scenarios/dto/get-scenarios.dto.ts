@@ -1,6 +1,7 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { PaginationDto } from 'common/dto';
-import { IsBoolean, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { Room } from 'devices/interfaces';
+import { IsBoolean, IsEnum, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import {
     SCENARIO_GROUP_NAME_MAX_LENGTH,
@@ -31,4 +32,13 @@ export class GetScenariosDto extends PaginationDto {
         maxLength: SCENARIO_GROUP_NAME_MAX_LENGTH,
     })
     group?: string;
+
+    @IsOptional()
+    @IsEnum(Room)
+    @ApiProperty({
+        required: false,
+        description: 'Filter scenarios by the room of devices in the scenario devices array',
+        enum: Room,
+    })
+    room?: Room;
 }

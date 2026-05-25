@@ -35,6 +35,7 @@ export const DeviceSchema = new Schema(
         room: {
             type: String,
             required: false,
+            default: Room.None,
             enum: Object.values(Room) as Array<string>,
         },
         ip: {

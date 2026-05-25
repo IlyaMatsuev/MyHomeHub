@@ -70,7 +70,7 @@ describe('DevicesController', () => {
             const result = await controller.getDevices(query);
 
             expect(result).toEqual(devicesPage);
-            expect(mockDevicesService.getDevices).toHaveBeenCalledWith(query);
+            expect(mockDevicesService.getDevices).toHaveBeenCalledWith({}, query);
         });
     });
 
