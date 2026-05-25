@@ -4,6 +4,7 @@ import { UpdateDeviceDto } from 'devices/dto';
 import { DevicesService } from 'devices/devices.service';
 import { DeviceControls, DevicePayload } from 'devices/interfaces';
 import {
+    Z2M_SUPPORTED_COMMANDS,
     Z2M_SUPPORTED_CONTROLS,
     Z2M_SUPPORTED_MEASUREMENTS,
     ZIGBEE_BRIDGE_DEVICE_REMOVE_TOPIC,
@@ -69,7 +70,11 @@ export class ZigbeeService {
                 return;
             }
 
-            const { controls, measurements } = this.mapZigbeeState(state);
+            const { commands, controls, measurements } = this.mapZigbeeState(state);
+
+            if (Object.keys(commands).length > 0) {
+                await this.devicesService.sendCommand(device.externalId, commands);
+            }
 
             const hasControls = Object.keys(controls).length > 0;
             const hasMeasurements = Object.keys(measurements).length > 0;
@@ -91,18 +96,25 @@ export class ZigbeeService {
     }
 
     // TODO: Need to find a better way to map z2m values based on device
-    private mapZigbeeState(z2mPayload: Record<string, unknown>): { controls: DeviceControls; measurements: DevicePayload } {
+    private mapZigbeeState(z2mPayload: Record<string, unknown>): {
+        commands: DevicePayload;
+        controls: DeviceControls;
+        measurements: DevicePayload;
+    } {
+        const commands: DevicePayload = {};
         const controls: DevicePayload = {};
         const measurements: DevicePayload = {};
 
         for (const [key, value] of Object.entries(z2mPayload)) {
-            if (Z2M_SUPPORTED_CONTROLS.has(key)) {
+            if (Z2M_SUPPORTED_COMMANDS.has(key)) {
+                commands[key] = value;
+            } else if (Z2M_SUPPORTED_CONTROLS.has(key)) {
                 controls[key] = value;
             } else if (Z2M_SUPPORTED_MEASUREMENTS.has(key)) {
                 measurements[key] = value;
             }
         }
 
-        return { controls, measurements };
+        return { commands, controls, measurements };
     }
 }

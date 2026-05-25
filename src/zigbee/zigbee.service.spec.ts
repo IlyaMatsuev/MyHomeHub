@@ -10,7 +10,12 @@ import { ZigbeeBridge } from './store/zigbee-bridge';
 describe('ZigbeeService', () => {
     let service: ZigbeeService;
     let mockMqttService: { publish: jest.Mock };
-    let mockDevicesService: { getDevice: jest.Mock; getDeviceByZigbeeFriendlyName: jest.Mock; updateDevice: jest.Mock };
+    let mockDevicesService: {
+        getDevice: jest.Mock;
+        getDeviceByZigbeeFriendlyName: jest.Mock;
+        updateDevice: jest.Mock;
+        sendCommand: jest.Mock;
+    };
     let connectedSpy: jest.SpyInstance;
 
     const mockDevice: Partial<Device> = {
@@ -28,7 +33,12 @@ describe('ZigbeeService', () => {
 
     beforeEach(async () => {
         mockMqttService = { publish: jest.fn() };
-        mockDevicesService = { getDevice: jest.fn(), getDeviceByZigbeeFriendlyName: jest.fn(), updateDevice: jest.fn() };
+        mockDevicesService = {
+            getDevice: jest.fn(),
+            getDeviceByZigbeeFriendlyName: jest.fn(),
+            updateDevice: jest.fn(),
+            sendCommand: jest.fn(),
+        };
         // The bridge is treated as connected by default; individual tests override this.
         connectedSpy = jest.spyOn(ZigbeeBridge, 'connected').mockReturnValue(true);
 
@@ -117,18 +127,14 @@ describe('ZigbeeService', () => {
     });
 
     describe('updateDeviceState', () => {
-        it('should update the device with supported controls', async () => {
+        it('should send a command for supported command fields', async () => {
             mockDevicesService.getDeviceByZigbeeFriendlyName.mockResolvedValue(mockDevice);
 
             await service.handleDeviceStateUpdate('living_room_bulb', { action: 'on' });
 
             expect(mockDevicesService.getDeviceByZigbeeFriendlyName).toHaveBeenCalledWith('living_room_bulb');
-            expect(mockDevicesService.updateDevice).toHaveBeenCalledWith(
-                'device-uuid-123',
-                expect.objectContaining({ controls: { action: 'on' } }),
-            );
-            const updateArg = mockDevicesService.updateDevice.mock.calls[0][1];
-            expect(updateArg).toBeInstanceOf(UpdateDeviceDto);
+            expect(mockDevicesService.sendCommand).toHaveBeenCalledWith('device-uuid-123', { action: 'on' });
+            expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
         });
 
         it('should update the device with supported measurements', async () => {
@@ -140,23 +146,28 @@ describe('ZigbeeService', () => {
                 'device-uuid-123',
                 expect.objectContaining({ measurements: { battery: 95, linkquality: 220 } }),
             );
+            const updateArg = mockDevicesService.updateDevice.mock.calls[0][1];
+            expect(updateArg).toBeInstanceOf(UpdateDeviceDto);
+            expect(mockDevicesService.sendCommand).not.toHaveBeenCalled();
         });
 
-        it('should partition controls and measurements in the same payload', async () => {
+        it('should partition commands and measurements in the same payload', async () => {
             mockDevicesService.getDeviceByZigbeeFriendlyName.mockResolvedValue(mockDevice);
 
             await service.handleDeviceStateUpdate('living_room_bulb', { action: 'on', battery: 90, unknown_field: 'ignored' });
 
+            expect(mockDevicesService.sendCommand).toHaveBeenCalledWith('device-uuid-123', { action: 'on' });
             const dto = mockDevicesService.updateDevice.mock.calls[0][1];
-            expect(dto.controls).toEqual({ action: 'on' });
             expect(dto.measurements).toEqual({ battery: 90 });
+            expect(dto.controls).toBeUndefined();
         });
 
-        it('should skip the update when no supported fields are present', async () => {
+        it('should skip both sendCommand and updateDevice when no supported fields are present', async () => {
             mockDevicesService.getDeviceByZigbeeFriendlyName.mockResolvedValue(mockDevice);
 
             await service.handleDeviceStateUpdate('living_room_bulb', { unknown_field: 1 });
 
+            expect(mockDevicesService.sendCommand).not.toHaveBeenCalled();
             expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
         });
 
@@ -165,6 +176,7 @@ describe('ZigbeeService', () => {
 
             await service.handleDeviceStateUpdate('unknown', { action: 'on' });
 
+            expect(mockDevicesService.sendCommand).not.toHaveBeenCalled();
             expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
         });
 
@@ -172,6 +184,14 @@ describe('ZigbeeService', () => {
             mockDevicesService.getDeviceByZigbeeFriendlyName.mockRejectedValue(new Error('Database error'));
 
             await expect(service.handleDeviceStateUpdate('living_room_bulb', { action: 'on' })).resolves.toBeUndefined();
+        });
+
+        it('should swallow errors thrown by sendCommand', async () => {
+            mockDevicesService.getDeviceByZigbeeFriendlyName.mockResolvedValue(mockDevice);
+            mockDevicesService.sendCommand.mockRejectedValue(new Error('Control service failure'));
+
+            await expect(service.handleDeviceStateUpdate('living_room_bulb', { action: 'on' })).resolves.toBeUndefined();
+            expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
         });
     });
 

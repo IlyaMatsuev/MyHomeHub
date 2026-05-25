@@ -87,6 +87,7 @@ export class ScenariosExecutionService {
     private async executeScenario(scenario: Scenario): Promise<void> {
         for (const deviceAction of scenario.devices) {
             if (deviceAction.set.controls) {
+                // TODO: Use DeviceUpdateRequestedEvent
                 const device = await this.devicesService.getDeviceByExternalId(deviceAction.externalId);
                 await this.devicesService.updateDevice(device.externalId, new UpdateDeviceDto({ controls: deviceAction.set.controls }));
             }
