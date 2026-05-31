@@ -161,7 +161,7 @@ describe('DevicesService', () => {
 
             const result = await service.getDevices({}, options);
 
-            expect(result.devices).toEqual(devices);
+            expect(result.items).toEqual(devices);
             expect(result.page).toBe(1);
             expect(result.pageSize).toBe(10);
             expect(result.totalPages).toBe(1);
@@ -198,7 +198,7 @@ describe('DevicesService', () => {
 
             const result = await service.getDevices();
 
-            expect(result.devices).toEqual([]);
+            expect(result.items).toEqual([]);
         });
 
         it('should filter devices by room from options when provided', async () => {
@@ -217,7 +217,7 @@ describe('DevicesService', () => {
 
             const result = await service.getDevices({}, options);
 
-            expect(result.devices).toEqual(devices);
+            expect(result.items).toEqual(devices);
             expect(mockDeviceModel.find).toHaveBeenCalledWith({ room: Room.LivingRoom });
             expect(mockDeviceModel.countDocuments).toHaveBeenCalledWith({ room: Room.LivingRoom });
         });
@@ -235,7 +235,7 @@ describe('DevicesService', () => {
 
             const result = await service.getDevices({ room: Room.LivingRoom });
 
-            expect(result.devices).toEqual(devices);
+            expect(result.items).toEqual(devices);
             expect(mockDeviceModel.find).toHaveBeenCalledWith({ room: Room.LivingRoom });
         });
     });
@@ -693,7 +693,7 @@ describe('DevicesService', () => {
 
             const result = await service.getPairableDevices();
 
-            expect(result.devices).toEqual([]);
+            expect(result.items).toEqual([]);
             expect(result.totalPages).toBe(0);
             expect(mockDeviceModel.find).not.toHaveBeenCalled();
         });
@@ -714,7 +714,7 @@ describe('DevicesService', () => {
                 { zigbeeIeeeAddress: { $in: ['0x001', '0x002', '0x003'] } },
                 { zigbeeIeeeAddress: 1 },
             );
-            expect(result.devices.map(d => d.zigbeeIeeeAddress)).toEqual(['0x001', '0x003']);
+            expect(result.items.map(d => d.zigbeeIeeeAddress)).toEqual(['0x001', '0x003']);
             expect(result.totalPages).toBe(1);
         });
 
@@ -734,9 +734,9 @@ describe('DevicesService', () => {
 
             const result = await service.getPairableDevices(options);
 
-            expect(result.devices).toHaveLength(10);
-            expect(result.devices[0].zigbeeIeeeAddress).toBe('0x010');
-            expect(result.devices[9].zigbeeIeeeAddress).toBe('0x019');
+            expect(result.items).toHaveLength(10);
+            expect(result.items[0].zigbeeIeeeAddress).toBe('0x010');
+            expect(result.items[9].zigbeeIeeeAddress).toBe('0x019');
             expect(result.page).toBe(2);
             expect(result.pageSize).toBe(10);
             expect(result.totalPages).toBe(3);

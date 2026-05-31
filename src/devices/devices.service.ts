@@ -4,13 +4,14 @@ import { Model, RootFilterQuery } from 'mongoose';
 import { DevicesControlServiceFactory } from 'devices-control/devices-control-service.factory';
 import { DevicesControlService } from 'devices-control/devices-control.service';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
-import { Device, DeviceFilter, DevicesPage, GetDeviceOptions, PairingModeStatus } from 'devices/interfaces';
+import { Device, DeviceFilter, GetDeviceOptions, PairingModeStatus } from 'devices/interfaces';
 import { GetDevicesDto, CreateDeviceDto, UpdateDeviceDto, GetPairableDevicesDto, DevicePayloadDto } from 'devices/dto';
 import { DeviceUpdateRequestedEvent, DeviceUpdateCompletedEvent, DeviceCommandExecutedEvent } from 'devices/events';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
 import { ZigbeeService } from 'zigbee/zigbee.service';
-import { PairableDevicesPage } from 'zigbee/interfaces';
+import { PairableDevice } from 'zigbee/interfaces';
 import { ZigbeePairableDevices } from 'zigbee/store';
+import { PageResponseDto } from 'common/dto';
 
 @Injectable()
 export class DevicesService {
@@ -42,7 +43,7 @@ export class DevicesService {
         return this.deviceControlServiceFactory.getControlService(device);
     }
 
-    async getDevices(filter: DeviceFilter = {}, options: GetDevicesDto = new GetDevicesDto()): Promise<DevicesPage> {
+    async getDevices(filter: DeviceFilter = {}, options: GetDevicesDto = new GetDevicesDto()): Promise<PageResponseDto<Device>> {
         const conditions: RootFilterQuery<Device> = { ...filter };
         if (options.room) {
             conditions.room = options.room;
@@ -53,12 +54,7 @@ export class DevicesService {
             this.deviceModel.countDocuments(conditions),
         ]);
 
-        return {
-            devices,
-            page: options.page,
-            pageSize: options.pageSize,
-            totalPages: Math.ceil(total / options.pageSize),
-        };
+        return PageResponseDto.fromQuery(devices, options.page, options.pageSize, total);
     }
 
     getDeviceByExternalId(externalId: string, options: GetDeviceOptions = { strict: true }): Promise<Device> {
@@ -149,11 +145,11 @@ export class DevicesService {
         return { enabled: enable, timeout: enable ? timeout : 0 };
     }
 
-    async getPairableDevices(options: GetPairableDevicesDto = new GetPairableDevicesDto()): Promise<PairableDevicesPage> {
+    async getPairableDevices(options: GetPairableDevicesDto = new GetPairableDevicesDto()): Promise<PageResponseDto<PairableDevice>> {
         const cachedZigbeeDevices = ZigbeePairableDevices.getAll();
 
         if (!cachedZigbeeDevices.length) {
-            return { devices: [], page: options.page, pageSize: options.pageSize, totalPages: 0 };
+            return PageResponseDto.fromQuery([], options.page, options.pageSize, 0);
         }
 
         const zigbeeDeviceIds = cachedZigbeeDevices.map(d => d.zigbeeIeeeAddress);
@@ -164,12 +160,7 @@ export class DevicesService {
 
         const pairableDevices = cachedZigbeeDevices.filter(d => !existingZigbeeDevicesIds.has(d.zigbeeIeeeAddress));
 
-        return {
-            devices: pairableDevices.slice(options.skipRecords, options.skipRecords + options.pageSize),
-            page: options.page,
-            pageSize: options.pageSize,
-            totalPages: Math.ceil(pairableDevices.length / options.pageSize),
-        };
+        return PageResponseDto.fromArray(pairableDevices, options.page, options.pageSize);
     }
 
     private async assignDtoValues(device: Device, updatedDevice: CreateDeviceDto | UpdateDeviceDto): Promise<Device> {

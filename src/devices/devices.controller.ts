@@ -3,14 +3,16 @@ import {
     ApiBadRequestResponse,
     ApiBearerAuth,
     ApiCreatedResponse,
+    ApiExtraModels,
     ApiNotFoundResponse,
     ApiOkResponse,
     ApiOperation,
     ApiParam,
     ApiUnauthorizedResponse,
+    getSchemaPath,
 } from '@nestjs/swagger';
 import { DevicesService } from 'devices/devices.service';
-import { Device, DevicesPage, PairingModeStatus } from 'devices/interfaces';
+import { Device, PairingModeStatus } from 'devices/interfaces';
 import {
     CreateDeviceDto,
     DevicePayloadDto,
@@ -19,19 +21,24 @@ import {
     GetDevicesDto,
     ToggleDevicesPairingModeDto,
 } from 'devices/dto';
-import { PairableDevicesPage } from 'zigbee/interfaces';
+import { PageResponseDto } from 'common/dto';
+import { PairableDevice } from 'zigbee/interfaces';
 
 @ApiBearerAuth()
+@ApiExtraModels(PageResponseDto)
 @Controller('devices')
 export class DevicesController {
     constructor(private readonly deviceService: DevicesService) {}
 
     @Get('/discover')
     @ApiOperation({ summary: 'Return the list of discoverable devices that can be paired' })
-    @ApiOkResponse()
+    @ApiOkResponse({
+        description: 'Paginated list of pairable devices',
+        schema: { allOf: [{ $ref: getSchemaPath(PageResponseDto) }] },
+    })
     @ApiBadRequestResponse()
     @ApiUnauthorizedResponse()
-    getPairableDevices(@Query() options: GetPairableDevicesDto): Promise<PairableDevicesPage> {
+    getPairableDevices(@Query() options: GetPairableDevicesDto): Promise<PageResponseDto<PairableDevice>> {
         return this.deviceService.getPairableDevices(options);
     }
 
@@ -46,9 +53,12 @@ export class DevicesController {
 
     @Get()
     @ApiOperation({ summary: 'Get all added devices' })
-    @ApiOkResponse()
+    @ApiOkResponse({
+        description: 'Paginated list of devices',
+        schema: { allOf: [{ $ref: getSchemaPath(PageResponseDto) }] },
+    })
     @ApiUnauthorizedResponse()
-    async getDevices(@Query() query: GetDevicesDto): Promise<DevicesPage> {
+    async getDevices(@Query() query: GetDevicesDto): Promise<PageResponseDto<Device>> {
         return this.deviceService.getDevices({}, query);
     }
 

@@ -3,18 +3,22 @@ import {
     ApiBadRequestResponse,
     ApiBearerAuth,
     ApiCreatedResponse,
+    ApiExtraModels,
     ApiNotFoundResponse,
     ApiOkResponse,
     ApiOperation,
     ApiParam,
     ApiUnauthorizedResponse,
+    getSchemaPath,
 } from '@nestjs/swagger';
 import { ScenariosService } from 'scenarios/scenarios.service';
 import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
-import { Scenario, ScenarioGroup, ScenarioGroupsPage, ScenariosPage } from 'scenarios/interfaces';
+import { Scenario, ScenarioGroup } from 'scenarios/interfaces';
 import { CreateScenarioDto, DeleteScenarioGroupDto, GetScenarioGroupsDto, GetScenariosDto, UpdateScenarioDto } from 'scenarios/dto';
+import { PageResponseDto } from 'common/dto';
 
 @ApiBearerAuth()
+@ApiExtraModels(PageResponseDto)
 @Controller('scenarios')
 export class ScenariosController {
     constructor(
@@ -24,17 +28,23 @@ export class ScenariosController {
 
     @Get()
     @ApiOperation({ summary: 'Get all added scenarios' })
-    @ApiOkResponse()
+    @ApiOkResponse({
+        description: 'Paginated list of scenarios',
+        schema: { allOf: [{ $ref: getSchemaPath(PageResponseDto) }] },
+    })
     @ApiUnauthorizedResponse()
-    async getScenarios(@Query() query: GetScenariosDto): Promise<ScenariosPage> {
+    async getScenarios(@Query() query: GetScenariosDto): Promise<PageResponseDto<Scenario>> {
         return this.scenariosService.getScenarios(query);
     }
 
     @Get('/groups')
     @ApiOperation({ summary: 'Get all scenario groups' })
-    @ApiOkResponse()
+    @ApiOkResponse({
+        description: 'Paginated list of scenario groups',
+        schema: { allOf: [{ $ref: getSchemaPath(PageResponseDto) }] },
+    })
     @ApiUnauthorizedResponse()
-    async getGroups(@Query() query: GetScenarioGroupsDto): Promise<ScenarioGroupsPage> {
+    async getGroups(@Query() query: GetScenarioGroupsDto): Promise<PageResponseDto<ScenarioGroup>> {
         return this.scenarioGroupsService.getGroups(query);
     }
 
