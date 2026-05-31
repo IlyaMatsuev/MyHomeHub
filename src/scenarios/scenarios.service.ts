@@ -10,13 +10,14 @@ import {
 } from '@nestjs/common';
 import { Model, RootFilterQuery } from 'mongoose';
 import { DevicesService } from 'devices/devices.service';
+import { GetDevicesDto } from 'devices/dto';
 import { GetScenarioOptions, Scenario, ScenarioCronTriggerSource, ScenarioFilter, ScenarioTriggerSourceType } from 'scenarios/interfaces';
 import { CreateScenarioDto, GetScenariosDto, UpdateScenarioDto } from 'scenarios/dto';
 import { SCENARIO_MODEL_PROVIDER_NAME } from 'scenarios/scenarios.constants';
 import { SchedulerService } from 'scheduler/scheduler.service';
 import { ScenariosExecutionService } from 'scenarios/scenarios-execution.service';
 import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
-import { PaginationResponse } from 'common/dto';
+import { PaginationResponseDto } from 'common/dto';
 
 @Injectable()
 export class ScenariosService implements OnModuleInit {
@@ -36,13 +37,15 @@ export class ScenariosService implements OnModuleInit {
         await this.scheduleExistingScenarios();
     }
 
-    async getScenarios(options: GetScenariosDto = new GetScenariosDto()): Promise<PaginationResponse<Scenario>> {
+    async getScenarios(options: GetScenariosDto = new GetScenariosDto()): Promise<PaginationResponseDto<Scenario>> {
         const conditions: RootFilterQuery<Scenario> = options.includeInactive ? {} : { active: true };
         if (options.group) {
             conditions.group = options.group;
         }
         if (options.room) {
-            const devicesPage = await this.devicesService.getDevices({ room: options.room });
+            const allDevicesOptions = new GetDevicesDto();
+            allDevicesOptions.pageSize = Number.MAX_SAFE_INTEGER;
+            const devicesPage = await this.devicesService.getDevices({ room: options.room }, allDevicesOptions);
             const deviceExternalIds = devicesPage.items.map(d => d.externalId);
             conditions['devices.externalId'] = { $in: deviceExternalIds };
         }
@@ -51,7 +54,7 @@ export class ScenariosService implements OnModuleInit {
             this.scenarioModel.countDocuments(conditions),
         ]);
 
-        return new PaginationResponse(scenarios, options.page, options.pageSize, total);
+        return new PaginationResponseDto(scenarios, options.page, options.pageSize, total);
     }
 
     getScenariosWithAdjustableTime(): Promise<Array<Scenario>> {

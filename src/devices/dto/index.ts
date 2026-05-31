@@ -6,3 +6,5 @@ export * from './toggle-devices-pairing-mode.dto';
 export * from './get-pairable-devices.dto';
 export * from './pair-request.dto';
 export * from './pair-accept.dto';
+export * from './device-response.dto';
+export * from './pairable-device-response.dto';

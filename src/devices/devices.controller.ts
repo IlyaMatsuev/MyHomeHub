@@ -14,12 +14,14 @@ import { Device, PairingModeStatus } from 'devices/interfaces';
 import {
     CreateDeviceDto,
     DevicePayloadDto,
+    DeviceResponseDto,
     GetPairableDevicesDto,
+    PairableDeviceResponseDto,
     UpdateDeviceDto,
     GetDevicesDto,
     ToggleDevicesPairingModeDto,
 } from 'devices/dto';
-import { PaginationResponse } from 'common/dto';
+import { ApiPaginationResponse, PaginationResponseDto } from 'common/dto';
 import { PairableDevice } from 'zigbee/interfaces';
 
 @ApiBearerAuth()
@@ -29,10 +31,10 @@ export class DevicesController {
 
     @Get('/discover')
     @ApiOperation({ summary: 'Return the list of discoverable devices that can be paired' })
-    @ApiOkResponse({ description: 'Paginated list of pairable devices' })
+    @ApiPaginationResponse(PairableDeviceResponseDto)
     @ApiBadRequestResponse()
     @ApiUnauthorizedResponse()
-    getPairableDevices(@Query() options: GetPairableDevicesDto): Promise<PaginationResponse<PairableDevice>> {
+    getPairableDevices(@Query() options: GetPairableDevicesDto): Promise<PaginationResponseDto<PairableDevice>> {
         return this.deviceService.getPairableDevices(options);
     }
 
@@ -47,9 +49,9 @@ export class DevicesController {
 
     @Get()
     @ApiOperation({ summary: 'Get all added devices' })
-    @ApiOkResponse({ description: 'Paginated list of devices' })
+    @ApiPaginationResponse(DeviceResponseDto)
     @ApiUnauthorizedResponse()
-    async getDevices(@Query() query: GetDevicesDto): Promise<PaginationResponse<Device>> {
+    async getDevices(@Query() query: GetDevicesDto): Promise<PaginationResponseDto<Device>> {
         return this.deviceService.getDevices({}, query);
     }
 

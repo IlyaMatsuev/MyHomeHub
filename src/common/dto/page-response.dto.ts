@@ -2,7 +2,7 @@ import { applyDecorators, Type } from '@nestjs/common';
 import { ApiExtraModels, ApiOkResponse, ApiProperty, ApiSchema, getSchemaPath } from '@nestjs/swagger';
 
 @ApiSchema({ name: 'PaginationResponse', description: 'Generic paginated response' })
-export class PaginationResponse<T> {
+export class PaginationResponseDto<T> {
     @ApiProperty({ description: 'Array of items for the current page', isArray: true })
     items: Array<T>;
 
@@ -19,7 +19,7 @@ export class PaginationResponse<T> {
     totalItems: number;
 
     constructor(items: Array<T>, page: number, pageSize: number, totalItems?: number) {
-        if (totalItems === undefined) {
+        if (totalItems == null) {
             this.totalItems = items.length;
             const skipRecords = (page - 1) * pageSize;
             this.items = items.slice(skipRecords, skipRecords + pageSize);
@@ -35,12 +35,12 @@ export class PaginationResponse<T> {
 
 export const ApiPaginationResponse = <TModel extends Type<unknown>>(model: TModel, description?: string) => {
     return applyDecorators(
-        ApiExtraModels(PaginationResponse, model),
+        ApiExtraModels(PaginationResponseDto, model),
         ApiOkResponse({
             description: description ?? `Paginated list of ${model.name}`,
             schema: {
                 allOf: [
-                    { $ref: getSchemaPath(PaginationResponse) },
+                    { $ref: getSchemaPath(PaginationResponseDto) },
                     {
                         properties: {
                             items: {

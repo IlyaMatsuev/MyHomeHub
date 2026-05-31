@@ -12,8 +12,16 @@ import {
 import { ScenariosService } from 'scenarios/scenarios.service';
 import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
 import { Scenario, ScenarioGroup } from 'scenarios/interfaces';
-import { CreateScenarioDto, DeleteScenarioGroupDto, GetScenarioGroupsDto, GetScenariosDto, UpdateScenarioDto } from 'scenarios/dto';
-import { PaginationResponse } from 'common/dto';
+import {
+    CreateScenarioDto,
+    DeleteScenarioGroupDto,
+    GetScenarioGroupsDto,
+    GetScenariosDto,
+    ScenarioGroupResponseDto,
+    ScenarioResponseDto,
+    UpdateScenarioDto,
+} from 'scenarios/dto';
+import { ApiPaginationResponse, PaginationResponseDto } from 'common/dto';
 
 @ApiBearerAuth()
 @Controller('scenarios')
@@ -25,17 +33,17 @@ export class ScenariosController {
 
     @Get()
     @ApiOperation({ summary: 'Get all added scenarios' })
-    @ApiOkResponse({ description: 'Paginated list of scenarios' })
+    @ApiPaginationResponse(ScenarioResponseDto)
     @ApiUnauthorizedResponse()
-    async getScenarios(@Query() query: GetScenariosDto): Promise<PaginationResponse<Scenario>> {
+    async getScenarios(@Query() query: GetScenariosDto): Promise<PaginationResponseDto<Scenario>> {
         return this.scenariosService.getScenarios(query);
     }
 
     @Get('/groups')
     @ApiOperation({ summary: 'Get all scenario groups' })
-    @ApiOkResponse({ description: 'Paginated list of scenario groups' })
+    @ApiPaginationResponse(ScenarioGroupResponseDto)
     @ApiUnauthorizedResponse()
-    async getGroups(@Query() query: GetScenarioGroupsDto): Promise<PaginationResponse<ScenarioGroup>> {
+    async getGroups(@Query() query: GetScenarioGroupsDto): Promise<PaginationResponseDto<ScenarioGroup>> {
         return this.scenarioGroupsService.getGroups(query);
     }
 

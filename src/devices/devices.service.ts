@@ -11,7 +11,7 @@ import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { PairableDevice } from 'zigbee/interfaces';
 import { ZigbeePairableDevices } from 'zigbee/store';
-import { PaginationResponse } from 'common/dto';
+import { PaginationResponseDto } from 'common/dto';
 
 @Injectable()
 export class DevicesService {
@@ -43,7 +43,7 @@ export class DevicesService {
         return this.deviceControlServiceFactory.getControlService(device);
     }
 
-    async getDevices(filter: DeviceFilter = {}, options: GetDevicesDto = new GetDevicesDto()): Promise<PaginationResponse<Device>> {
+    async getDevices(filter: DeviceFilter = {}, options: GetDevicesDto = new GetDevicesDto()): Promise<PaginationResponseDto<Device>> {
         const conditions: RootFilterQuery<Device> = { ...filter };
         if (options.room) {
             conditions.room = options.room;
@@ -54,7 +54,7 @@ export class DevicesService {
             this.deviceModel.countDocuments(conditions),
         ]);
 
-        return new PaginationResponse(devices, options.page, options.pageSize, total);
+        return new PaginationResponseDto(devices, options.page, options.pageSize, total);
     }
 
     getDeviceByExternalId(externalId: string, options: GetDeviceOptions = { strict: true }): Promise<Device> {
@@ -145,11 +145,11 @@ export class DevicesService {
         return { enabled: enable, timeout: enable ? timeout : 0 };
     }
 
-    async getPairableDevices(options: GetPairableDevicesDto = new GetPairableDevicesDto()): Promise<PaginationResponse<PairableDevice>> {
+    async getPairableDevices(options: GetPairableDevicesDto = new GetPairableDevicesDto()): Promise<PaginationResponseDto<PairableDevice>> {
         const cachedZigbeeDevices = ZigbeePairableDevices.getAll();
 
         if (!cachedZigbeeDevices.length) {
-            return new PaginationResponse([], options.page, options.pageSize, 0);
+            return new PaginationResponseDto([], options.page, options.pageSize, 0);
         }
 
         const zigbeeDeviceIds = cachedZigbeeDevices.map(d => d.zigbeeIeeeAddress);
@@ -160,7 +160,7 @@ export class DevicesService {
 
         const pairableDevices = cachedZigbeeDevices.filter(d => !existingZigbeeDevicesIds.has(d.zigbeeIeeeAddress));
 
-        return new PaginationResponse(pairableDevices, options.page, options.pageSize);
+        return new PaginationResponseDto(pairableDevices, options.page, options.pageSize);
     }
 
     private async assignDtoValues(device: Device, updatedDevice: CreateDeviceDto | UpdateDeviceDto): Promise<Device> {

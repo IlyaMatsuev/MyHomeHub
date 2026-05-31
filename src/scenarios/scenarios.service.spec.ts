@@ -247,7 +247,10 @@ describe('ScenariosService', () => {
 
             await service.getScenarios(options);
 
-            expect(mockDevicesService.getDevices).toHaveBeenCalledWith({ room: Room.LivingRoom });
+            expect(mockDevicesService.getDevices).toHaveBeenCalledWith(
+                { room: Room.LivingRoom },
+                expect.objectContaining({ pageSize: Number.MAX_SAFE_INTEGER }),
+            );
             expect(mockScenarioModel.find).toHaveBeenCalledWith({
                 active: true,
                 'devices.externalId': { $in: ['device-1', 'device-2'] },
@@ -276,7 +279,10 @@ describe('ScenariosService', () => {
 
             await service.getScenarios(options);
 
-            expect(mockDevicesService.getDevices).toHaveBeenCalledWith({ room: Room.None });
+            expect(mockDevicesService.getDevices).toHaveBeenCalledWith(
+                { room: Room.None },
+                expect.objectContaining({ pageSize: Number.MAX_SAFE_INTEGER }),
+            );
             expect(mockScenarioModel.find).toHaveBeenCalledWith({
                 active: true,
                 'devices.externalId': { $in: ['device-no-room'] },
