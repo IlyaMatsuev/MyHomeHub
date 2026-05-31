@@ -3,22 +3,19 @@ import {
     ApiBadRequestResponse,
     ApiBearerAuth,
     ApiCreatedResponse,
-    ApiExtraModels,
     ApiNotFoundResponse,
     ApiOkResponse,
     ApiOperation,
     ApiParam,
     ApiUnauthorizedResponse,
-    getSchemaPath,
 } from '@nestjs/swagger';
 import { ScenariosService } from 'scenarios/scenarios.service';
 import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
 import { Scenario, ScenarioGroup } from 'scenarios/interfaces';
 import { CreateScenarioDto, DeleteScenarioGroupDto, GetScenarioGroupsDto, GetScenariosDto, UpdateScenarioDto } from 'scenarios/dto';
-import { PageResponseDto } from 'common/dto';
+import { PaginationResponse } from 'common/dto';
 
 @ApiBearerAuth()
-@ApiExtraModels(PageResponseDto)
 @Controller('scenarios')
 export class ScenariosController {
     constructor(
@@ -28,23 +25,17 @@ export class ScenariosController {
 
     @Get()
     @ApiOperation({ summary: 'Get all added scenarios' })
-    @ApiOkResponse({
-        description: 'Paginated list of scenarios',
-        schema: { allOf: [{ $ref: getSchemaPath(PageResponseDto) }] },
-    })
+    @ApiOkResponse({ description: 'Paginated list of scenarios' })
     @ApiUnauthorizedResponse()
-    async getScenarios(@Query() query: GetScenariosDto): Promise<PageResponseDto<Scenario>> {
+    async getScenarios(@Query() query: GetScenariosDto): Promise<PaginationResponse<Scenario>> {
         return this.scenariosService.getScenarios(query);
     }
 
     @Get('/groups')
     @ApiOperation({ summary: 'Get all scenario groups' })
-    @ApiOkResponse({
-        description: 'Paginated list of scenario groups',
-        schema: { allOf: [{ $ref: getSchemaPath(PageResponseDto) }] },
-    })
+    @ApiOkResponse({ description: 'Paginated list of scenario groups' })
     @ApiUnauthorizedResponse()
-    async getGroups(@Query() query: GetScenarioGroupsDto): Promise<PageResponseDto<ScenarioGroup>> {
+    async getGroups(@Query() query: GetScenarioGroupsDto): Promise<PaginationResponse<ScenarioGroup>> {
         return this.scenarioGroupsService.getGroups(query);
     }
 

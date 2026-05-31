@@ -16,7 +16,7 @@ import { SCENARIO_MODEL_PROVIDER_NAME } from 'scenarios/scenarios.constants';
 import { SchedulerService } from 'scheduler/scheduler.service';
 import { ScenariosExecutionService } from 'scenarios/scenarios-execution.service';
 import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
-import { PageResponseDto } from 'common/dto';
+import { PaginationResponse } from 'common/dto';
 
 @Injectable()
 export class ScenariosService implements OnModuleInit {
@@ -36,7 +36,7 @@ export class ScenariosService implements OnModuleInit {
         await this.scheduleExistingScenarios();
     }
 
-    async getScenarios(options: GetScenariosDto = new GetScenariosDto()): Promise<PageResponseDto<Scenario>> {
+    async getScenarios(options: GetScenariosDto = new GetScenariosDto()): Promise<PaginationResponse<Scenario>> {
         const conditions: RootFilterQuery<Scenario> = options.includeInactive ? {} : { active: true };
         if (options.group) {
             conditions.group = options.group;
@@ -51,7 +51,7 @@ export class ScenariosService implements OnModuleInit {
             this.scenarioModel.countDocuments(conditions),
         ]);
 
-        return PageResponseDto.fromQuery(scenarios, options.page, options.pageSize, total);
+        return new PaginationResponse(scenarios, options.page, options.pageSize, total);
     }
 
     getScenariosWithAdjustableTime(): Promise<Array<Scenario>> {

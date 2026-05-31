@@ -1,7 +1,8 @@
-import { ApiProperty, ApiSchema } from '@nestjs/swagger';
+import { applyDecorators, Type } from '@nestjs/common';
+import { ApiExtraModels, ApiOkResponse, ApiProperty, ApiSchema, getSchemaPath } from '@nestjs/swagger';
 
-@ApiSchema({ name: 'PageResponse', description: 'Generic paginated response' })
-export class PageResponseDto<T> {
+@ApiSchema({ name: 'PaginationResponse', description: 'Generic paginated response' })
+export class PaginationResponse<T> {
     @ApiProperty({ description: 'Array of items for the current page', isArray: true })
     items: Array<T>;
 
@@ -17,22 +18,39 @@ export class PageResponseDto<T> {
     @ApiProperty({ description: 'Total number of items across all pages', example: 50 })
     totalItems: number;
 
-    private constructor(items: Array<T>, page: number, pageSize: number, totalItems: number) {
-        this.items = items;
+    constructor(items: Array<T>, page: number, pageSize: number, totalItems?: number) {
+        if (totalItems === undefined) {
+            this.totalItems = items.length;
+            const skipRecords = (page - 1) * pageSize;
+            this.items = items.slice(skipRecords, skipRecords + pageSize);
+        } else {
+            this.totalItems = totalItems;
+            this.items = items;
+        }
         this.page = page;
         this.pageSize = pageSize;
-        this.totalItems = totalItems;
-        this.totalPages = Math.ceil(totalItems / pageSize);
-    }
-
-    static fromQuery<T>(items: Array<T>, page: number, pageSize: number, totalItems: number): PageResponseDto<T> {
-        return new PageResponseDto(items, page, pageSize, totalItems);
-    }
-
-    static fromArray<T>(items: Array<T>, page: number, pageSize: number): PageResponseDto<T> {
-        const totalItems = items.length;
-        const skipRecords = (page - 1) * pageSize;
-        const slicedItems = items.slice(skipRecords, skipRecords + pageSize);
-        return new PageResponseDto(slicedItems, page, pageSize, totalItems);
+        this.totalPages = Math.ceil(this.totalItems / pageSize);
     }
 }
+
+export const ApiPaginationResponse = <TModel extends Type<unknown>>(model: TModel, description?: string) => {
+    return applyDecorators(
+        ApiExtraModels(PaginationResponse, model),
+        ApiOkResponse({
+            description: description ?? `Paginated list of ${model.name}`,
+            schema: {
+                allOf: [
+                    { $ref: getSchemaPath(PaginationResponse) },
+                    {
+                        properties: {
+                            items: {
+                                type: 'array',
+                                items: { $ref: getSchemaPath(model) },
+                            },
+                        },
+                    },
+                ],
+            },
+        }),
+    );
+};

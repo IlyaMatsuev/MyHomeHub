@@ -3,13 +3,11 @@ import {
     ApiBadRequestResponse,
     ApiBearerAuth,
     ApiCreatedResponse,
-    ApiExtraModels,
     ApiNotFoundResponse,
     ApiOkResponse,
     ApiOperation,
     ApiParam,
     ApiUnauthorizedResponse,
-    getSchemaPath,
 } from '@nestjs/swagger';
 import { DevicesService } from 'devices/devices.service';
 import { Device, PairingModeStatus } from 'devices/interfaces';
@@ -21,24 +19,20 @@ import {
     GetDevicesDto,
     ToggleDevicesPairingModeDto,
 } from 'devices/dto';
-import { PageResponseDto } from 'common/dto';
+import { PaginationResponse } from 'common/dto';
 import { PairableDevice } from 'zigbee/interfaces';
 
 @ApiBearerAuth()
-@ApiExtraModels(PageResponseDto)
 @Controller('devices')
 export class DevicesController {
     constructor(private readonly deviceService: DevicesService) {}
 
     @Get('/discover')
     @ApiOperation({ summary: 'Return the list of discoverable devices that can be paired' })
-    @ApiOkResponse({
-        description: 'Paginated list of pairable devices',
-        schema: { allOf: [{ $ref: getSchemaPath(PageResponseDto) }] },
-    })
+    @ApiOkResponse({ description: 'Paginated list of pairable devices' })
     @ApiBadRequestResponse()
     @ApiUnauthorizedResponse()
-    getPairableDevices(@Query() options: GetPairableDevicesDto): Promise<PageResponseDto<PairableDevice>> {
+    getPairableDevices(@Query() options: GetPairableDevicesDto): Promise<PaginationResponse<PairableDevice>> {
         return this.deviceService.getPairableDevices(options);
     }
 
@@ -53,12 +47,9 @@ export class DevicesController {
 
     @Get()
     @ApiOperation({ summary: 'Get all added devices' })
-    @ApiOkResponse({
-        description: 'Paginated list of devices',
-        schema: { allOf: [{ $ref: getSchemaPath(PageResponseDto) }] },
-    })
+    @ApiOkResponse({ description: 'Paginated list of devices' })
     @ApiUnauthorizedResponse()
-    async getDevices(@Query() query: GetDevicesDto): Promise<PageResponseDto<Device>> {
+    async getDevices(@Query() query: GetDevicesDto): Promise<PaginationResponse<Device>> {
         return this.deviceService.getDevices({}, query);
     }
 

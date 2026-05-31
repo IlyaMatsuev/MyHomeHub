@@ -3,7 +3,7 @@ import { Model, RootFilterQuery } from 'mongoose';
 import { Scenario, ScenarioGroup } from 'scenarios/interfaces';
 import { GetScenarioGroupsDto } from 'scenarios/dto';
 import { SCENARIO_GROUP_MODEL_PROVIDER_NAME, SCENARIO_MODEL_PROVIDER_NAME } from 'scenarios/scenarios.constants';
-import { PageResponseDto } from 'common/dto';
+import { PaginationResponse } from 'common/dto';
 
 @Injectable()
 export class ScenarioGroupsService {
@@ -14,7 +14,7 @@ export class ScenarioGroupsService {
         private readonly scenarioModel: Model<Scenario>,
     ) {}
 
-    async getGroups(options: GetScenarioGroupsDto = new GetScenarioGroupsDto()): Promise<PageResponseDto<ScenarioGroup>> {
+    async getGroups(options: GetScenarioGroupsDto = new GetScenarioGroupsDto()): Promise<PaginationResponse<ScenarioGroup>> {
         const conditions: RootFilterQuery<ScenarioGroup> = {};
         if (options.term) {
             conditions.name = { $regex: options.term, $options: 'i' };
@@ -24,7 +24,7 @@ export class ScenarioGroupsService {
             this.scenarioGroupModel.countDocuments(conditions),
         ]);
 
-        return PageResponseDto.fromQuery(groups, options.page, options.pageSize, total);
+        return new PaginationResponse(groups, options.page, options.pageSize, total);
     }
 
     async getGroupByName(name: string, options: { strict: boolean } = { strict: true }): Promise<ScenarioGroup | null> {
