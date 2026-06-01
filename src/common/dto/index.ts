@@ -1,2 +1,2 @@
 export * from './pagination.dto';
-export * from './page-response.dto';
+export * from './pagination-response.dto';
