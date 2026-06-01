@@ -7,7 +7,7 @@ import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-contro
 import { Device, DeviceFilter, GetDeviceOptions, PairingModeStatus } from 'devices/interfaces';
 import { GetDevicesDto, CreateDeviceDto, UpdateDeviceDto, GetPairableDevicesDto, DevicePayloadDto } from 'devices/dto';
 import { DeviceUpdateRequestedEvent, DeviceUpdateCompletedEvent, DeviceCommandExecutedEvent } from 'devices/events';
-import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
+import { DEVICE_MODEL_PROVIDER_NAME, GET_ALL_DEVICES_PAGE_SIZE } from 'devices/devices.constants';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { PairableDevice } from 'zigbee/interfaces';
 import { ZigbeePairableDevices } from 'zigbee/store';
@@ -55,6 +55,30 @@ export class DevicesService {
         ]);
 
         return new PaginationResponseDto(devices, options.page, options.pageSize, total);
+    }
+
+    async getAllDevices(filter: DeviceFilter = {}): Promise<PaginationResponseDto<Device>> {
+        const options = new GetDevicesDto();
+        options.pageSize = GET_ALL_DEVICES_PAGE_SIZE;
+
+        const firstPage = await this.getDevices(filter, options);
+        const allDevices: Array<Device> = [...firstPage.items];
+
+        if (firstPage.totalPages > 1) {
+            const remainingPages = Array.from({ length: firstPage.totalPages - 1 }, (_, i) => i + 2);
+            const pagePromises = remainingPages.map(pageNum => {
+                const pageOptions = new GetDevicesDto();
+                pageOptions.page = pageNum;
+                pageOptions.pageSize = GET_ALL_DEVICES_PAGE_SIZE;
+                return this.getDevices(filter, pageOptions);
+            });
+            const pages = await Promise.all(pagePromises);
+            for (const page of pages) {
+                allDevices.push(...page.items);
+            }
+        }
+
+        return new PaginationResponseDto(allDevices, 1, allDevices.length, allDevices.length);
     }
 
     getDeviceByExternalId(externalId: string, options: GetDeviceOptions = { strict: true }): Promise<Device> {

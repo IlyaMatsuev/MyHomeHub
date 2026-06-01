@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { Model, RootFilterQuery } from 'mongoose';
 import { DevicesService } from 'devices/devices.service';
-import { GetDevicesDto } from 'devices/dto';
 import { GetScenarioOptions, Scenario, ScenarioCronTriggerSource, ScenarioFilter, ScenarioTriggerSourceType } from 'scenarios/interfaces';
 import { CreateScenarioDto, GetScenariosDto, UpdateScenarioDto } from 'scenarios/dto';
 import { SCENARIO_MODEL_PROVIDER_NAME } from 'scenarios/scenarios.constants';
@@ -43,9 +42,7 @@ export class ScenariosService implements OnModuleInit {
             conditions.group = options.group;
         }
         if (options.room) {
-            const allDevicesOptions = new GetDevicesDto();
-            allDevicesOptions.pageSize = Number.MAX_SAFE_INTEGER;
-            const devicesPage = await this.devicesService.getDevices({ room: options.room }, allDevicesOptions);
+            const devicesPage = await this.devicesService.getAllDevices({ room: options.room });
             const deviceExternalIds = devicesPage.items.map(d => d.externalId);
             conditions['devices.externalId'] = { $in: deviceExternalIds };
         }

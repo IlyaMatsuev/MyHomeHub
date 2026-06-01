@@ -16,3 +16,5 @@ export const ESP32_DEVICE_CONTROLS_SYNC_TOPIC = 'home/devices/+/controls/sync';
 export const ESP32_DEVICE_MEASUREMENTS_UPDATE_TOPIC = 'home/devices/+/measurements/update';
 
 export const ESP32_DEVICE_MEASUREMENTS_DEFAULT_UPDATE_INTERVAL = 1000 * 60 * 5;
+
+export const GET_ALL_DEVICES_PAGE_SIZE = 50;
