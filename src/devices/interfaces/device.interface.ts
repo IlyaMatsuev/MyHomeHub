@@ -9,16 +9,16 @@ export interface Device extends Document {
     room: Room;
     brand: DeviceBrand;
     transportProtocol: TransportProtocol;
-    ip: string;
-    tuyaDeviceId: string;
-    tuyaDeviceLocalKey: string;
-    zigbeeFriendlyName: string;
-    zigbeeIeeeAddress: string;
-    updateInterval: number;
-    controls: DevicePayload;
-    controlsUpdatedAt: Date;
-    measurements: DevicePayload;
-    measurementsUpdatedAt: Date;
+    ip?: string;
+    tuyaDeviceId?: string;
+    tuyaDeviceLocalKey?: string;
+    zigbeeFriendlyName?: string;
+    zigbeeIeeeAddress?: string;
+    updateInterval?: number;
+    controls?: DevicePayload;
+    controlsUpdatedAt?: Date;
+    measurements?: DevicePayload;
+    measurementsUpdatedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }

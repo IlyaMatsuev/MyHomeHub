@@ -1,6 +1,6 @@
 import { Body, Controller, Param, Query, Delete, Get, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
-import { ApiPaginationResponse, PaginationResponseDto } from 'common/dto';
+import { ApiOkPaginationResponse, PaginationResponseDto } from 'common/dto';
 import { ApiInternalError, ApiNotFound, ApiUnauthorized, ApiValidationError } from 'common/decorators';
 import { ScenariosService } from 'scenarios/scenarios.service';
 import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
@@ -28,14 +28,14 @@ export class ScenariosController {
 
     @Get()
     @ApiOperation({ summary: 'Get all added scenarios' })
-    @ApiPaginationResponse(ScenarioResponseDto, 'Paginated list of scenarios')
+    @ApiOkPaginationResponse(ScenarioResponseDto, 'Paginated list of scenarios')
     async getScenarios(@Query() query: GetScenariosDto): Promise<PaginationResponseDto<Scenario>> {
         return this.scenariosService.getScenarios(query);
     }
 
     @Get('/groups')
     @ApiOperation({ summary: 'Get all scenario groups' })
-    @ApiPaginationResponse(ScenarioGroupResponseDto, 'Paginated list of scenario groups')
+    @ApiOkPaginationResponse(ScenarioGroupResponseDto, 'Paginated list of scenario groups')
     async getGroups(@Query() query: GetScenarioGroupsDto): Promise<PaginationResponseDto<ScenarioGroup>> {
         return this.scenarioGroupsService.getGroups(query);
     }

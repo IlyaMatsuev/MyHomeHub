@@ -20,6 +20,11 @@ export class PaginationDto {
     })
     pageSize: number = DEFAULT_PAGE_SIZE;
 
+    constructor({ page, pageSize }: Partial<PaginationDto> = {}) {
+        this.page = page ?? MIN_PAGE;
+        this.pageSize = pageSize ?? DEFAULT_PAGE_SIZE;
+    }
+
     get skipRecords() {
         return (this.page - 1) * this.pageSize;
     }

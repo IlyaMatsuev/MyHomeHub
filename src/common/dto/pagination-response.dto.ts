@@ -34,7 +34,7 @@ export class PaginationResponseDto<T> {
     }
 }
 
-export const ApiPaginationResponse = <TModel extends Type<unknown>>(model: TModel, description?: string) => {
+export const ApiOkPaginationResponse = <TModel extends Type<unknown>>(model: TModel, description?: string) => {
     return applyDecorators(
         ApiExtraModels(PaginationResponseDto, model),
         ApiOkResponse({
