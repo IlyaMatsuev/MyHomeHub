@@ -240,6 +240,68 @@ describe('DevicesService', () => {
         });
     });
 
+    describe('getAllDevices', () => {
+        const mockGetDevicesPage = (items: Array<Partial<Device>>, totalItems: number) => {
+            mockDeviceModel.find.mockReturnValueOnce({
+                skip: jest.fn().mockReturnValue({
+                    limit: jest.fn().mockReturnValue({
+                        lean: jest.fn().mockResolvedValue(items),
+                    }),
+                }),
+            });
+            mockDeviceModel.countDocuments.mockResolvedValueOnce(totalItems);
+        };
+
+        it('should return all devices in a single page when they fit into MAX_PAGE_SIZE', async () => {
+            const devices = [mockDevice, { ...mockDevice, externalId: 'device-2' }];
+            mockGetDevicesPage(devices, 2);
+
+            const result = await service.getAllDevices();
+
+            expect(result.items).toEqual(devices);
+            expect(result.totalItems).toBe(2);
+            expect(mockDeviceModel.find).toHaveBeenCalledTimes(1);
+            expect(mockDeviceModel.find).toHaveBeenCalledWith({});
+        });
+
+        it('should aggregate devices across pages when totalPages > 1', async () => {
+            const firstPage = Array.from({ length: 50 }, (_, i) => ({ ...mockDevice, externalId: `device-${i + 1}` }));
+            const secondPage = [
+                { ...mockDevice, externalId: 'device-51' },
+                { ...mockDevice, externalId: 'device-52' },
+            ];
+            mockGetDevicesPage(firstPage, 52);
+            mockGetDevicesPage(secondPage, 52);
+
+            const result = await service.getAllDevices();
+
+            expect(result.items).toHaveLength(52);
+            expect(result.items[0].externalId).toBe('device-1');
+            expect(result.items[51].externalId).toBe('device-52');
+            expect(mockDeviceModel.find).toHaveBeenCalledTimes(2);
+        });
+
+        it('should pass the provided filter to every paginated query', async () => {
+            mockGetDevicesPage([mockDevice], 1);
+
+            await service.getAllDevices({ room: Room.LivingRoom });
+
+            expect(mockDeviceModel.find).toHaveBeenCalledWith({ room: Room.LivingRoom });
+            expect(mockDeviceModel.countDocuments).toHaveBeenCalledWith({ room: Room.LivingRoom });
+        });
+
+        it('should return an empty page when no devices match the filter', async () => {
+            mockGetDevicesPage([], 0);
+
+            const result = await service.getAllDevices({ room: Room.LivingRoom });
+
+            expect(result.items).toEqual([]);
+            expect(result.totalItems).toBe(0);
+            expect(result.totalPages).toBe(1);
+            expect(mockDeviceModel.find).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('getDeviceByExternalId', () => {
         it('should return device when found', async () => {
             mockDeviceModel.findOne.mockReturnValue({

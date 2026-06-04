@@ -10,7 +10,7 @@ export const MIN_PAIRING_TIMEOUT_SECONDS = 30;
 export const MAX_PAIRING_TIMEOUT_SECONDS = 254;
 
 export const ESP32_DEVICE_PAIR_REQUEST_TOPIC = 'home/devices/pair';
-export const ESP32_DEVICE_PAIR_REQUEST_REPLY_TOPIC = 'homeGET_ALL_DEVICES_PAGE_SIZE/devices/pair/reply';
+export const ESP32_DEVICE_PAIR_REQUEST_REPLY_TOPIC = 'home/devices/pair/reply';
 export const ESP32_DEVICE_CONTROLS_UPDATE_TOPIC = 'home/devices/+/controls/update';
 export const ESP32_DEVICE_CONTROLS_SYNC_TOPIC = 'home/devices/+/controls/sync';
 export const ESP32_DEVICE_MEASUREMENTS_UPDATE_TOPIC = 'home/devices/+/measurements/update';

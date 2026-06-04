@@ -30,7 +30,7 @@ export class PaginationResponseDto<T> {
         }
         this.page = page;
         this.pageSize = pageSize;
-        this.totalPages = Math.ceil(this.totalItems / pageSize);
+        this.totalPages = pageSize === 0 ? MIN_PAGE : Math.ceil(this.totalItems / pageSize);
     }
 }
 

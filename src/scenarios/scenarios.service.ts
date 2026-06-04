@@ -38,7 +38,7 @@ export class ScenariosService implements OnModuleInit {
 
     async getScenarios(options: GetScenariosDto = new GetScenariosDto()): Promise<PaginationResponseDto<Scenario>> {
         const conditions: RootFilterQuery<Scenario> = {};
-        if (options.includeInactive) {
+        if (!options.includeInactive) {
             conditions.active = true;
         }
         if (options.group) {
