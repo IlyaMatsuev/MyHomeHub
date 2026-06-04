@@ -9,7 +9,7 @@ import {
     SCENARIO_GROUP_NAME_PATTERN_ERROR_MESSAGE,
 } from 'scenarios/scenarios.constants';
 
-@ApiSchema({ name: 'Scenario.GetScenarios', description: 'Parameters used to query scenarios' })
+@ApiSchema({ name: 'Scenarios.GetScenarios', description: 'Parameters used to query scenarios' })
 export class GetScenariosDto extends PaginationDto {
     @IsBoolean()
     // "false" is implicitly converted to boolean before @Transform, so it's always true. Hence, the explicit String type

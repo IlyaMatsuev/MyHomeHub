@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional, ApiSchema } from '@nestjs/swagger';
 import { DeviceBrand, DevicePayload, DeviceType, Room } from 'devices/interfaces';
 import { TransportProtocol } from 'devices-control/interfaces';
 
-@ApiSchema({ name: 'Device.DeviceResponse', description: 'Device entity returned in API responses' })
+@ApiSchema({ name: 'Devices.DeviceResponse', description: 'Device entity returned in API responses' })
 export class DeviceResponseDto {
     @ApiProperty({ description: 'Unique external identifier (UUID)', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     externalId: string;

@@ -1,6 +1,6 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 
-@ApiSchema({ name: 'Scenario.ScenarioGroupResponse', description: 'Scenario group entity returned in API responses' })
+@ApiSchema({ name: 'Scenarios.ScenarioGroupResponse', description: 'Scenario group entity returned in API responses' })
 export class ScenarioGroupResponseDto {
     @ApiProperty({ description: 'Group name' })
     name: string;

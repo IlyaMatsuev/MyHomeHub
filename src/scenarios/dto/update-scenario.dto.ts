@@ -27,7 +27,7 @@ import {
 } from 'scenarios/scenarios.constants';
 import { Type } from 'class-transformer';
 
-@ApiSchema({ name: 'Scenario.UpdateScenario', description: 'DTO used to update an existing scenario information or devices' })
+@ApiSchema({ name: 'Scenarios.UpdateScenario', description: 'DTO used to update an existing scenario information or devices' })
 export class UpdateScenarioDto {
     @IsOptional()
     @IsString()

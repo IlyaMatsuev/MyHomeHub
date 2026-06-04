@@ -2,7 +2,7 @@ import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { IsBoolean, IsOptional } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
-@ApiSchema({ name: 'Scenario.DeleteScenarioGroup', description: 'Parameters used to delete a scenario group' })
+@ApiSchema({ name: 'Scenarios.DeleteScenarioGroup', description: 'Parameters used to delete a scenario group' })
 export class DeleteScenarioGroupDto {
     @IsOptional()
     @IsBoolean()

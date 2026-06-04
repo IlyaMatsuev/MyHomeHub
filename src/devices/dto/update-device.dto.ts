@@ -30,7 +30,7 @@ import { DeviceControlsDto, DevicePayloadDto } from 'devices/dto';
 import { TransportProtocol } from 'devices-control/interfaces';
 
 @ApiSchema({
-    name: 'Device.DeviceUpdate',
+    name: 'Devices.DeviceUpdate',
     description: 'DTO used to update an existing device information, controls state or measurements',
 })
 export class UpdateDeviceDto {

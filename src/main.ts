@@ -36,10 +36,10 @@ async function bootstrap() {
         }),
     );
 
-    setupSwagger(app);
+    setupSwagger(app, config);
 
     await app.startAllMicroservices();
-    await app.listen(process.env.PORT ?? 3000);
+    await app.listen(config.get<string>('PORT') ?? process.env.PORT ?? 3000);
 }
 
 function setupLogger(config: ConfigService): LoggerService {
@@ -51,12 +51,13 @@ function setupLogger(config: ConfigService): LoggerService {
     return new ConsoleLogger({ prefix: 'SmartHome Hub', logLevels });
 }
 
-function setupSwagger(app: INestApplication) {
+function setupSwagger(app: INestApplication, conf: ConfigService) {
+    const port = conf.get<string>('PORT') ?? process.env.PORT ?? 3000;
     const config = new DocumentBuilder()
         .setTitle('My Smart Home REST API')
         .setDescription('API documentation describing available methods for controlling devices connected to the hub')
         .setVersion('1.0')
-        .addServer('http://localhost:3000/', 'Default local server used for development')
+        .addServer(`http://localhost:${port}/`, 'Default local server used for development')
         .addBearerAuth()
         .build();
 
