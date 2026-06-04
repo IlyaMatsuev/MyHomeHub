@@ -4,8 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import * as speakeasy from 'speakeasy';
 import { UsersService } from 'users/users.service';
-import { LoginResult } from 'auth/interfaces';
-import { NewUser } from 'users/interfaces';
+import { LoginResponseDto, RegisterResponseDto } from 'auth/dto';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +16,7 @@ export class AuthService {
         private readonly configService: ConfigService,
     ) {}
 
-    async login(email: string, password: string): Promise<LoginResult> {
+    async login(email: string, password: string): Promise<LoginResponseDto> {
         const user = await this.usersService.findByEmail(email);
         if (!user || !(await this.verifyUserPasswordHash(user.password, password))) {
             throw new UnauthorizedException();
@@ -28,13 +27,13 @@ export class AuthService {
         return { accessToken };
     }
 
-    async register(email: string, password: string, totp: string): Promise<NewUser> {
+    async register(email: string, password: string, totp: string): Promise<RegisterResponseDto> {
         if (!this.verifyTotp(totp)) {
             this.logger.debug(`Registration one-time password is not valid`);
             throw new UnauthorizedException();
         }
         const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password));
-        return { id: newUser._id, email: newUser.email };
+        return { email: newUser.email };
     }
 
     verifyTotp(token: string): boolean {
