@@ -47,6 +47,8 @@ export interface Scenario extends Document {
     repeatTimes?: number;
     trigger: ScenarioTrigger;
     devices: Array<ScenarioDevice>;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export type ScenarioFilter = Partial<Scenario & { _id: string }>;

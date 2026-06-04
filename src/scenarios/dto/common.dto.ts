@@ -30,6 +30,7 @@ export class ScenarioCronTriggerSourceDto implements ScenarioCronTriggerSource {
         required: true,
         description: 'The type of the scenario trigger source',
         enum: ScenarioTriggerSourceType,
+        example: ScenarioTriggerSourceType.Cron,
     })
     type: ScenarioTriggerSourceType.Cron;
 
@@ -63,6 +64,7 @@ export class ScenarioDeviceTriggerSourceDto implements ScenarioDeviceTriggerSour
         required: true,
         description: 'The type of the scenario trigger source',
         enum: ScenarioTriggerSourceType,
+        example: ScenarioTriggerSourceType.Device,
     })
     type: ScenarioTriggerSourceType.Device;
 

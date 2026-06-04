@@ -37,13 +37,16 @@ export class ScenariosService implements OnModuleInit {
     }
 
     async getScenarios(options: GetScenariosDto = new GetScenariosDto()): Promise<PaginationResponseDto<Scenario>> {
-        const conditions: RootFilterQuery<Scenario> = options.includeInactive ? {} : { active: true };
+        const conditions: RootFilterQuery<Scenario> = {};
+        if (options.includeInactive) {
+            conditions.active = true;
+        }
         if (options.group) {
             conditions.group = options.group;
         }
         if (options.room) {
-            const devicesPage = await this.devicesService.getAllDevices({ room: options.room });
-            const deviceExternalIds = devicesPage.items.map(d => d.externalId);
+            const allDevices = await this.devicesService.getAllDevices({ room: options.room });
+            const deviceExternalIds = allDevices.items.map(d => d.externalId);
             conditions['devices.externalId'] = { $in: deviceExternalIds };
         }
         const [scenarios, total] = await Promise.all([

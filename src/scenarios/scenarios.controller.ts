@@ -4,7 +4,6 @@ import { ApiOkPaginationResponse, PaginationResponseDto } from 'common/dto';
 import { ApiInternalError, ApiNotFound, ApiUnauthorized, ApiValidationError } from 'common/decorators';
 import { ScenariosService } from 'scenarios/scenarios.service';
 import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
-import { Scenario, ScenarioGroup } from 'scenarios/interfaces';
 import {
     CreateScenarioDto,
     DeleteScenarioGroupDto,
@@ -26,17 +25,11 @@ export class ScenariosController {
         private readonly scenarioGroupsService: ScenarioGroupsService,
     ) {}
 
-    @Get()
-    @ApiOperation({ summary: 'Get all added scenarios' })
-    @ApiOkPaginationResponse(ScenarioResponseDto, 'Paginated list of scenarios')
-    async getScenarios(@Query() query: GetScenariosDto): Promise<PaginationResponseDto<Scenario>> {
-        return this.scenariosService.getScenarios(query);
-    }
-
     @Get('/groups')
     @ApiOperation({ summary: 'Get all scenario groups' })
     @ApiOkPaginationResponse(ScenarioGroupResponseDto, 'Paginated list of scenario groups')
-    async getGroups(@Query() query: GetScenarioGroupsDto): Promise<PaginationResponseDto<ScenarioGroup>> {
+    @ApiNotFound('scenario group')
+    async getGroups(@Query() query: GetScenarioGroupsDto): Promise<PaginationResponseDto<ScenarioGroupResponseDto>> {
         return this.scenarioGroupsService.getGroups(query);
     }
 
@@ -47,8 +40,9 @@ export class ScenariosController {
         example: 'outside_lights',
     })
     @ApiOperation({ summary: 'Get scenario group by name' })
-    @ApiOkResponse()
-    async getGroup(@Param('name') name: string): Promise<ScenarioGroup> {
+    @ApiOkResponse({ type: ScenarioGroupResponseDto })
+    @ApiNotFound('scenario group')
+    async getGroup(@Param('name') name: string): Promise<ScenarioGroupResponseDto> {
         return this.scenarioGroupsService.getGroupByName(name);
     }
 
@@ -59,9 +53,10 @@ export class ScenariosController {
         example: 'outside_lights',
     })
     @ApiOperation({ summary: 'Create a new scenario group' })
-    @ApiOkResponse()
+    @ApiOkResponse({ type: ScenarioGroupResponseDto })
+    @ApiNotFound('scenario group')
     @ApiValidationError()
-    async createGroup(@Param('name') name: string): Promise<ScenarioGroup> {
+    async createGroup(@Param('name') name: string): Promise<ScenarioGroupResponseDto> {
         return this.scenarioGroupsService.createGroup(name);
     }
 
@@ -72,43 +67,54 @@ export class ScenariosController {
         example: 'outside_lights',
     })
     @ApiOperation({ summary: 'Delete a scenario group by name' })
-    @ApiOkResponse()
+    @ApiOkResponse({ type: ScenarioGroupResponseDto })
     @ApiValidationError()
-    async deleteGroup(@Param('name') name: string, @Query() query: DeleteScenarioGroupDto): Promise<ScenarioGroup> {
+    @ApiNotFound('scenario group')
+    async deleteGroup(@Param('name') name: string, @Query() query: DeleteScenarioGroupDto): Promise<ScenarioGroupResponseDto> {
         return this.scenarioGroupsService.deleteGroup(name, query.deleteScenarios);
+    }
+
+    @Get()
+    @ApiOperation({ summary: 'Get all added scenarios' })
+    @ApiOkPaginationResponse(ScenarioResponseDto, 'Paginated list of scenarios')
+    async getScenarios(@Query() query: GetScenariosDto): Promise<PaginationResponseDto<ScenarioResponseDto>> {
+        return this.scenariosService.getScenarios(query);
     }
 
     @Get('/:externalId')
     @ApiParam({ name: 'externalId', description: 'External ID of the scenario to find', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Get a specific scenario by the provided external ID' })
-    @ApiOkResponse()
-    async getScenario(@Param('externalId') externalId: string): Promise<Scenario> {
+    @ApiOkResponse({ type: ScenarioResponseDto })
+    async getScenario(@Param('externalId') externalId: string): Promise<ScenarioResponseDto> {
         return this.scenariosService.getScenarioByExternalId(externalId);
     }
 
     @Post()
     @ApiOperation({ summary: 'Add a new scenario' })
-    @ApiCreatedResponse()
+    @ApiCreatedResponse({ type: ScenarioResponseDto })
     @ApiValidationError()
-    async addScenario(@Body() createScenarioDto: CreateScenarioDto): Promise<Scenario> {
+    async addScenario(@Body() createScenarioDto: CreateScenarioDto): Promise<ScenarioResponseDto> {
         return this.scenariosService.addScenario(createScenarioDto);
     }
 
     @Put('/:externalId')
     @ApiParam({ name: 'externalId', description: 'External ID of the scenario to update', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Update an existing scenario by the provided external ID' })
-    @ApiOkResponse()
+    @ApiOkResponse({ type: ScenarioResponseDto })
     @ApiValidationError()
-    async updateScenario(@Param('externalId') externalId: string, @Body() updateScenarioDto: UpdateScenarioDto): Promise<Scenario> {
+    async updateScenario(
+        @Param('externalId') externalId: string,
+        @Body() updateScenarioDto: UpdateScenarioDto,
+    ): Promise<ScenarioResponseDto> {
         return this.scenariosService.updateScenario(externalId, updateScenarioDto);
     }
 
     @Delete('/:externalId')
     @ApiParam({ name: 'externalId', description: 'External ID of the scenario to delete', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Delete an existing scenario by the provided external ID' })
-    @ApiOkResponse()
+    @ApiOkResponse({ type: ScenarioResponseDto })
     @ApiValidationError()
-    async removeScenario(@Param('externalId') externalId: string): Promise<Scenario> {
+    async removeScenario(@Param('externalId') externalId: string): Promise<ScenarioResponseDto> {
         return this.scenariosService.removeScenario(externalId);
     }
 }
