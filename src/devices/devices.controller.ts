@@ -31,7 +31,7 @@ export class DevicesController {
 
     @Get('/discover')
     @ApiOperation({ summary: 'Return the list of discoverable devices that can be paired' })
-    @ApiPaginationResponse(PairableDeviceResponseDto)
+    @ApiPaginationResponse(PairableDeviceResponseDto, 'Paginated list of discoverable devices')
     @ApiBadRequestResponse()
     @ApiUnauthorizedResponse()
     getPairableDevices(@Query() options: GetPairableDevicesDto): Promise<PaginationResponseDto<PairableDevice>> {
@@ -49,7 +49,7 @@ export class DevicesController {
 
     @Get()
     @ApiOperation({ summary: 'Get all added devices' })
-    @ApiPaginationResponse(DeviceResponseDto)
+    @ApiPaginationResponse(DeviceResponseDto, 'Paginated list of devices')
     @ApiUnauthorizedResponse()
     async getDevices(@Query() query: GetDevicesDto): Promise<PaginationResponseDto<Device>> {
         return this.deviceService.getDevices({}, query);

@@ -1,7 +1,7 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { ScenarioDeviceDto, ScenarioTriggerDto } from 'scenarios/dto/common.dto';
 
-@ApiSchema({ name: 'ScenarioResponse', description: 'Scenario entity returned in API responses' })
+@ApiSchema({ name: 'Scenario.ScenarioResponse', description: 'Scenario entity returned in API responses' })
 export class ScenarioResponseDto {
     @ApiProperty({ description: 'Unique external identifier (UUID)', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     externalId: string;

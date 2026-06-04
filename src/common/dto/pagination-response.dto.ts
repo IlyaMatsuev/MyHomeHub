@@ -1,15 +1,16 @@
 import { applyDecorators, Type } from '@nestjs/common';
 import { ApiExtraModels, ApiOkResponse, ApiProperty, ApiSchema, getSchemaPath } from '@nestjs/swagger';
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, MIN_PAGE, MIN_PAGE_SIZE } from 'common/common.constants';
 
-@ApiSchema({ name: 'PaginationResponse', description: 'Generic paginated response' })
+@ApiSchema({ name: 'Common.PaginationResponse', description: 'Generic paginated response' })
 export class PaginationResponseDto<T> {
     @ApiProperty({ description: 'Array of items for the current page', isArray: true })
     items: Array<T>;
 
-    @ApiProperty({ description: 'Current page number', example: 1 })
+    @ApiProperty({ description: 'Current page number', minimum: MIN_PAGE, example: MIN_PAGE })
     page: number;
 
-    @ApiProperty({ description: 'Number of items per page', example: 5 })
+    @ApiProperty({ description: 'Number of items per page', minimum: MIN_PAGE_SIZE, maximum: MAX_PAGE_SIZE, example: DEFAULT_PAGE_SIZE })
     pageSize: number;
 
     @ApiProperty({ description: 'Total number of pages', example: 10 })

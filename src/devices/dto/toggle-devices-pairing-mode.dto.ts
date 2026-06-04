@@ -2,7 +2,7 @@ import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { IsBoolean, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { MAX_PAIRING_TIMEOUT_SECONDS, MIN_PAIRING_TIMEOUT_SECONDS } from 'devices/devices.constants';
 
-@ApiSchema({ name: 'ToggleDevicesPairingModeRequest', description: 'DTO for enabling/disabling pairing mode' })
+@ApiSchema({ name: 'Device.ToggleDevicesPairingMode', description: 'DTO for enabling/disabling pairing mode' })
 export class ToggleDevicesPairingModeDto {
     @IsBoolean()
     @ApiProperty({

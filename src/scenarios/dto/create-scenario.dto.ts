@@ -29,7 +29,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-@ApiSchema({ name: 'CreateScenarioRequest', description: 'DTO used to add a new scenario to the hub control' })
+@ApiSchema({ name: 'Scenario.CreateScenario', description: 'DTO used to add a new scenario to the hub control' })
 export class CreateScenarioDto {
     @IsString()
     @IsNotEmpty()

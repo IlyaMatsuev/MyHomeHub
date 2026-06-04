@@ -1,7 +1,7 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty } from 'class-validator';
 
-@ApiSchema({ name: 'LoginRequest', description: 'Payload used to login and get an access token used for authentication' })
+@ApiSchema({ name: 'Auth.Login', description: 'Payload used to login and get an access token used for authentication' })
 export class LoginDto {
     @IsEmail()
     @IsNotEmpty()

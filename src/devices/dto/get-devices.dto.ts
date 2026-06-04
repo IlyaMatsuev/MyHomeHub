@@ -3,7 +3,7 @@ import { IsEnum, IsOptional } from 'class-validator';
 import { PaginationDto } from 'common/dto';
 import { Room } from 'devices/interfaces';
 
-@ApiSchema({ name: 'GetDevicesParameters', description: 'Parameters used to query devices' })
+@ApiSchema({ name: 'Device.GetDevices', description: 'Parameters used to query devices' })
 export class GetDevicesDto extends PaginationDto {
     @IsOptional()
     @IsEnum(Room)
