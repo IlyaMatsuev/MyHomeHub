@@ -106,7 +106,7 @@ describe('AuthService', () => {
 
             const result = await service.register('new@example.com', 'password', '123456');
 
-            expect(result).toEqual({ id: 'new-user-id', email: 'test@example.com' });
+            expect(result).toEqual({ email: 'test@example.com' });
             expect(speakeasy.totp.verify).toHaveBeenCalledWith({
                 secret: 'test-totp-secret',
                 encoding: 'base32',

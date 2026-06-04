@@ -31,7 +31,7 @@ describe('ScenariosService', () => {
         syncGroupOnUpdate: jest.Mock;
         syncGroupOnDelete: jest.Mock;
     };
-    let mockDevicesService: { getDevices: jest.Mock };
+    let mockDevicesService: { getAllDevices: jest.Mock };
 
     const mockScenario: Partial<Scenario> = {
         _id: 'mongo-id-123',
@@ -90,7 +90,7 @@ describe('ScenariosService', () => {
             syncGroupOnDelete: jest.fn().mockResolvedValue(undefined),
         };
         mockDevicesService = {
-            getDevices: jest.fn().mockResolvedValue({ devices: [], page: 1, pageSize: 5, totalPages: 0 }),
+            getAllDevices: jest.fn().mockResolvedValue({ items: [], page: 1, pageSize: 0, totalPages: 0, totalItems: 0 }),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -184,7 +184,7 @@ describe('ScenariosService', () => {
 
             const result = await service.getScenarios(options);
 
-            expect(result.scenarios).toEqual(scenarios);
+            expect(result.items).toEqual(scenarios);
             expect(result.page).toBe(1);
             expect(mockScenarioModel.find).toHaveBeenCalledWith({ active: true });
         });
@@ -234,11 +234,12 @@ describe('ScenariosService', () => {
                 }),
             });
             mockScenarioModel.countDocuments.mockResolvedValue(0);
-            mockDevicesService.getDevices.mockResolvedValue({
-                devices: [{ externalId: 'device-1' }, { externalId: 'device-2' }],
+            mockDevicesService.getAllDevices.mockResolvedValue({
+                items: [{ externalId: 'device-1' }, { externalId: 'device-2' }],
                 page: 1,
-                pageSize: 5,
+                pageSize: 2,
                 totalPages: 1,
+                totalItems: 2,
             });
 
             const options = new GetScenariosDto();
@@ -246,7 +247,7 @@ describe('ScenariosService', () => {
 
             await service.getScenarios(options);
 
-            expect(mockDevicesService.getDevices).toHaveBeenCalledWith({ room: Room.LivingRoom });
+            expect(mockDevicesService.getAllDevices).toHaveBeenCalledWith({ room: Room.LivingRoom });
             expect(mockScenarioModel.find).toHaveBeenCalledWith({
                 active: true,
                 'devices.externalId': { $in: ['device-1', 'device-2'] },
@@ -262,11 +263,12 @@ describe('ScenariosService', () => {
                 }),
             });
             mockScenarioModel.countDocuments.mockResolvedValue(0);
-            mockDevicesService.getDevices.mockResolvedValue({
-                devices: [{ externalId: 'device-no-room' }],
+            mockDevicesService.getAllDevices.mockResolvedValue({
+                items: [{ externalId: 'device-no-room' }],
                 page: 1,
-                pageSize: 5,
+                pageSize: 1,
                 totalPages: 1,
+                totalItems: 1,
             });
 
             const options = new GetScenariosDto();
@@ -274,7 +276,7 @@ describe('ScenariosService', () => {
 
             await service.getScenarios(options);
 
-            expect(mockDevicesService.getDevices).toHaveBeenCalledWith({ room: Room.None });
+            expect(mockDevicesService.getAllDevices).toHaveBeenCalledWith({ room: Room.None });
             expect(mockScenarioModel.find).toHaveBeenCalledWith({
                 active: true,
                 'devices.externalId': { $in: ['device-no-room'] },

@@ -51,14 +51,14 @@ describe('AuthController', () => {
     });
 
     describe('register', () => {
-        it('should register new user and return user data', async () => {
+        it('should register new user and return only the email', async () => {
             const registerDto = { email: 'new@example.com', password: 'password123', totp: '123456' };
-            const newUser = { id: 'user-id', email: 'new@example.com' };
-            mockAuthService.register.mockResolvedValue(newUser);
+            const registerResponse = { email: 'new@example.com' };
+            mockAuthService.register.mockResolvedValue(registerResponse);
 
             const result = await controller.register(registerDto);
 
-            expect(result).toEqual(newUser);
+            expect(result).toEqual(registerResponse);
             expect(mockAuthService.register).toHaveBeenCalledWith('new@example.com', 'password123', '123456');
         });
     });

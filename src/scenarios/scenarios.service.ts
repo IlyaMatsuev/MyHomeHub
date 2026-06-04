@@ -10,19 +10,13 @@ import {
 } from '@nestjs/common';
 import { Model, RootFilterQuery } from 'mongoose';
 import { DevicesService } from 'devices/devices.service';
-import {
-    GetScenarioOptions,
-    Scenario,
-    ScenarioCronTriggerSource,
-    ScenarioFilter,
-    ScenariosPage,
-    ScenarioTriggerSourceType,
-} from 'scenarios/interfaces';
+import { GetScenarioOptions, Scenario, ScenarioCronTriggerSource, ScenarioFilter, ScenarioTriggerSourceType } from 'scenarios/interfaces';
 import { CreateScenarioDto, GetScenariosDto, UpdateScenarioDto } from 'scenarios/dto';
 import { SCENARIO_MODEL_PROVIDER_NAME } from 'scenarios/scenarios.constants';
 import { SchedulerService } from 'scheduler/scheduler.service';
 import { ScenariosExecutionService } from 'scenarios/scenarios-execution.service';
 import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
+import { PaginationResponseDto } from 'common/dto';
 
 @Injectable()
 export class ScenariosService implements OnModuleInit {
@@ -42,14 +36,17 @@ export class ScenariosService implements OnModuleInit {
         await this.scheduleExistingScenarios();
     }
 
-    async getScenarios(options: GetScenariosDto = new GetScenariosDto()): Promise<ScenariosPage> {
-        const conditions: RootFilterQuery<Scenario> = options.includeInactive ? {} : { active: true };
+    async getScenarios(options: GetScenariosDto = new GetScenariosDto()): Promise<PaginationResponseDto<Scenario>> {
+        const conditions: RootFilterQuery<Scenario> = {};
+        if (!options.includeInactive) {
+            conditions.active = true;
+        }
         if (options.group) {
             conditions.group = options.group;
         }
         if (options.room) {
-            const devicesPage = await this.devicesService.getDevices({ room: options.room });
-            const deviceExternalIds = devicesPage.devices.map(d => d.externalId);
+            const allDevices = await this.devicesService.getAllDevices({ room: options.room });
+            const deviceExternalIds = allDevices.items.map(d => d.externalId);
             conditions['devices.externalId'] = { $in: deviceExternalIds };
         }
         const [scenarios, total] = await Promise.all([
@@ -57,12 +54,7 @@ export class ScenariosService implements OnModuleInit {
             this.scenarioModel.countDocuments(conditions),
         ]);
 
-        return {
-            scenarios,
-            page: options.page,
-            pageSize: options.pageSize,
-            totalPages: Math.ceil(total / options.pageSize),
-        };
+        return new PaginationResponseDto(scenarios, options.page, options.pageSize, total);
     }
 
     getScenariosWithAdjustableTime(): Promise<Array<Scenario>> {

@@ -2,7 +2,7 @@ import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, Matches, MaxLength, MinLength } from 'class-validator';
 import { USER_PASSWORD_MAX_LENGTH, USER_PASSWORD_MIN_LENGTH } from 'users/users.constants';
 
-@ApiSchema({ name: 'RegisterRequest', description: 'Payload used to register a new user' })
+@ApiSchema({ name: 'Auth.Register', description: 'Payload used to register a new user' })
 export class RegisterDto {
     @IsEmail()
     @IsNotEmpty()

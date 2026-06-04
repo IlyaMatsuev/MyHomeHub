@@ -1,16 +1,18 @@
 import { Controller, Logger } from '@nestjs/common';
-import { DevicesMqttService } from 'devices/devices-mqtt.service';
+import { ApiExcludeController } from '@nestjs/swagger';
 import { Ctx, MessagePattern, MqttContext, Payload } from '@nestjs/microservices';
-import { DeviceControlsDto, DevicePayloadDto, PairRequestDto } from 'devices/dto';
 import { plainToInstance } from 'class-transformer';
 import {
     ESP32_DEVICE_CONTROLS_SYNC_TOPIC,
     ESP32_DEVICE_MEASUREMENTS_UPDATE_TOPIC,
     ESP32_DEVICE_PAIR_REQUEST_TOPIC,
 } from 'devices/devices.constants';
+import { DevicesMqttService } from 'devices/devices-mqtt.service';
+import { DeviceControlsDto, DevicePayloadDto, PairRequestDto } from 'devices/dto';
 import { MqttService } from 'mqtt/mqtt.service';
 
 @Controller()
+@ApiExcludeController()
 export class DevicesMqttController {
     private readonly logger = new Logger(DevicesMqttController.name);
 

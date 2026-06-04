@@ -2,7 +2,7 @@ import { IsInt, Max, Min } from 'class-validator';
 import { MAX_PAGE_SIZE, MIN_PAGE_SIZE, DEFAULT_PAGE_SIZE, MIN_PAGE } from 'common/common.constants';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 
-@ApiSchema({ name: 'PaginationParameters', description: 'DTO used to fetch a specific page of the existing records' })
+@ApiSchema({ name: 'Common.Pagination', description: 'DTO used to fetch a specific page of the existing records' })
 export class PaginationDto {
     @IsInt()
     @Min(MIN_PAGE)
@@ -19,6 +19,11 @@ export class PaginationDto {
         minimum: MIN_PAGE,
     })
     pageSize: number = DEFAULT_PAGE_SIZE;
+
+    constructor({ page, pageSize }: Partial<PaginationDto> = {}) {
+        this.page = page ?? MIN_PAGE;
+        this.pageSize = pageSize ?? DEFAULT_PAGE_SIZE;
+    }
 
     get skipRecords() {
         return (this.page - 1) * this.pageSize;

@@ -85,7 +85,7 @@ describe('ScenarioGroupsService', () => {
 
             const result = await service.getGroups();
 
-            expect(result.groups).toEqual(groups);
+            expect(result.items).toEqual(groups);
             expect(result.page).toBe(1);
             expect(result.totalPages).toBe(1);
             expect(mockScenarioGroupModel.find).toHaveBeenCalledWith({});
@@ -108,7 +108,7 @@ describe('ScenarioGroupsService', () => {
             options.term = 'test';
             const result = await service.getGroups(options);
 
-            expect(result.groups).toEqual(groups);
+            expect(result.items).toEqual(groups);
             expect(mockScenarioGroupModel.find).toHaveBeenCalledWith({
                 name: { $regex: 'test', $options: 'i' },
             });

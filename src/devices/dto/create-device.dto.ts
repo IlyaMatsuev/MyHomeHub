@@ -32,7 +32,7 @@ import {
 import { DeviceControlsDto, DevicePayloadDto } from 'devices/dto';
 import { TransportProtocol } from 'devices-control/interfaces';
 
-@ApiSchema({ name: 'CreateDeviceRequest', description: 'DTO used to add a new device to the hub control' })
+@ApiSchema({ name: 'Devices.CreateDevice', description: 'DTO used to add a new device to the hub control' })
 export class CreateDeviceDto {
     @IsString()
     @IsNotEmpty()

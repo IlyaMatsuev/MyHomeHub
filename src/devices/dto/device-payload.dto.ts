@@ -2,7 +2,7 @@ import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { IsBoolean, IsOptional } from 'class-validator';
 import { DeviceControls, DevicePayload } from 'devices/interfaces';
 
-@ApiSchema({ name: 'DevicePayload', description: 'DTO describing the structure of controls or measurements payloads' })
+@ApiSchema({ name: 'Devices.DevicePayload', description: 'DTO describing the structure of controls or measurements payloads' })
 export class DevicePayloadDto implements DevicePayload {
     @IsBoolean()
     @IsOptional()
@@ -15,7 +15,7 @@ export class DevicePayloadDto implements DevicePayload {
     [key: string]: unknown;
 }
 
-@ApiSchema({ name: 'DeviceControls', description: 'DTO describing the structure of a generic controls payload' })
+@ApiSchema({ name: 'Devices.DeviceControls', description: 'DTO describing the structure of a generic controls payload' })
 export class DeviceControlsDto extends DevicePayloadDto implements DeviceControls {
     @IsBoolean()
     @IsOptional()

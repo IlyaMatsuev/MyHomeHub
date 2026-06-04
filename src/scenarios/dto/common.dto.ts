@@ -24,12 +24,13 @@ import {
 import { EXTERNAL_ID_UUID_VERSION } from 'common/common.constants';
 import { SCENARIO_TRIGGER_LOGIC_MAX_LENGTH, SCENARIO_TRIGGER_LOGIC_MIN_LENGTH } from 'scenarios/scenarios.constants';
 
-@ApiSchema({ name: 'ScenarioCronTriggerSource' })
+@ApiSchema({ name: 'Scenarios.ScenarioCronTriggerSource' })
 export class ScenarioCronTriggerSourceDto implements ScenarioCronTriggerSource {
     @ApiProperty({
         required: true,
         description: 'The type of the scenario trigger source',
         enum: ScenarioTriggerSourceType,
+        example: ScenarioTriggerSourceType.Cron,
     })
     type: ScenarioTriggerSourceType.Cron;
 
@@ -47,7 +48,7 @@ export class ScenarioCronTriggerSourceDto implements ScenarioCronTriggerSource {
     adjustTo?: ScenarioCronTimeAdjustOption;
 }
 
-@ApiSchema({ name: 'ScenarioDeviceTriggerSourceConditions' })
+@ApiSchema({ name: 'Scenarios.ScenarioDeviceTriggerSourceConditions' })
 export class ScenarioDeviceTriggerSourceConditionsDto implements ScenarioDeviceTriggerSourceConditions {
     @ApiProperty({
         required: true,
@@ -57,12 +58,13 @@ export class ScenarioDeviceTriggerSourceConditionsDto implements ScenarioDeviceT
 }
 
 @ApiExtraModels(ScenarioDeviceTriggerSourceConditionsDto)
-@ApiSchema({ name: 'ScenarioDeviceTriggerSource' })
+@ApiSchema({ name: 'Scenarios.ScenarioDeviceTriggerSource' })
 export class ScenarioDeviceTriggerSourceDto implements ScenarioDeviceTriggerSource {
     @ApiProperty({
         required: true,
         description: 'The type of the scenario trigger source',
         enum: ScenarioTriggerSourceType,
+        example: ScenarioTriggerSourceType.Device,
     })
     type: ScenarioTriggerSourceType.Device;
 
@@ -93,7 +95,7 @@ export class ScenarioDeviceTriggerSourceDto implements ScenarioDeviceTriggerSour
 }
 
 @ApiExtraModels(ScenarioCronTriggerSourceDto, ScenarioDeviceTriggerSourceDto)
-@ApiSchema({ name: 'ScenarioTrigger' })
+@ApiSchema({ name: 'Scenarios.ScenarioTrigger' })
 export class ScenarioTriggerDto implements ScenarioTrigger {
     @IsDefined()
     @IsArray()
@@ -120,7 +122,7 @@ export class ScenarioTriggerDto implements ScenarioTrigger {
     logic: string;
 }
 
-@ApiSchema({ name: 'ScenarioDeviceSetting' })
+@ApiSchema({ name: 'Scenarios.ScenarioDeviceSetting' })
 export class ScenarioDeviceSettingDto {
     @IsOptional()
     @IsObject()
@@ -143,7 +145,7 @@ export class ScenarioDeviceSettingDto {
     measurements?: Record<string, object>;
 }
 
-@ApiSchema({ name: 'ScenarioDevice' })
+@ApiSchema({ name: 'Scenarios.ScenarioDevice' })
 export class ScenarioDeviceDto implements ScenarioDevice {
     @IsNotEmpty()
     @IsUUID(EXTERNAL_ID_UUID_VERSION)

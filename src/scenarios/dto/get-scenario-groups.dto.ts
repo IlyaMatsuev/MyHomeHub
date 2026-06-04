@@ -3,7 +3,7 @@ import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { PaginationDto } from 'common/dto';
 import { SCENARIO_GROUP_NAME_MAX_LENGTH } from 'scenarios/scenarios.constants';
 
-@ApiSchema({ name: 'GetScenarioGroupsParameters', description: 'Parameters used to query scenario groups' })
+@ApiSchema({ name: 'Scenarios.GetScenarioGroups', description: 'Parameters used to query scenario groups' })
 export class GetScenarioGroupsDto extends PaginationDto {
     @IsOptional()
     @IsString()
