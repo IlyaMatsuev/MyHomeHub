@@ -1,5 +1,7 @@
+import path from 'node:path';
 import { NestFactory } from '@nestjs/core';
 import { ConsoleLogger, INestApplication, LogLevel, LoggerService, ValidationPipe, LOG_LEVELS } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerCustomOptions } from '@nestjs/swagger/dist/interfaces/swagger-custom-options.interface';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -12,7 +14,9 @@ import { CustomValidationException } from 'common/exceptions';
 bootstrap();
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule, { bufferLogs: true });
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
+    app.useStaticAssets(path.join(__dirname, '..', 'public'));
+
     const config = app.get<ConfigService>(ConfigService);
     app.useLogger(setupLogger(config));
     app.connectMicroservice<MicroserviceOptions>({
@@ -66,6 +70,7 @@ function setupSwagger(app: INestApplication, conf: ConfigService) {
     };
     const swaggerOptions: SwaggerCustomOptions = {
         customCss: new SwaggerTheme().getBuffer(SwaggerThemeNameEnum.ONE_DARK),
+        customfavIcon: '/favicon.ico',
         customSiteTitle: 'SmartHome REST API',
         swaggerOptions: {
             defaultModelsExpandDepth: 3,

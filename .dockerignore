@@ -49,9 +49,11 @@ configs/mqtt/pwfile
 **/.env.*
 **/.env
 
+# Assets
+public/
+
 # Other
 docs/
-devices/
 **/Procfile
 **/LICENSE
 **/README.md

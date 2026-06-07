@@ -8,6 +8,7 @@ services:
       - "${PORT}:${PORT}"
     volumes:
       - ./.env:/usr/src/app/.env
+      - ./public:/usr/src/app/public
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     depends_on:
