@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DiscoveryController } from './discovery.controller';
-import { DiscoveryService } from './discovery.service';
-import { ServerDto } from './dto';
+import { DiscoveryController } from 'discovery/discovery.controller';
+import { DiscoveryService } from 'discovery/discovery.service';
+import { ServerDto } from 'discovery/dto';
 
 describe('DiscoveryController', () => {
     let controller: DiscoveryController;

@@ -3,8 +3,8 @@ import { networkInterfaces } from 'node:os';
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DEFAULT_PORT, DEFAULT_SERVER_LABEL } from 'common/common.constants';
-import { ServerDto } from './dto';
-import { DEFAULT_DISCOVERY_MESSAGE, DEFAULT_UDP_PORT } from './discovery.constants';
+import { ServerDto } from 'discovery/dto';
+import { DEFAULT_DISCOVERY_MESSAGE, DEFAULT_UDP_PORT } from 'discovery/discovery.constants';
 
 @Injectable()
 export class DiscoveryService implements OnModuleInit, OnModuleDestroy {

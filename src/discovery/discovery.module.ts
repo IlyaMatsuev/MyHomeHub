@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { DiscoveryController } from './discovery.controller';
-import { DiscoveryService } from './discovery.service';
+import { DiscoveryController } from 'discovery/discovery.controller';
+import { DiscoveryService } from 'discovery/discovery.service';
 
 @Module({
     controllers: [DiscoveryController],

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { DiscoveryService } from './discovery.service';
+import { DiscoveryService } from 'discovery/discovery.service';
 import * as dgram from 'node:dgram';
 import * as os from 'node:os';
 
