@@ -10,7 +10,8 @@
       "zigbee/*": ["src/zigbee/*"],
       "common/*": ["src/common/*"],
       "scheduler/*": ["src/scheduler/*"],
-      "db/*": ["src/db/*"]
+      "db/*": ["src/db/*"],
+      "discovery/*": ["src/discovery/*"]
     },
     "module": "commonjs",
     "declaration": true,

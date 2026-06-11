@@ -9,6 +9,7 @@ import { DevicesModule } from 'devices/devices.module';
 import { ScenariosModule } from 'scenarios/scenarios.module';
 import { MqttModule } from 'mqtt/mqtt.module';
 import { ZigbeeModule } from 'zigbee/zigbee.module';
+import { DiscoveryModule } from 'discovery/discovery.module';
 
 @Module({
     imports: [
@@ -19,6 +20,7 @@ import { ZigbeeModule } from 'zigbee/zigbee.module';
         ScenariosModule,
         MqttModule,
         ZigbeeModule,
+        DiscoveryModule,
 
         ScheduleModule.forRoot(),
         EventEmitterModule.forRoot(),

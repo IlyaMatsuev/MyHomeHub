@@ -107,7 +107,8 @@
   "overrides": {
     "castv2": {
       "protobufjs": "^7.5.5"
-    }
+    },
+    "qs": "^6.15.2"
   },
   "lint-staged": {
     "**/*.{html,js,ts,css,xml,yaml,yml,json,md}": [
@@ -116,5 +117,11 @@
     "**/*.{js,ts}": [
       "npm run eslint"
     ]
+  },
+  "allowScripts": {
+    "@nestjs/core@11.1.19": true,
+    "argon2@0.41.1": true,
+    "protobufjs@7.5.8": true,
+    "fsevents@2.3.3": true
   }
 }

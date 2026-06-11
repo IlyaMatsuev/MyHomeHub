@@ -6,6 +6,7 @@ services:
     restart: always
     ports:
       - "${PORT}:${PORT}"
+      - "${UDP_PORT}:${UDP_PORT}"
     volumes:
       - ./.env:/usr/src/app/.env
       - ./public:/usr/src/app/public
