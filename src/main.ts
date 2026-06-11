@@ -57,8 +57,9 @@ function setupLogger(config: ConfigService): LoggerService {
 
 function setupSwagger(app: INestApplication, conf: ConfigService) {
     const port = conf.get<string>('PORT') ?? process.env.PORT ?? 3000;
+    const serverLabel = conf.get<string>('SERVER_LABEL') ?? 'SmartHome Hub';
     const config = new DocumentBuilder()
-        .setTitle('My Smart Home REST API')
+        .setTitle(`${serverLabel} REST API`)
         .setDescription('API documentation describing available methods for controlling devices connected to the hub')
         .setVersion('1.0')
         .addServer(`http://localhost:${port}/`, 'Default local server used for development')
@@ -71,7 +72,7 @@ function setupSwagger(app: INestApplication, conf: ConfigService) {
     const swaggerOptions: SwaggerCustomOptions = {
         customCss: new SwaggerTheme().getBuffer(SwaggerThemeNameEnum.ONE_DARK),
         customfavIcon: '/favicon.ico',
-        customSiteTitle: 'SmartHome REST API',
+        customSiteTitle: `${serverLabel} REST API`,
         swaggerOptions: {
             defaultModelsExpandDepth: 3,
         },
