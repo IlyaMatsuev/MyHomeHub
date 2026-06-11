@@ -117,9 +117,9 @@ Environment file: `.env`
 
 Key variables:
 
-- `PORT`, `TZ_LATITUDE`, `TZ_LONGITUDE` - Server config
 - `SERVER_LABEL` - Human-readable server name (used in Swagger and discovery)
-- `DISCOVERY_UDP_PORT`, `DISCOVERY_MESSAGE` - UDP broadcast discovery settings
+- `PORT`, `TZ_LATITUDE`, `TZ_LONGITUDE` - Server config
+- `UDP_PORT`, `DISCOVERY_MESSAGE` - UDP broadcast discovery settings
 - `JWT_SECRET`, `JWT_EXPIRATION_TIMEOUT` - Auth tokens
 - `REGISTRATION_TOTP_SECRET` - Admin TOTP for user registration
 - `USER_PASSWORD_SECRET`, `USER_PASSWORD_SALT` - Argon2 hashing

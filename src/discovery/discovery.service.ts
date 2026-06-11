@@ -3,7 +3,7 @@ import { networkInterfaces } from 'node:os';
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DEFAULT_PORT, DEFAULT_SERVER_LABEL } from 'common/common.constants';
-import { ServerInfoDto } from './dto';
+import { ServerDto } from './dto';
 import { DEFAULT_DISCOVERY_MESSAGE, DEFAULT_UDP_PORT } from './discovery.constants';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
         this.stopUdpListener();
     }
 
-    getServerInfo(): ServerInfoDto {
+    getServerInfo(): ServerDto {
         return {
             label: this.getServerLabel(),
             address: this.getLocalIpAddress(),
@@ -99,7 +99,7 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
     }
 
     private getUdpPort(): number {
-        return Number(this.configService.get<string>('DISCOVERY_UDP_PORT') ?? DEFAULT_UDP_PORT);
+        return Number(this.configService.get<string>('UDP_PORT') ?? DEFAULT_UDP_PORT);
     }
 
     private getDiscoveryMessage(): string {

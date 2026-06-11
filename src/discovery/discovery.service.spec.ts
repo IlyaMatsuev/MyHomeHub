@@ -117,8 +117,8 @@ describe('DiscoveryService', () => {
         it('should create and bind UDP socket on init', () => {
             mockConfigService.get.mockImplementation((key: string) => {
                 const config: Record<string, string> = {
-                    DISCOVERY_UDP_PORT: '5353',
-                    DISCOVERY_MESSAGE: 'SMARTHOME_DISCOVER',
+                    UDP_PORT: '5353',
+                    DISCOVERY_MESSAGE: 'SMARTHOME_HUB_DISCOVER',
                 };
                 return config[key];
             });
@@ -168,7 +168,7 @@ describe('DiscoveryService', () => {
         it('should respond to valid discovery message', () => {
             mockConfigService.get.mockImplementation((key: string) => {
                 const config: Record<string, string> = {
-                    DISCOVERY_MESSAGE: 'SMARTHOME_DISCOVER',
+                    DISCOVERY_MESSAGE: 'SMARTHOME_HUB_DISCOVER',
                     SERVER_LABEL: 'Test Hub',
                     PORT: '3000',
                 };
@@ -197,7 +197,7 @@ describe('DiscoveryService', () => {
                 family: 'IPv4',
                 size: 18,
             };
-            messageHandler(Buffer.from('SMARTHOME_DISCOVER'), rinfo);
+            messageHandler(Buffer.from('SMARTHOME_HUB_DISCOVER'), rinfo);
 
             expect(mockSocket.send).toHaveBeenCalled();
             const sendCall = mockSocket.send.mock.calls[0];
@@ -215,7 +215,7 @@ describe('DiscoveryService', () => {
         it('should ignore invalid discovery message', () => {
             mockConfigService.get.mockImplementation((key: string) => {
                 const config: Record<string, string> = {
-                    DISCOVERY_MESSAGE: 'SMARTHOME_DISCOVER',
+                    DISCOVERY_MESSAGE: 'SMARTHOME_HUB_DISCOVER',
                 };
                 return config[key];
             });
@@ -268,7 +268,7 @@ describe('DiscoveryService', () => {
                 family: 'IPv4',
                 size: 18,
             };
-            messageHandler(Buffer.from('SMARTHOME_DISCOVER'), rinfo);
+            messageHandler(Buffer.from('SMARTHOME_HUB_DISCOVER'), rinfo);
 
             expect(mockSocket.send).toHaveBeenCalled();
         });

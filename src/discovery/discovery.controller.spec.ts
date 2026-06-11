@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DiscoveryController } from './discovery.controller';
 import { DiscoveryService } from './discovery.service';
-import { ServerInfoDto } from './dto';
+import { ServerDto } from './dto';
 
 describe('DiscoveryController', () => {
     let controller: DiscoveryController;
@@ -33,7 +33,7 @@ describe('DiscoveryController', () => {
 
     describe('getServerInfo', () => {
         it('should return server info from discovery service', () => {
-            const expectedInfo: ServerInfoDto = {
+            const expectedInfo: ServerDto = {
                 label: 'Test Smart Home',
                 address: '192.168.1.100',
                 port: 3000,
@@ -47,7 +47,7 @@ describe('DiscoveryController', () => {
         });
 
         it('should return default values when not configured', () => {
-            const expectedInfo: ServerInfoDto = {
+            const expectedInfo: ServerDto = {
                 label: 'SmartHome Hub',
                 address: '127.0.0.1',
                 port: 3000,

@@ -10,6 +10,7 @@ import { ValidationError as ClassValidationError } from 'class-validator';
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 import { AppModule } from './app.module';
 import { CustomValidationException } from 'common/exceptions';
+import { DEFAULT_PORT, DEFAULT_SERVER_LABEL } from 'common/common.constants';
 
 bootstrap();
 
@@ -43,7 +44,7 @@ async function bootstrap() {
     setupSwagger(app, config);
 
     await app.startAllMicroservices();
-    await app.listen(config.get<string>('PORT') ?? process.env.PORT ?? 3000);
+    await app.listen(config.get<string>('PORT') ?? DEFAULT_PORT);
 }
 
 function setupLogger(config: ConfigService): LoggerService {
@@ -52,12 +53,12 @@ function setupLogger(config: ConfigService): LoggerService {
     logLevel = LOG_LEVELS.includes(logLevel) ? logLevel : defaultLevel;
 
     const logLevels = LOG_LEVELS.slice(LOG_LEVELS.indexOf(logLevel));
-    return new ConsoleLogger({ prefix: 'SmartHome Hub', logLevels });
+    return new ConsoleLogger({ prefix: config.get<string>('SERVER_LABEL') ?? DEFAULT_SERVER_LABEL, logLevels });
 }
 
 function setupSwagger(app: INestApplication, conf: ConfigService) {
-    const port = conf.get<string>('PORT') ?? process.env.PORT ?? 3000;
-    const serverLabel = conf.get<string>('SERVER_LABEL') ?? 'SmartHome Hub';
+    const port = conf.get<string>('PORT') ?? DEFAULT_PORT;
+    const serverLabel = conf.get<string>('SERVER_LABEL') ?? DEFAULT_SERVER_LABEL;
     const config = new DocumentBuilder()
         .setTitle(`${serverLabel} REST API`)
         .setDescription('API documentation describing available methods for controlling devices connected to the hub')
