@@ -1,9 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { UsersService } from 'users/users.service';
+import { RegistrationRequestsService } from 'auth/registration-requests.service';
+import { RegistrationRequestStatus } from 'auth/interfaces';
 import * as argon2 from 'argon2';
 import * as speakeasy from 'speakeasy';
 
@@ -14,6 +16,7 @@ describe('AuthService', () => {
     let service: AuthService;
     let usersService: jest.Mocked<UsersService>;
     let jwtService: jest.Mocked<JwtService>;
+    let registrationRequestsService: jest.Mocked<RegistrationRequestsService>;
 
     const mockUser = {
         _id: 'user-id-123',
@@ -52,12 +55,20 @@ describe('AuthService', () => {
                         get: jest.fn((key: string) => mockConfig[key]),
                     },
                 },
+                {
+                    provide: RegistrationRequestsService,
+                    useValue: {
+                        findByEmail: jest.fn(),
+                        createAutoApprovedRequest: jest.fn(),
+                    },
+                },
             ],
         }).compile();
 
         service = module.get<AuthService>(AuthService);
         usersService = module.get(UsersService);
         jwtService = module.get(JwtService);
+        registrationRequestsService = module.get(RegistrationRequestsService);
     });
 
     afterEach(() => {
@@ -98,11 +109,12 @@ describe('AuthService', () => {
     });
 
     describe('register', () => {
-        it('should create new user when TOTP is valid', async () => {
+        it('should create new user when TOTP is valid and create auto-approved request', async () => {
             const newUser = { ...mockUser, _id: 'new-user-id' };
             (speakeasy.totp.verify as jest.Mock).mockReturnValue(true);
             (argon2.hash as jest.Mock).mockResolvedValue('new-hashed-password');
             usersService.create.mockResolvedValue(newUser as never);
+            registrationRequestsService.createAutoApprovedRequest.mockResolvedValue({} as never);
 
             const result = await service.register('new@example.com', 'password', '123456');
 
@@ -113,12 +125,58 @@ describe('AuthService', () => {
                 token: '123456',
             });
             expect(usersService.create).toHaveBeenCalledWith('new@example.com', 'new-hashed-password');
+            expect(registrationRequestsService.createAutoApprovedRequest).toHaveBeenCalledWith('new@example.com');
         });
 
         it('should throw UnauthorizedException when TOTP is invalid', async () => {
             (speakeasy.totp.verify as jest.Mock).mockReturnValue(false);
 
             await expect(service.register('new@example.com', 'password', 'invalid-totp')).rejects.toThrow(UnauthorizedException);
+            expect(usersService.create).not.toHaveBeenCalled();
+        });
+
+        it('should create user when registration request is approved and no TOTP provided', async () => {
+            const newUser = { ...mockUser, _id: 'new-user-id', email: 'approved@example.com' };
+            const approvedRequest = { status: RegistrationRequestStatus.APPROVED };
+            registrationRequestsService.findByEmail.mockResolvedValue(approvedRequest as never);
+            (argon2.hash as jest.Mock).mockResolvedValue('new-hashed-password');
+            usersService.create.mockResolvedValue(newUser as never);
+
+            const result = await service.register('approved@example.com', 'password');
+
+            expect(result).toEqual({ email: 'approved@example.com' });
+            expect(usersService.create).toHaveBeenCalledWith('approved@example.com', 'new-hashed-password');
+        });
+
+        it('should throw BadRequestException when no TOTP and no registration request exists', async () => {
+            registrationRequestsService.findByEmail.mockResolvedValue(null);
+
+            await expect(service.register('new@example.com', 'password')).rejects.toThrow(BadRequestException);
+            await expect(service.register('new@example.com', 'password')).rejects.toThrow(
+                'No registration request found for this email. Please submit a registration request first.',
+            );
+            expect(usersService.create).not.toHaveBeenCalled();
+        });
+
+        it('should throw BadRequestException when registration request is pending', async () => {
+            const pendingRequest = { status: RegistrationRequestStatus.PENDING };
+            registrationRequestsService.findByEmail.mockResolvedValue(pendingRequest as never);
+
+            await expect(service.register('pending@example.com', 'password')).rejects.toThrow(BadRequestException);
+            await expect(service.register('pending@example.com', 'password')).rejects.toThrow(
+                'Your registration request has not been reviewed yet. Please wait for admin approval.',
+            );
+            expect(usersService.create).not.toHaveBeenCalled();
+        });
+
+        it('should throw BadRequestException when registration request is rejected', async () => {
+            const rejectedRequest = { status: RegistrationRequestStatus.REJECTED };
+            registrationRequestsService.findByEmail.mockResolvedValue(rejectedRequest as never);
+
+            await expect(service.register('rejected@example.com', 'password')).rejects.toThrow(BadRequestException);
+            await expect(service.register('rejected@example.com', 'password')).rejects.toThrow(
+                'Your registration request has been rejected.',
+            );
             expect(usersService.create).not.toHaveBeenCalled();
         });
     });

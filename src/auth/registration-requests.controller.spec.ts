@@ -1,0 +1,146 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { RegistrationRequestsController } from './registration-requests.controller';
+import { RegistrationRequestsService } from './registration-requests.service';
+import { RegistrationRequestStatus } from 'auth/interfaces';
+import { PaginationResponseDto } from 'common/dto';
+import { RegistrationRequestResponseDto } from 'auth/dto';
+
+describe('RegistrationRequestsController', () => {
+    let controller: RegistrationRequestsController;
+    let mockRegistrationRequestsService: {
+        getRequests: jest.Mock;
+        getRequest: jest.Mock;
+        createRequest: jest.Mock;
+        updateRequest: jest.Mock;
+    };
+
+    const mockRequestResponse: RegistrationRequestResponseDto = {
+        externalId: 'test-uuid',
+        userEmail: 'test@example.com',
+        status: RegistrationRequestStatus.PENDING,
+        comment: 'Test comment',
+        createdAt: new Date('2026-01-01'),
+        updatedAt: new Date('2026-01-01'),
+    };
+
+    beforeEach(async () => {
+        mockRegistrationRequestsService = {
+            getRequests: jest.fn(),
+            getRequest: jest.fn(),
+            createRequest: jest.fn(),
+            updateRequest: jest.fn(),
+        };
+
+        const module: TestingModule = await Test.createTestingModule({
+            controllers: [RegistrationRequestsController],
+            providers: [
+                {
+                    provide: RegistrationRequestsService,
+                    useValue: mockRegistrationRequestsService,
+                },
+            ],
+        }).compile();
+
+        controller = module.get<RegistrationRequestsController>(RegistrationRequestsController);
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    describe('createRequest', () => {
+        it('should create a new registration request', async () => {
+            mockRegistrationRequestsService.createRequest.mockResolvedValue(mockRequestResponse);
+
+            const result = await controller.createRequest({ email: 'test@example.com', comment: 'Test comment' });
+
+            expect(result).toEqual(mockRequestResponse);
+            expect(mockRegistrationRequestsService.createRequest).toHaveBeenCalledWith({
+                email: 'test@example.com',
+                comment: 'Test comment',
+            });
+        });
+    });
+
+    describe('getRequest', () => {
+        it('should return a registration request by external ID', async () => {
+            mockRegistrationRequestsService.getRequest.mockResolvedValue(mockRequestResponse);
+
+            const result = await controller.getRequest('test-uuid');
+
+            expect(result).toEqual(mockRequestResponse);
+            expect(mockRegistrationRequestsService.getRequest).toHaveBeenCalledWith('test-uuid');
+        });
+
+        it('should return a registration request by email', async () => {
+            mockRegistrationRequestsService.getRequest.mockResolvedValue(mockRequestResponse);
+
+            const result = await controller.getRequest('test@example.com');
+
+            expect(result).toEqual(mockRequestResponse);
+            expect(mockRegistrationRequestsService.getRequest).toHaveBeenCalledWith('test@example.com');
+        });
+    });
+
+    describe('updateRequest', () => {
+        it('should approve a registration request', async () => {
+            const approvedResponse = { ...mockRequestResponse, status: RegistrationRequestStatus.APPROVED };
+            mockRegistrationRequestsService.updateRequest.mockResolvedValue(approvedResponse);
+
+            const result = await controller.updateRequest('test-uuid', { approve: true });
+
+            expect(result.status).toBe(RegistrationRequestStatus.APPROVED);
+            expect(mockRegistrationRequestsService.updateRequest).toHaveBeenCalledWith('test-uuid', { approve: true });
+        });
+
+        it('should reject a registration request', async () => {
+            const rejectedResponse = { ...mockRequestResponse, status: RegistrationRequestStatus.REJECTED };
+            mockRegistrationRequestsService.updateRequest.mockResolvedValue(rejectedResponse);
+
+            const result = await controller.updateRequest('test-uuid', { approve: false });
+
+            expect(result.status).toBe(RegistrationRequestStatus.REJECTED);
+            expect(mockRegistrationRequestsService.updateRequest).toHaveBeenCalledWith('test-uuid', { approve: false });
+        });
+
+        it('should reject and blacklist a registration request', async () => {
+            const rejectedResponse = { ...mockRequestResponse, status: RegistrationRequestStatus.REJECTED };
+            mockRegistrationRequestsService.updateRequest.mockResolvedValue(rejectedResponse);
+
+            const result = await controller.updateRequest('test-uuid', { approve: false, blackListed: true });
+
+            expect(result.status).toBe(RegistrationRequestStatus.REJECTED);
+            expect(mockRegistrationRequestsService.updateRequest).toHaveBeenCalledWith('test-uuid', {
+                approve: false,
+                blackListed: true,
+            });
+        });
+    });
+
+    describe('getRequests', () => {
+        it('should return paginated registration requests', async () => {
+            const paginatedResponse = new PaginationResponseDto([mockRequestResponse], 1, 10, 1);
+            mockRegistrationRequestsService.getRequests.mockResolvedValue(paginatedResponse);
+
+            const result = await controller.getRequests({ page: 1, pageSize: 10, skipRecords: 0 });
+
+            expect(result.items).toHaveLength(1);
+            expect(result.totalItems).toBe(1);
+            expect(mockRegistrationRequestsService.getRequests).toHaveBeenCalledWith({ page: 1, pageSize: 10, skipRecords: 0 });
+        });
+
+        it('should filter by status when provided', async () => {
+            const paginatedResponse = new PaginationResponseDto([mockRequestResponse], 1, 10, 1);
+            mockRegistrationRequestsService.getRequests.mockResolvedValue(paginatedResponse);
+
+            await controller.getRequests({ page: 1, pageSize: 10, skipRecords: 0, status: RegistrationRequestStatus.PENDING });
+
+            expect(mockRegistrationRequestsService.getRequests).toHaveBeenCalledWith({
+                page: 1,
+                pageSize: 10,
+                skipRecords: 0,
+                status: RegistrationRequestStatus.PENDING,
+            });
+        });
+    });
+});
