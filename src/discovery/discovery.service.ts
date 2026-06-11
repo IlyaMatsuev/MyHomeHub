@@ -2,7 +2,9 @@ import { createSocket, RemoteInfo, Socket } from 'node:dgram';
 import { networkInterfaces } from 'node:os';
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DEFAULT_PORT, DEFAULT_SERVER_LABEL } from 'common/common.constants';
 import { ServerInfoDto } from './dto';
+import { DEFAULT_DISCOVERY_MESSAGE, DEFAULT_UDP_PORT } from './discovery.constants';
 
 @Injectable()
 export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
@@ -89,18 +91,18 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
     }
 
     private getServerLabel(): string {
-        return this.configService.get<string>('SERVER_LABEL') ?? 'SmartHome Hub';
+        return this.configService.get<string>('SERVER_LABEL') ?? DEFAULT_SERVER_LABEL;
     }
 
     private getServerPort(): number {
-        return Number(this.configService.get<string>('PORT') ?? process.env.PORT ?? 3000);
+        return Number(this.configService.get<string>('PORT') ?? process.env.PORT ?? DEFAULT_PORT);
     }
 
     private getUdpPort(): number {
-        return Number(this.configService.get<string>('DISCOVERY_UDP_PORT') ?? 5353);
+        return Number(this.configService.get<string>('DISCOVERY_UDP_PORT') ?? DEFAULT_UDP_PORT);
     }
 
     private getDiscoveryMessage(): string {
-        return this.configService.get<string>('DISCOVERY_MESSAGE') ?? 'SMARTHOME_DISCOVER';
+        return this.configService.get<string>('DISCOVERY_MESSAGE') ?? DEFAULT_DISCOVERY_MESSAGE;
     }
 }

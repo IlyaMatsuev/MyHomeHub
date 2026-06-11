@@ -9,7 +9,7 @@ import { DevicesModule } from 'devices/devices.module';
 import { ScenariosModule } from 'scenarios/scenarios.module';
 import { MqttModule } from 'mqtt/mqtt.module';
 import { ZigbeeModule } from 'zigbee/zigbee.module';
-import { DiscoveryModule } from './discovery/discovery.module';
+import { DiscoveryModule } from 'discovery/discovery.module';
 
 @Module({
     imports: [
