@@ -24,8 +24,8 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
     getServerInfo(): ServerDto {
         return {
             label: this.getServerLabel(),
-            address: this.getLocalIpAddress(),
-            port: this.getServerPort(),
+            address: this.getServerAddress(),
+            port: this.getExternalPort(),
         };
     }
 
@@ -78,6 +78,14 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
         });
     }
 
+    private getServerAddress(): string {
+        const configuredAddress = this.configService.get<string>('SERVER_ADDRESS');
+        if (configuredAddress) {
+            return configuredAddress;
+        }
+        return this.getLocalIpAddress();
+    }
+
     private getLocalIpAddress(): string {
         const interfaces = networkInterfaces();
         for (const name of Object.keys(interfaces)) {
@@ -94,7 +102,11 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
         return this.configService.get<string>('SERVER_LABEL') ?? DEFAULT_SERVER_LABEL;
     }
 
-    private getServerPort(): number {
+    private getExternalPort(): number {
+        const externalPort = this.configService.get<string>('SERVER_EXTERNAL_PORT');
+        if (externalPort) {
+            return Number(externalPort);
+        }
         return Number(this.configService.get<string>('PORT') ?? process.env.PORT ?? DEFAULT_PORT);
     }
 
