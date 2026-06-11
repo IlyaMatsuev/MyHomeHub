@@ -54,6 +54,7 @@ public/
 
 # Other
 docs/
+.npmrc
 **/Procfile
 **/LICENSE
 **/README.md
