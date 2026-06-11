@@ -26,6 +26,7 @@ module.exports = {
         '^mqtt/(.*)$': '<rootDir>/mqtt/$1',
         '^scenarios/(.*)$': '<rootDir>/scenarios/$1',
         '^scheduler/(.*)$': '<rootDir>/scheduler/$1',
+        '^discovery/(.*)$': '<rootDir>/discovery/$1',
         '^users/(.*)$': '<rootDir>/users/$1',
         '^zigbee/(.*)$': '<rootDir>/zigbee/$1',
     },
