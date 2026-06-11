@@ -70,7 +70,8 @@ AppModule
 │   └── DevicesControlModule  # Device communication providers
 ├── ScenariosModule       # Automation scenarios with triggers and actions
 │   └── SchedulerModule   # Cron-based scenario scheduling
-└── MqttModule            # MQTT broker communication
+├── MqttModule            # MQTT broker communication
+└── DiscoveryModule       # UDP broadcast discovery and GET /info endpoint
 ```
 
 ### Device Control Architecture
@@ -107,6 +108,7 @@ mqtt/*          → src/mqtt/*
 common/*        → src/common/*
 scheduler/*     → src/scheduler/*
 db/*            → src/db/*
+discovery/*     → src/discovery/*
 ```
 
 ## Environment Configuration
@@ -116,6 +118,8 @@ Environment file: `.env`
 Key variables:
 
 - `PORT`, `TZ_LATITUDE`, `TZ_LONGITUDE` - Server config
+- `SERVER_LABEL` - Human-readable server name (used in Swagger and discovery)
+- `DISCOVERY_UDP_PORT`, `DISCOVERY_MESSAGE` - UDP broadcast discovery settings
 - `JWT_SECRET`, `JWT_EXPIRATION_TIMEOUT` - Auth tokens
 - `REGISTRATION_TOTP_SECRET` - Admin TOTP for user registration
 - `USER_PASSWORD_SECRET`, `USER_PASSWORD_SALT` - Argon2 hashing
