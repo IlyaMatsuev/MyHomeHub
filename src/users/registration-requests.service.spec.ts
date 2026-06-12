@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { RegistrationRequestsService } from './registration-requests.service';
-import { RegistrationRequestStatus, RegistrationRequest } from 'auth/interfaces';
-import { REGISTRATION_REQUEST_MODEL_PROVIDER_NAME, REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT } from 'auth/auth.constants';
+import { RegistrationRequestStatus, RegistrationRequest } from 'users/interfaces';
+import { REGISTRATION_REQUEST_MODEL_PROVIDER_NAME, REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT } from 'users/users.constants';
 
 describe('RegistrationRequestsService', () => {
     let service: RegistrationRequestsService;

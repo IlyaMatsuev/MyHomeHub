@@ -3,13 +3,13 @@ import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiParam } from '@nestjs/sw
 import { ApiInternalError, ApiNotFound, ApiUnauthorized, ApiValidationError } from 'common/decorators';
 import { ApiOkPaginationResponse, PaginationResponseDto } from 'common/dto';
 import { Public } from 'auth/decorators';
-import { RegistrationRequestsService } from 'auth/registration-requests.service';
+import { RegistrationRequestsService } from 'users/registration-requests.service';
 import {
     CreateRegistrationRequestDto,
     GetRegistrationRequestsDto,
     RegistrationRequestResponseDto,
     UpdateRegistrationRequestDto,
-} from 'auth/dto';
+} from 'users/dto';
 
 @Controller('auth/register/requests')
 @ApiUnauthorized()

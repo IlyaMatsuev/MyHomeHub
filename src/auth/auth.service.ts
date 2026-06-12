@@ -4,9 +4,9 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import * as speakeasy from 'speakeasy';
 import { UsersService } from 'users/users.service';
+import { RegistrationRequestsService } from 'users/registration-requests.service';
+import { RegistrationRequestStatus } from 'users/interfaces';
 import { LoginResponseDto, RegisterResponseDto } from 'auth/dto';
-import { RegistrationRequestsService } from 'auth/registration-requests.service';
-import { RegistrationRequestStatus } from 'auth/interfaces';
 
 @Injectable()
 export class AuthService {

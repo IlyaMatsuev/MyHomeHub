@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
-import { RegistrationRequestStatus } from 'auth/interfaces';
+import { RegistrationRequestStatus } from 'users/interfaces';
 
 export const RegistrationRequestSchema = new mongoose.Schema(
     {

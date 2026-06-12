@@ -1,6 +1,6 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
-import { REGISTRATION_REQUEST_COMMENT_MAX_LENGTH } from 'auth/auth.constants';
+import { REGISTRATION_REQUEST_COMMENT_MAX_LENGTH } from 'users/users.constants';
 
 @ApiSchema({ name: 'Auth.CreateRegistrationRequest', description: 'Payload used to create a new registration request' })
 export class CreateRegistrationRequestDto {

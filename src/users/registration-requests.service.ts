@@ -1,14 +1,14 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Model, FilterQuery } from 'mongoose';
 import { PaginationResponseDto } from 'common/dto';
-import { RegistrationRequest, RegistrationRequestStatus } from 'auth/interfaces';
+import { RegistrationRequest, RegistrationRequestStatus } from 'users/interfaces';
 import {
     CreateRegistrationRequestDto,
     GetRegistrationRequestsDto,
     RegistrationRequestResponseDto,
     UpdateRegistrationRequestDto,
-} from 'auth/dto';
-import { REGISTRATION_REQUEST_MODEL_PROVIDER_NAME, REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT } from 'auth/auth.constants';
+} from 'users/dto';
+import { REGISTRATION_REQUEST_MODEL_PROVIDER_NAME, REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT } from 'users/users.constants';
 
 @Injectable()
 export class RegistrationRequestsService {

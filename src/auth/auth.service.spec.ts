@@ -4,8 +4,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { UsersService } from 'users/users.service';
-import { RegistrationRequestsService } from 'auth/registration-requests.service';
-import { RegistrationRequestStatus } from 'auth/interfaces';
+import { RegistrationRequestsService } from 'users/registration-requests.service';
+import { RegistrationRequestStatus } from 'users/interfaces';
 import * as argon2 from 'argon2';
 import * as speakeasy from 'speakeasy';
 

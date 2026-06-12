@@ -1,5 +1,5 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { RegistrationRequestStatus, RegistrationRequest } from 'auth/interfaces';
+import { RegistrationRequestStatus, RegistrationRequest } from 'users/interfaces';
 
 @ApiSchema({ name: 'Auth.RegistrationRequestResponse', description: 'The registration request details' })
 export class RegistrationRequestResponseDto {

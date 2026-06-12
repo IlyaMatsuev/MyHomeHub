@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegistrationRequestsController } from './registration-requests.controller';
-import { RegistrationRequestsService } from './registration-requests.service';
-import { RegistrationRequestStatus } from 'auth/interfaces';
+import { RegistrationRequestsService } from 'users/registration-requests.service';
+import { RegistrationRequestStatus } from 'users/interfaces';
 import { PaginationResponseDto } from 'common/dto';
-import { RegistrationRequestResponseDto } from 'auth/dto';
+import { RegistrationRequestResponseDto } from 'users/dto';
 
 describe('RegistrationRequestsController', () => {
     let controller: RegistrationRequestsController;
