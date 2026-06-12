@@ -10,6 +10,7 @@ import { ScenariosModule } from 'scenarios/scenarios.module';
 import { MqttModule } from 'mqtt/mqtt.module';
 import { ZigbeeModule } from 'zigbee/zigbee.module';
 import { DiscoveryModule } from 'discovery/discovery.module';
+import { ThrottlerModule } from 'throttler/throttler.module';
 
 @Module({
     imports: [
@@ -21,6 +22,7 @@ import { DiscoveryModule } from 'discovery/discovery.module';
         MqttModule,
         ZigbeeModule,
         DiscoveryModule,
+        ThrottlerModule,
 
         ScheduleModule.forRoot(),
         EventEmitterModule.forRoot(),

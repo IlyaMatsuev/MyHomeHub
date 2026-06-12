@@ -4,6 +4,10 @@ services:
     image: ilyamatsuev/smarthome-hub-server
     container_name: smarthome-hub
     restart: always
+    # Don't remove port mappings - "network_mode: host" works only for Linux
+    ports:
+      - "${PORT}:${PORT}"
+      - "${UDP_PORT}:${UDP_PORT}"
     volumes:
       - ./.env:/usr/src/app/.env
       - ./public:/usr/src/app/public
@@ -12,6 +16,8 @@ services:
     depends_on:
       - mongodb
       - mqtt-broker
+      - redis
+    # Host mode is required to allow proper UDP packets exchange
     network_mode: host
 
   mongodb:
@@ -26,6 +32,15 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
       - ./data/${NODE_ENV:-local}/:/data/db
+    networks:
+      - smarthome-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT}:6379"
     networks:
       - smarthome-network
 
