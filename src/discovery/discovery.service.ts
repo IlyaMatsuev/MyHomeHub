@@ -40,11 +40,12 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
             this.socket.close();
         });
 
-        this.socket.on('message', (msg: Buffer, rinfo: RemoteInfo) => {
+        this.socket.on('message', (msg: Buffer, remoteInfo: RemoteInfo) => {
             const message = msg.toString().trim();
+            this.logger.debug(`Received discovery message "${message} from "${remoteInfo.address}:${remoteInfo.port}"`);
             if (message === discoveryMessage) {
-                this.logger.debug(`Discovery request from ${rinfo.address}:${rinfo.port}`);
-                this.sendDiscoveryResponse(rinfo);
+                this.logger.debug(`Discovery request from ${remoteInfo.address}:${remoteInfo.port}`);
+                this.sendDiscoveryResponse(remoteInfo);
             }
         });
 
@@ -65,15 +66,15 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
-    private sendDiscoveryResponse(rinfo: RemoteInfo): void {
+    private sendDiscoveryResponse(remoteInfo: RemoteInfo): void {
         const response = JSON.stringify(this.getServerInfo());
         const responseBuffer = Buffer.from(response);
 
-        this.socket.send(responseBuffer, 0, responseBuffer.length, rinfo.port, rinfo.address, err => {
+        this.socket.send(responseBuffer, 0, responseBuffer.length, remoteInfo.port, remoteInfo.address, err => {
             if (err) {
                 this.logger.error(`Failed to send discovery response: ${err.message}`);
             } else {
-                this.logger.debug(`Discovery response sent to ${rinfo.address}:${rinfo.port}`);
+                this.logger.debug(`Discovery response sent to ${remoteInfo.address}:${remoteInfo.port}`);
             }
         });
     }
