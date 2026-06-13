@@ -25,7 +25,7 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
         return {
             label: this.getServerLabel(),
             address: this.getServerAddress(),
-            port: this.getExternalPort(),
+            port: this.getServerPort(),
         };
     }
 
@@ -79,7 +79,7 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
     }
 
     private getServerAddress(): string {
-        const configuredAddress = this.configService.get<string>('SERVER_ADDRESS');
+        const configuredAddress = this.configService.get<string>('SERVER_EXTERNAL_ADDRESS');
         if (configuredAddress) {
             return configuredAddress;
         }
@@ -102,7 +102,7 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
         return this.configService.get<string>('SERVER_LABEL') ?? DEFAULT_SERVER_LABEL;
     }
 
-    private getExternalPort(): number {
+    private getServerPort(): number {
         const externalPort = this.configService.get<string>('SERVER_EXTERNAL_PORT');
         if (externalPort) {
             return Number(externalPort);

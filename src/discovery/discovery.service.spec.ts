@@ -101,10 +101,10 @@ describe('DiscoveryService', () => {
             expect(result.port).toBe(3000);
         });
 
-        it('should use SERVER_ADDRESS when configured', () => {
+        it('should use SERVER_EXTERNAL_ADDRESS when configured', () => {
             mockConfigService.get.mockImplementation((key: string) => {
                 const config: Record<string, string> = {
-                    SERVER_ADDRESS: 'smarthome.local',
+                    SERVER_EXTERNAL_ADDRESS: 'smarthome.local',
                     PORT: '3000',
                 };
                 return config[key];
@@ -143,7 +143,7 @@ describe('DiscoveryService', () => {
             expect(result.port).toBe(8080);
         });
 
-        it('should fall back to auto-detected IP when SERVER_ADDRESS not configured', () => {
+        it('should fall back to auto-detected IP when SERVER_EXTERNAL_ADDRESS not configured', () => {
             mockConfigService.get.mockImplementation((key: string) => {
                 const config: Record<string, string> = {
                     PORT: '3000',
