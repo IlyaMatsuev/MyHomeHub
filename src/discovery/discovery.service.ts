@@ -79,11 +79,7 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
     }
 
     private getServerAddress(): string {
-        const configuredAddress = this.configService.get<string>('SERVER_EXTERNAL_ADDRESS');
-        if (configuredAddress) {
-            return configuredAddress;
-        }
-        return this.getLocalIpAddress();
+        return this.configService.get<string>('SERVER_EXTERNAL_ADDRESS') || this.getLocalIpAddress();
     }
 
     private getLocalIpAddress(): string {
@@ -107,7 +103,7 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
         if (externalPort) {
             return Number(externalPort);
         }
-        return Number(this.configService.get<string>('PORT') ?? process.env.PORT ?? DEFAULT_PORT);
+        return Number(this.configService.get<string>('PORT') ?? DEFAULT_PORT);
     }
 
     private getUdpPort(): number {
