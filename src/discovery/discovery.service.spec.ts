@@ -101,6 +101,61 @@ describe('DiscoveryService', () => {
             expect(result.port).toBe(3000);
         });
 
+        it('should use SERVER_EXTERNAL_ADDRESS when configured', () => {
+            mockConfigService.get.mockImplementation((key: string) => {
+                const config: Record<string, string> = {
+                    SERVER_EXTERNAL_ADDRESS: 'smarthome.local',
+                    PORT: '3000',
+                };
+                return config[key];
+            });
+
+            const result = service.getServerInfo();
+
+            expect(result.address).toBe('smarthome.local');
+        });
+
+        it('should use SERVER_EXTERNAL_PORT when configured', () => {
+            mockConfigService.get.mockImplementation((key: string) => {
+                const config: Record<string, string> = {
+                    SERVER_EXTERNAL_PORT: '443',
+                    PORT: '3000',
+                };
+                return config[key];
+            });
+
+            const result = service.getServerInfo();
+
+            expect(result.port).toBe(443);
+        });
+
+        it('should prefer SERVER_EXTERNAL_PORT over PORT', () => {
+            mockConfigService.get.mockImplementation((key: string) => {
+                const config: Record<string, string> = {
+                    SERVER_EXTERNAL_PORT: '8080',
+                    PORT: '3000',
+                };
+                return config[key];
+            });
+
+            const result = service.getServerInfo();
+
+            expect(result.port).toBe(8080);
+        });
+
+        it('should fall back to auto-detected IP when SERVER_EXTERNAL_ADDRESS not configured', () => {
+            mockConfigService.get.mockImplementation((key: string) => {
+                const config: Record<string, string> = {
+                    PORT: '3000',
+                };
+                return config[key];
+            });
+
+            const result = service.getServerInfo();
+
+            expect(result.address).toBe('192.168.1.100');
+        });
+
         it('should return 127.0.0.1 when no external network interface found', () => {
             (os.networkInterfaces as jest.Mock).mockReturnValue({
                 lo: [{ family: 'IPv4', address: '127.0.0.1', internal: true }],
