@@ -4,9 +4,6 @@ services:
     image: ilyamatsuev/smarthome-hub-server
     container_name: smarthome-hub
     restart: always
-    ports:
-      - "${PORT}:${PORT}"
-      - "${UDP_PORT}:${UDP_PORT}/udp"
     volumes:
       - ./.env:/usr/src/app/.env
       - ./public:/usr/src/app/public
@@ -15,8 +12,7 @@ services:
     depends_on:
       - mongodb
       - mqtt-broker
-    networks:
-      - smarthome-network
+    network_mode: host
 
   mongodb:
     image: mongo:7.0.16-jammy

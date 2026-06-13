@@ -24,7 +24,7 @@ const MQTT_PWFILE = path.join(ROOT, 'configs/mqtt/pwfile');
 const CREATE_MQTT_USER_NPM_SCRIPT = 'mqtt:user:new';
 
 const REQUIRED_VARS = [
-    'MQTT_DOMAIN',
+    'Z2M_MQTT_DOMAIN',
     'MQTT_PORT',
     'Z2M_MQTT_USERNAME',
     'Z2M_MQTT_PASSWORD',
@@ -81,7 +81,7 @@ function main() {
     }
 
     const substitutions = {
-        MQTT_SERVER_URL: yamlString(`mqtt://${resolved.MQTT_DOMAIN}:${resolved.MQTT_PORT}`),
+        MQTT_SERVER_URL: yamlString(`mqtt://${resolved.Z2M_MQTT_DOMAIN}:${resolved.MQTT_PORT}`),
     };
     for (const name of REQUIRED_VARS) {
         substitutions[name] = STRING_VARS.has(name) ? yamlString(resolved[name]) : resolved[name];
