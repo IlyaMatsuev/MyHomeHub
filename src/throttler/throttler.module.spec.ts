@@ -30,11 +30,11 @@ describe('ThrottlerModule', () => {
                                 THROTTLE_ENABLED: 'true',
                                 REDIS_DOMAIN: 'localhost',
                                 REDIS_PORT: '6379',
-                                THROTTLE_SHORT_TTL: '1000',
+                                THROTTLE_SHORT_TTL_SEC: '1000',
                                 THROTTLE_SHORT_LIMIT: '3',
-                                THROTTLE_MEDIUM_TTL: '10000',
+                                THROTTLE_MEDIUM_TTL_SEC: '10000',
                                 THROTTLE_MEDIUM_LIMIT: '20',
-                                THROTTLE_LONG_TTL: '60000',
+                                THROTTLE_LONG_TTL_SEC: '60000',
                                 THROTTLE_LONG_LIMIT: '100',
                             }),
                         ],
@@ -51,7 +51,6 @@ describe('ThrottlerModule', () => {
         it('should compile the module', () => {
             expect(module).toBeDefined();
         });
-
     });
 
     describe('when throttle is disabled', () => {

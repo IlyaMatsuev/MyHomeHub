@@ -37,12 +37,12 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: redis
+    container_name: smarthome-redis
     restart: unless-stopped
+    volumes:
+      - ./data/redis:/data
     ports:
       - "${REDIS_PORT}:6379"
-    networks:
-      - smarthome-network
 
   mqtt-broker:
     image: eclipse-mosquitto
