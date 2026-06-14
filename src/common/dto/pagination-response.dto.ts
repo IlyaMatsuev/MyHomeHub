@@ -1,5 +1,4 @@
-import { applyDecorators, Type } from '@nestjs/common';
-import { ApiExtraModels, ApiOkResponse, ApiProperty, ApiSchema, getSchemaPath } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, MIN_PAGE, MIN_PAGE_SIZE } from 'common/common.constants';
 
 @ApiSchema({ name: 'Common.PaginationResponse', description: 'Generic paginated response' })
@@ -33,25 +32,3 @@ export class PaginationResponseDto<T> {
         this.totalPages = pageSize === 0 ? MIN_PAGE : Math.ceil(this.totalItems / pageSize);
     }
 }
-
-export const ApiOkPaginationResponse = <TModel extends Type<unknown>>(model: TModel, description?: string) => {
-    return applyDecorators(
-        ApiExtraModels(PaginationResponseDto, model),
-        ApiOkResponse({
-            description: description ?? `Paginated list of ${model.name}`,
-            schema: {
-                allOf: [
-                    { $ref: getSchemaPath(PaginationResponseDto) },
-                    {
-                        properties: {
-                            items: {
-                                type: 'array',
-                                items: { $ref: getSchemaPath(model) },
-                            },
-                        },
-                    },
-                ],
-            },
-        }),
-    );
-};

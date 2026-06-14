@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import { ApiInternalError, ApiNotFound, ApiUnauthorized, ApiValidationError } from 'common/decorators';
-import { ApiOkPaginationResponse, PaginationResponseDto } from 'common/dto';
+import { ApiOkPaginationResponse, ApiInternalError, ApiNotFound, ApiUnauthorized, ApiValidationError } from 'common/decorators';
+import { PaginationResponseDto } from 'common/dto';
 import { Public } from 'auth/decorators';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
 import {
