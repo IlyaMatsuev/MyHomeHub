@@ -1,7 +1,14 @@
-import { Controller, Body, Param, Query, Get, Delete, Post, Put } from '@nestjs/common';
+import { Controller, Body, Query, Get, Delete, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
-import { ApiInternalError, ApiNotFound, ApiUnauthorized, ApiValidationError } from 'common/decorators';
-import { ApiOkPaginationResponse, PaginationResponseDto } from 'common/dto';
+import {
+    ApiOkPaginationResponse,
+    ApiInternalError,
+    ApiNotFound,
+    ApiUnauthorized,
+    ApiValidationError,
+    ExternalIdParam,
+} from 'common/decorators';
+import { PaginationResponseDto } from 'common/dto';
 import { DevicesService } from 'devices/devices.service';
 import {
     CreateDeviceDto,
@@ -50,7 +57,7 @@ export class DevicesController {
     @ApiParam({ name: 'externalId', description: 'External ID of the device to find', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Get a specific device by the provided external ID' })
     @ApiOkResponse({ type: DeviceResponseDto })
-    async getDevice(@Param('externalId') externalId: string): Promise<DeviceResponseDto> {
+    async getDevice(@ExternalIdParam() externalId: string): Promise<DeviceResponseDto> {
         return this.deviceService.getDeviceByExternalId(externalId);
     }
 
@@ -67,7 +74,7 @@ export class DevicesController {
     @ApiOperation({ summary: 'Update an existing device by the provided external ID' })
     @ApiOkResponse({ type: DeviceResponseDto })
     @ApiValidationError()
-    async updateDevice(@Param('externalId') externalId: string, @Body() updateDeviceDto: UpdateDeviceDto): Promise<DeviceResponseDto> {
+    async updateDevice(@ExternalIdParam() externalId: string, @Body() updateDeviceDto: UpdateDeviceDto): Promise<DeviceResponseDto> {
         return this.deviceService.updateDevice(externalId, updateDeviceDto);
     }
 
@@ -82,7 +89,7 @@ export class DevicesController {
     })
     @ApiOkResponse({ type: DeviceResponseDto })
     @ApiValidationError()
-    async sendCommand(@Param('externalId') externalId: string, @Body() commandDto: DevicePayloadDto): Promise<DeviceResponseDto> {
+    async sendCommand(@ExternalIdParam() externalId: string, @Body() commandDto: DevicePayloadDto): Promise<DeviceResponseDto> {
         return this.deviceService.sendCommand(externalId, commandDto);
     }
 
@@ -91,7 +98,7 @@ export class DevicesController {
     @ApiOperation({ summary: 'Delete an existing device by the provided external ID' })
     @ApiOkResponse({ type: DeviceResponseDto })
     @ApiValidationError()
-    async removeDevice(@Param('externalId') externalId: string): Promise<DeviceResponseDto> {
+    async removeDevice(@ExternalIdParam() externalId: string): Promise<DeviceResponseDto> {
         return this.deviceService.removeDevice(externalId);
     }
 }

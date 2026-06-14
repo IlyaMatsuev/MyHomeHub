@@ -49,7 +49,7 @@ async function bootstrap() {
     setupSwagger(app, config);
 
     await app.startAllMicroservices();
-    await app.listen(config.get<string>('PORT') ?? DEFAULT_PORT);
+    await app.listen(config.get<string>('PORT') ?? DEFAULT_PORT, '0.0.0.0');
 }
 
 function setupLogger(config: ConfigService): LoggerService {

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
+import { FieldValidationException } from 'common/exceptions';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DevicesService } from './devices.service';
 import { DEVICE_MODEL_PROVIDER_NAME } from './devices.constants';
@@ -387,7 +388,7 @@ describe('DevicesService', () => {
             expect(result.name).toBe('New Device');
         });
 
-        it('should throw BadRequestException when device with same name exists', async () => {
+        it('should throw FieldValidationException when device with same name exists', async () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockDevice),
             });
@@ -398,11 +399,16 @@ describe('DevicesService', () => {
                 brand: DeviceBrand.Tuya,
             } as CreateDeviceDto;
 
-            await expect(service.addDevice(createDto)).rejects.toThrow(BadRequestException);
-            await expect(service.addDevice(createDto)).rejects.toThrow("Device with the same name ('Test Device') already exists");
+            await expect(service.addDevice(createDto)).rejects.toThrow(FieldValidationException);
+            await expect(service.addDevice(createDto)).rejects.toMatchObject({
+                response: {
+                    messages: ["Device with the same name ('Test Device') already exists"],
+                    details: { errors: [{ message: "Device with the same name ('Test Device') already exists", path: 'name' }] },
+                },
+            });
         });
 
-        it('should throw BadRequestException when zigbeeIeeeAddress is not currently pairable', async () => {
+        it('should throw FieldValidationException when zigbeeIeeeAddress is not currently pairable', async () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(null),
             });
@@ -416,10 +422,15 @@ describe('DevicesService', () => {
                 zigbeeFriendlyName: 'living_room',
             } as CreateDeviceDto;
 
-            await expect(service.addDevice(createDto)).rejects.toThrow(BadRequestException);
-            await expect(service.addDevice(createDto)).rejects.toThrow(
-                "Device with the provided zigbee Ieee ('0xnotpairable') is not discoverable. Make sure it's pairable first",
-            );
+            const expectedMessage =
+                "Device with the provided zigbee Ieee ('0xnotpairable') is not discoverable. Make sure it's pairable first";
+            await expect(service.addDevice(createDto)).rejects.toThrow(FieldValidationException);
+            await expect(service.addDevice(createDto)).rejects.toMatchObject({
+                response: {
+                    messages: [expectedMessage],
+                    details: { errors: [{ message: expectedMessage, path: 'zigbeeIeeeAddress' }] },
+                },
+            });
             expect(mockZigbeeService.renameDevice).not.toHaveBeenCalled();
         });
 

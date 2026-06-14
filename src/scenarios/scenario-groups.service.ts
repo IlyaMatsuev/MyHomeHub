@@ -4,6 +4,7 @@ import { Scenario, ScenarioGroup } from 'scenarios/interfaces';
 import { GetScenarioGroupsDto } from 'scenarios/dto';
 import { SCENARIO_GROUP_MODEL_PROVIDER_NAME, SCENARIO_MODEL_PROVIDER_NAME } from 'scenarios/scenarios.constants';
 import { PaginationResponseDto } from 'common/dto';
+import { FieldValidationException } from 'common/exceptions';
 
 @Injectable()
 export class ScenarioGroupsService {
@@ -38,7 +39,7 @@ export class ScenarioGroupsService {
     async createGroup(name: string): Promise<ScenarioGroup> {
         const group = await this.getGroupByName(name, { strict: false });
         if (group) {
-            throw new BadRequestException(`Scenario group '${name}' already exists`);
+            throw new FieldValidationException(`Scenario group '${name}' already exists`, 'name');
         }
         return this.upsertGroup(name);
     }

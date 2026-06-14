@@ -7,8 +7,269 @@
   },
   "item": [
     {
-      "name": "Auth",
+      "name": "Auth/Users",
       "item": [
+        {
+          "name": "Registration Requests",
+          "item": [
+            {
+              "name": "Get All Requests",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    const allRequests = pm.response.json().items;",
+                      "    if (allRequests.length) {",
+                      "        const lastQueriedRequest = allRequests.pop();",
+                      "        pm.environment.set('lastQueriedRegistrationRequestId', lastQueriedRequest.externalId);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-host",
+                    "value": "{{proxyHubHostname}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Proxy-Authorization",
+                    "value": "{{proxyAccessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register/requests",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "register", "requests"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "disabled": true
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": "10",
+                      "disabled": true
+                    },
+                    {
+                      "key": "status",
+                      "value": "pending",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Request By External Id",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "x-host",
+                    "value": "{{proxyHubHostname}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Proxy-Authorization",
+                    "value": "{{proxyAccessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register/requests/:externalId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "register", "requests", ":externalId"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "disabled": true
+                    },
+                    {
+                      "key": "pageSize",
+                      "value": "10",
+                      "disabled": true
+                    },
+                    {
+                      "key": "status",
+                      "value": "pending",
+                      "disabled": true
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "externalId",
+                      "value": "{{lastQueriedRegistrationRequestId}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Request",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    pm.environment.set('lastQueriedRequestId', pm.response.json().externalId);",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "x-host",
+                    "value": "{{proxyHubHostname}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Proxy-Authorization",
+                    "value": "{{proxyAccessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"test@test.com\",\n    \"comment\": \"Please approve\"\n}\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register/requests",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "register", "requests"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Request",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    pm.environment.set('lastQueriedRegistrationRequestId', pm.response.json().externalId);",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "x-host",
+                    "value": "{{proxyHubHostname}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Proxy-Authorization",
+                    "value": "{{proxyAccessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"approve\": true,\n    \"blackListed\": false\n}\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register/requests/:externalId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "register", "requests", ":externalId"],
+                  "variable": [
+                    {
+                      "key": "externalId",
+                      "value": "{{lastQueriedRegistrationRequestId}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
         {
           "name": "Login",
           "event": [
@@ -115,6 +376,55 @@
               "raw": "{{baseUrl}}/auth/register",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "register"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Discovery",
+      "item": [
+        {
+          "name": "Server Info",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["info"]
             }
           },
           "response": []
@@ -329,7 +639,7 @@
               "script": {
                 "exec": [
                   "if (pm.response.code === 200) {",
-                  "    const allDevices = pm.response.json().devices;",
+                  "    const allDevices = pm.response.json().items;",
                   "    if (allDevices.length) {",
                   "        const lastQueriedDevice = allDevices.pop();",
                   "        pm.environment.set('lastQueriedDeviceId', lastQueriedDevice.externalId);",
@@ -743,7 +1053,7 @@
               "script": {
                 "exec": [
                   "if (pm.response.code === 200) {",
-                  "    const allScenarios = pm.response.json().scenarios;",
+                  "    const allScenarios = pm.response.json().items;",
                   "    if (allScenarios.length) {",
                   "        const lastQueriedScenario = allScenarios.pop();",
                   "        pm.environment.set('lastQueriedScenarioId', lastQueriedScenario.externalId);",
@@ -790,7 +1100,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/scenarios?pageSize=20",
+              "raw": "{{baseUrl}}/scenarios?pageSize=20&includeInactive=true",
               "host": ["{{baseUrl}}"],
               "path": ["scenarios"],
               "query": [
@@ -805,8 +1115,7 @@
                 },
                 {
                   "key": "includeInactive",
-                  "value": "false",
-                  "disabled": true
+                  "value": "true"
                 },
                 {
                   "key": "group",
@@ -936,7 +1245,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Main ceiling light On\",\n    \"description\": \"Switches on the main ceiling light on\",\n    \"group\": \"living_room\",\n    \"active\": true,\n    \"trigger\": {\n        \"sources\": [\n            {\n                \"type\": \"device\",\n                \"device\": {\n                    \"externalId\": \"7662737f-400b-48c2-9719-45a4a14bad9c\",\n                    \"commands\": {\n                        \"are\": {\n                            \"action\": \"on_press\"\n                        }\n                    }\n                }\n            }\n        ],\n        \"logic\": \"1\"\n    },\n    \"devices\": [\n        {\n            \"externalId\": \"38a78ca6-dd90-43aa-a73a-9ad2edc6806a\",\n            \"set\": {\n                \"controls\": {\n                    \"on\": true\n                }\n            }\n        }\n    ]\n}",
+              "raw": "{\n    \"name\": \"Main ceiling light On\",\n    \"description\": \"Switches on the main ceiling light on\",\n    \"group\": \"living_room\",\n    \"active\": false,\n    \"trigger\": {\n        \"sources\": [\n            {\n                \"type\": \"device\",\n                \"device\": {\n                    \"externalId\": \"7662737f-400b-48c2-9719-45a4a14bad9c\",\n                    \"commands\": {\n                        \"are\": {\n                            \"action\": \"on_press\"\n                        }\n                    }\n                }\n            }\n        ],\n        \"logic\": \"1\"\n    },\n    \"devices\": [\n        {\n            \"externalId\": \"38a78ca6-dd90-43aa-a73a-9ad2edc6806a\",\n            \"set\": {\n                \"controls\": {\n                    \"on\": true\n                }\n            }\n        }\n    ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1459,7 +1768,8 @@
                   "script": {
                     "exec": [""],
                     "type": "text/javascript",
-                    "packages": {}
+                    "packages": {},
+                    "requests": {}
                   }
                 },
                 {
@@ -1467,7 +1777,8 @@
                   "script": {
                     "exec": [""],
                     "type": "text/javascript",
-                    "packages": {}
+                    "packages": {},
+                    "requests": {}
                   }
                 }
               ],
@@ -1487,8 +1798,9 @@
                   }
                 },
                 "url": {
-                  "raw": "{{shellyDeviceAddress1}}/rpc",
-                  "host": ["{{shellyDeviceAddress1}}"],
+                  "raw": "http://192.168.0.11/rpc",
+                  "protocol": "http",
+                  "host": ["192", "168", "0", "11"],
                   "path": ["rpc"]
                 }
               },
@@ -1502,7 +1814,8 @@
                   "script": {
                     "exec": [""],
                     "type": "text/javascript",
-                    "packages": {}
+                    "packages": {},
+                    "requests": {}
                   }
                 },
                 {
@@ -1510,7 +1823,8 @@
                   "script": {
                     "exec": [""],
                     "type": "text/javascript",
-                    "packages": {}
+                    "packages": {},
+                    "requests": {}
                   }
                 }
               ],
@@ -1522,7 +1836,7 @@
                 "header": [],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"id\": 1,\n    \"method\": \"Switch.Set\",\n    \"params\": {\n        \"id\": 0,\n        \"on\": true\n    }\n}   ",
+                  "raw": "{\n    \"id\": 1,\n    \"method\": \"Switch.Set\",\n    \"params\": {\n        \"id\": 0,\n        \"on\": true,\n        \"toggle_after\": 15\n    }\n}   ",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1530,8 +1844,9 @@
                   }
                 },
                 "url": {
-                  "raw": "{{shellyDeviceAddress1}}/rpc",
-                  "host": ["{{shellyDeviceAddress1}}"],
+                  "raw": "http://192.168.0.11/rpc",
+                  "protocol": "http",
+                  "host": ["192", "168", "0", "11"],
                   "path": ["rpc"]
                 }
               },
@@ -1545,7 +1860,8 @@
                   "script": {
                     "exec": [""],
                     "type": "text/javascript",
-                    "packages": {}
+                    "packages": {},
+                    "requests": {}
                   }
                 },
                 {
@@ -1553,7 +1869,8 @@
                   "script": {
                     "exec": [""],
                     "type": "text/javascript",
-                    "packages": {}
+                    "packages": {},
+                    "requests": {}
                   }
                 }
               ],
@@ -1573,8 +1890,55 @@
                   }
                 },
                 "url": {
-                  "raw": "{{shellyDeviceAddress1}}/rpc",
-                  "host": ["{{shellyDeviceAddress1}}"],
+                  "raw": "http://192.168.0.11/rpc",
+                  "protocol": "http",
+                  "host": ["192", "168", "0", "11"],
+                  "path": ["rpc"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Set Config",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"id\": 1,\n    \"method\": \"Sys.SetConfig\",\n    \"config\": {\n        \n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://192.168.0.11/rpc",
+                  "protocol": "http",
+                  "host": ["192", "168", "0", "11"],
                   "path": ["rpc"]
                 }
               },
