@@ -4,4 +4,7 @@ import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 export class LoginResponseDto {
     @ApiProperty({ description: 'The user JWT token used for authentication' })
     accessToken: string;
+
+    @ApiProperty({ description: 'The token used to obtain a new access token without providing the credentials again' })
+    refreshToken: string;
 }

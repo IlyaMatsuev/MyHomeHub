@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { FieldValidationException } from 'common/exceptions';
-import { User } from 'users/interfaces';
+import { User, UserRole } from 'users/interfaces';
 import { USER_MODEL_PROVIDER_NAME } from 'users/users.constants';
 
 @Injectable()
@@ -15,11 +15,11 @@ export class UsersService {
         return this.userModel.findOne({ email }).exec();
     }
 
-    async create(email: string, passwordHash: string): Promise<User> {
+    async create(email: string, passwordHash: string, role: UserRole): Promise<User> {
         const user = await this.findByEmail(email);
         if (user) {
             throw new FieldValidationException('User with the provided email already exists', 'email');
         }
-        return new this.userModel({ email, password: passwordHash }).save({ validateBeforeSave: true });
+        return new this.userModel({ email, password: passwordHash, role }).save({ validateBeforeSave: true });
     }
 }

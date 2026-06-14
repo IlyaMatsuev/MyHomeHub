@@ -1,6 +1,7 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 import { IsBooleanValue } from 'common/decorators';
+import { UserRole } from 'users/interfaces';
 import { REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED } from 'users/users.constants';
 
 @ApiSchema({ name: 'Auth.UpdateRegistrationRequest', description: 'Payload used to approve or reject a registration request' })
@@ -23,4 +24,14 @@ export class UpdateRegistrationRequestDto {
         example: REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED,
     })
     blackListed?: boolean = REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED;
+
+    @IsOptional()
+    @IsEnum(UserRole)
+    @ApiProperty({
+        required: false,
+        enum: UserRole,
+        description: 'The role to assign to the user once the registration request is approved',
+        example: UserRole.Resident,
+    })
+    role?: UserRole;
 }

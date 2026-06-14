@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { FieldValidationException } from 'common/exceptions';
 import { UsersService } from './users.service';
 import { USER_MODEL_PROVIDER_NAME } from './users.constants';
-import { User } from './interfaces';
+import { User, UserRole } from './interfaces';
 
 describe('UsersService', () => {
     let service: UsersService;
@@ -16,6 +16,7 @@ describe('UsersService', () => {
         id: 'user-id-123',
         email: 'test@example.com',
         password: 'hashed-password',
+        role: UserRole.Guest,
     };
 
     beforeEach(async () => {
@@ -77,10 +78,11 @@ describe('UsersService', () => {
                 exec: jest.fn().mockResolvedValue(null),
             });
 
-            const result = await service.create('new@example.com', 'hashed-password');
+            const result = await service.create('new@example.com', 'hashed-password', UserRole.Resident);
 
             expect(result.email).toBe('new@example.com');
             expect(result.password).toBe('hashed-password');
+            expect(result.role).toBe(UserRole.Resident);
         });
 
         it('should throw FieldValidationException when user with email already exists', async () => {
@@ -88,8 +90,8 @@ describe('UsersService', () => {
                 exec: jest.fn().mockResolvedValue(mockUser),
             });
 
-            await expect(service.create('test@example.com', 'hashed-password')).rejects.toThrow(FieldValidationException);
-            await expect(service.create('test@example.com', 'hashed-password')).rejects.toMatchObject({
+            await expect(service.create('test@example.com', 'hashed-password', UserRole.Guest)).rejects.toThrow(FieldValidationException);
+            await expect(service.create('test@example.com', 'hashed-password', UserRole.Guest)).rejects.toMatchObject({
                 response: {
                     messages: ['User with the provided email already exists'],
                     details: { errors: [{ message: 'User with the provided email already exists', path: 'email' }] },

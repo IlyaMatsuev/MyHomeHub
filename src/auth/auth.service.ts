@@ -5,8 +5,10 @@ import * as argon2 from 'argon2';
 import * as speakeasy from 'speakeasy';
 import { UsersService } from 'users/users.service';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
-import { RegistrationRequestStatus } from 'users/interfaces';
+import { RegistrationRequestStatus, User } from 'users/interfaces';
+import { TOTP_REGISTRATION_ROLE } from 'users/users.constants';
 import { LoginResponseDto, RegisterResponseDto } from 'auth/dto';
+import { JwtPayload } from 'auth/interfaces';
 import { FieldValidationException } from 'common/exceptions';
 
 @Injectable()
@@ -20,15 +22,35 @@ export class AuthService {
         private readonly registrationRequestsService: RegistrationRequestsService,
     ) {}
 
-    async login(email: string, password: string): Promise<LoginResponseDto> {
+    async login(email?: string, password?: string, refreshToken?: string): Promise<LoginResponseDto> {
+        if (refreshToken) {
+            return this.refreshTokens(refreshToken);
+        }
+
         const user = await this.usersService.findByEmail(email);
         if (!user || !(await this.verifyUserPasswordHash(user.password, password))) {
             throw new UnauthorizedException();
         }
 
-        const jwtSecret = this.configService.get<string>('JWT_SECRET');
-        const accessToken = await this.jwtService.signAsync({ sub: user.id, email }, { secret: jwtSecret });
-        return { accessToken };
+        return this.generateTokens(user);
+    }
+
+    async refreshTokens(refreshToken: string): Promise<LoginResponseDto> {
+        let payload: JwtPayload;
+        try {
+            payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
+                secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+            });
+        } catch {
+            throw new UnauthorizedException();
+        }
+
+        const user = await this.usersService.findByEmail(payload.email);
+        if (!user) {
+            throw new UnauthorizedException();
+        }
+
+        return this.generateTokens(user);
     }
 
     async register(email: string, password: string, totp?: string): Promise<RegisterResponseDto> {
@@ -37,7 +59,7 @@ export class AuthService {
                 this.logger.debug(`Registration one-time password is not valid`);
                 throw new ForbiddenException();
             }
-            const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password));
+            const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password), TOTP_REGISTRATION_ROLE);
             await this.registrationRequestsService.createAutoApprovedRequest(email);
             return { email: newUser.email };
         }
@@ -61,7 +83,7 @@ export class AuthService {
             throw new FieldValidationException('Your registration request has been rejected.', 'status');
         }
 
-        const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password));
+        const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password), registrationRequest.role);
         return { email: newUser.email };
     }
 
@@ -78,5 +100,15 @@ export class AuthService {
     verifyUserPasswordHash(hash: string, password: string): Promise<boolean> {
         const passwordHashSecret = this.configService.get<string>('USER_PASSWORD_SECRET');
         return argon2.verify(hash, password, { secret: Buffer.from(passwordHashSecret) });
+    }
+
+    private async generateTokens(user: User): Promise<LoginResponseDto> {
+        const payload: JwtPayload = { sub: user.id, email: user.email, role: user.role };
+        const accessToken = await this.jwtService.signAsync(payload, { secret: this.configService.get<string>('JWT_SECRET') });
+        const refreshToken = await this.jwtService.signAsync(payload, {
+            secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+            expiresIn: Number(this.configService.get('JWT_REFRESH_EXPIRATION_TIMEOUT')),
+        });
+        return { accessToken, refreshToken };
     }
 }

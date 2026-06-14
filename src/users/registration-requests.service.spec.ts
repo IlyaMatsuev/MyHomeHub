@@ -2,8 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { FieldValidationException } from 'common/exceptions';
 import { RegistrationRequestsService } from './registration-requests.service';
-import { RegistrationRequestStatus, RegistrationRequest } from 'users/interfaces';
-import { REGISTRATION_REQUEST_MODEL_PROVIDER_NAME, REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT } from 'users/users.constants';
+import { RegistrationRequestStatus, RegistrationRequest, UserRole } from 'users/interfaces';
+import {
+    REGISTRATION_REQUEST_DEFAULT_ROLE,
+    REGISTRATION_REQUEST_MODEL_PROVIDER_NAME,
+    REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
+    TOTP_REGISTRATION_ROLE,
+} from 'users/users.constants';
 
 describe('RegistrationRequestsService', () => {
     let service: RegistrationRequestsService;
@@ -18,6 +23,7 @@ describe('RegistrationRequestsService', () => {
         externalId: 'test-uuid',
         requesterEmail: 'test@example.com',
         status: RegistrationRequestStatus.Pending,
+        role: UserRole.Guest,
         requesterComment: 'Test comment',
         blackListed: false,
         createdAt: new Date('2026-01-01'),
@@ -147,6 +153,20 @@ describe('RegistrationRequestsService', () => {
             expect(mockSaveFn).toHaveBeenCalled();
         });
 
+        it('should default the role to guest for a new request', async () => {
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+            mockSaveFn.mockImplementation(function (this: Record<string, unknown>) {
+                return Promise.resolve(createMockRequest({ role: this.role }));
+            });
+
+            const result = await service.createRequest({ email: 'new@example.com' });
+
+            expect(result.role).toBe(REGISTRATION_REQUEST_DEFAULT_ROLE);
+            expect(REGISTRATION_REQUEST_DEFAULT_ROLE).toBe(UserRole.Guest);
+        });
+
         it('should throw FieldValidationException when pending request exists', async () => {
             const pendingRequest = createMockRequest({ status: RegistrationRequestStatus.Pending });
             mockRegistrationRequestModel.findOne.mockReturnValue({
@@ -250,6 +270,21 @@ describe('RegistrationRequestsService', () => {
             expect(result.blackListed).toBe(true);
         });
 
+        it('should assign the requested role when approving', async () => {
+            const mockRequest = createMockRequest();
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockRequest),
+            });
+            mockSaveFn.mockImplementation(function (this: Record<string, unknown>) {
+                return Promise.resolve(createMockRequest({ status: this.status, role: this.role }));
+            });
+
+            const result = await service.updateRequest('test-uuid', { approve: true, role: UserRole.Resident });
+
+            expect(result.status).toBe(RegistrationRequestStatus.Approved);
+            expect(result.role).toBe(UserRole.Resident);
+        });
+
         it('should throw FieldValidationException when trying to approve and blacklist', async () => {
             await expect(service.updateRequest('test-uuid', { approve: true, blackListed: true })).rejects.toThrow(
                 FieldValidationException,
@@ -288,22 +323,39 @@ describe('RegistrationRequestsService', () => {
             expect(result.requesterComment).toBe(REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT);
         });
 
-        it('should update existing request to approved', async () => {
+        it('should assign the admin role to the auto-approved request', async () => {
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+            mockSaveFn.mockImplementation(function (this: Record<string, unknown>) {
+                return Promise.resolve(createMockRequest({ status: this.status, role: this.role }));
+            });
+
+            const result = await service.createAutoApprovedRequest('new@example.com');
+
+            expect(result.role).toBe(TOTP_REGISTRATION_ROLE);
+            expect(TOTP_REGISTRATION_ROLE).toBe(UserRole.Admin);
+        });
+
+        it('should update existing request to approved with admin role', async () => {
             const existingRequest = createMockRequest();
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(existingRequest),
             });
-            const updatedRequest = {
-                ...existingRequest,
-                status: RegistrationRequestStatus.Approved,
-                requesterComment: REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
-            };
-            mockSaveFn.mockResolvedValue(updatedRequest);
+            mockSaveFn.mockImplementation(() =>
+                Promise.resolve({
+                    ...existingRequest,
+                    status: RegistrationRequestStatus.Approved,
+                    role: existingRequest.role,
+                    requesterComment: REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
+                }),
+            );
 
             const result = await service.createAutoApprovedRequest('test@example.com');
 
             expect(result.status).toBe(RegistrationRequestStatus.Approved);
             expect(result.requesterComment).toBe(REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT);
+            expect(existingRequest.role).toBe(TOTP_REGISTRATION_ROLE);
         });
     });
 

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { RegistrationRequestStatus, RegistrationRequest } from 'users/interfaces';
+import { RegistrationRequestStatus, RegistrationRequest, UserRole } from 'users/interfaces';
 import { REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED } from 'users/users.constants';
 
 @ApiSchema({ name: 'Auth.RegistrationRequestResponse', description: 'The registration request details' })
@@ -16,6 +16,13 @@ export class RegistrationRequestResponseDto {
         example: RegistrationRequestStatus.Pending,
     })
     status: RegistrationRequestStatus;
+
+    @ApiProperty({
+        description: 'The role that will be assigned to the user once the registration request is approved',
+        enum: UserRole,
+        example: UserRole.Guest,
+    })
+    role: UserRole;
 
     @ApiProperty({ description: 'Optional comment provided by the requester', example: 'Please approve my account', required: false })
     requesterComment?: string;
@@ -37,6 +44,7 @@ export class RegistrationRequestResponseDto {
         this.requesterEmail = request.requesterEmail;
         this.requesterComment = request.requesterComment;
         this.status = request.status;
+        this.role = request.role;
         this.blackListed = request.blackListed;
         this.createdAt = request.createdAt;
         this.updatedAt = request.updatedAt;

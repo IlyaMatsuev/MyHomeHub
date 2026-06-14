@@ -1,3 +1,5 @@
+import { UserRole } from 'users/interfaces/user.interface';
+
 export const USER_MODEL_PROVIDER_NAME = 'USER_MODEL';
 export const USER_SCHEMA_NAME = 'User';
 
@@ -10,3 +12,6 @@ export const REGISTRATION_REQUEST_SCHEMA_NAME = 'RegistrationRequest';
 export const REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED = false;
 export const REGISTRATION_REQUEST_COMMENT_MAX_LENGTH = 100;
 export const REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT = 'Automatically approved via TOTP';
+
+export const REGISTRATION_REQUEST_DEFAULT_ROLE = UserRole.Guest;
+export const TOTP_REGISTRATION_ROLE = UserRole.Admin;

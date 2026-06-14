@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { UsersService } from 'users/users.service';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
-import { RegistrationRequestStatus } from 'users/interfaces';
+import { RegistrationRequestStatus, UserRole } from 'users/interfaces';
 import * as argon2 from 'argon2';
 import * as speakeasy from 'speakeasy';
 
@@ -24,10 +24,13 @@ describe('AuthService', () => {
         id: 'user-id-123',
         email: 'test@example.com',
         password: 'hashed-password',
+        role: UserRole.Resident,
     };
 
     const mockConfig: Record<string, string> = {
         JWT_SECRET: 'test-jwt-secret',
+        JWT_REFRESH_SECRET: 'test-jwt-refresh-secret',
+        JWT_REFRESH_EXPIRATION_TIMEOUT: '604800',
         REGISTRATION_TOTP_SECRET: 'test-totp-secret',
         USER_PASSWORD_SECRET: 'test-password-secret',
         USER_PASSWORD_SALT: 'test-salt',
@@ -48,6 +51,7 @@ describe('AuthService', () => {
                     provide: JwtService,
                     useValue: {
                         signAsync: jest.fn(),
+                        verifyAsync: jest.fn(),
                     },
                 },
                 {
@@ -77,21 +81,27 @@ describe('AuthService', () => {
     });
 
     describe('login', () => {
-        it('should return access token when credentials are valid', async () => {
+        it('should return access and refresh tokens when credentials are valid', async () => {
             usersService.findByEmail.mockResolvedValue(mockUser as never);
             (argon2.verify as jest.Mock).mockResolvedValue(true);
-            jwtService.signAsync.mockResolvedValue('jwt-token');
+            jwtService.signAsync.mockResolvedValueOnce('access-token').mockResolvedValueOnce('refresh-token');
 
             const result = await service.login('test@example.com', 'password');
 
-            expect(result).toEqual({ accessToken: 'jwt-token' });
+            expect(result).toEqual({ accessToken: 'access-token', refreshToken: 'refresh-token' });
             expect(usersService.findByEmail).toHaveBeenCalledWith('test@example.com');
             expect(argon2.verify).toHaveBeenCalledWith('hashed-password', 'password', {
                 secret: Buffer.from('test-password-secret'),
             });
-            expect(jwtService.signAsync).toHaveBeenCalledWith(
-                { sub: 'user-id-123', email: 'test@example.com' },
+            expect(jwtService.signAsync).toHaveBeenNthCalledWith(
+                1,
+                { sub: 'user-id-123', email: 'test@example.com', role: UserRole.Resident },
                 { secret: 'test-jwt-secret' },
+            );
+            expect(jwtService.signAsync).toHaveBeenNthCalledWith(
+                2,
+                { sub: 'user-id-123', email: 'test@example.com', role: UserRole.Resident },
+                { secret: 'test-jwt-refresh-secret', expiresIn: 604800 },
             );
         });
 
@@ -106,6 +116,44 @@ describe('AuthService', () => {
             (argon2.verify as jest.Mock).mockResolvedValue(false);
 
             await expect(service.login('test@example.com', 'wrong-password')).rejects.toThrow(UnauthorizedException);
+        });
+
+        it('should refresh tokens when a refresh token is provided', async () => {
+            jwtService.verifyAsync.mockResolvedValue({ sub: 'user-id-123', email: 'test@example.com', role: UserRole.Resident } as never);
+            usersService.findByEmail.mockResolvedValue(mockUser as never);
+            jwtService.signAsync.mockResolvedValueOnce('new-access-token').mockResolvedValueOnce('new-refresh-token');
+
+            const result = await service.login(undefined, undefined, 'valid-refresh-token');
+
+            expect(result).toEqual({ accessToken: 'new-access-token', refreshToken: 'new-refresh-token' });
+            expect(jwtService.verifyAsync).toHaveBeenCalledWith('valid-refresh-token', { secret: 'test-jwt-refresh-secret' });
+            expect(argon2.verify).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('refreshTokens', () => {
+        it('should issue new tokens for a valid refresh token', async () => {
+            jwtService.verifyAsync.mockResolvedValue({ sub: 'user-id-123', email: 'test@example.com', role: UserRole.Resident } as never);
+            usersService.findByEmail.mockResolvedValue(mockUser as never);
+            jwtService.signAsync.mockResolvedValueOnce('access-token').mockResolvedValueOnce('refresh-token');
+
+            const result = await service.refreshTokens('valid-refresh-token');
+
+            expect(result).toEqual({ accessToken: 'access-token', refreshToken: 'refresh-token' });
+            expect(usersService.findByEmail).toHaveBeenCalledWith('test@example.com');
+        });
+
+        it('should throw UnauthorizedException when refresh token is invalid', async () => {
+            jwtService.verifyAsync.mockRejectedValue(new Error('invalid token'));
+
+            await expect(service.refreshTokens('invalid-token')).rejects.toThrow(UnauthorizedException);
+        });
+
+        it('should throw UnauthorizedException when the user no longer exists', async () => {
+            jwtService.verifyAsync.mockResolvedValue({ sub: 'user-id-123', email: 'test@example.com', role: UserRole.Resident } as never);
+            usersService.findByEmail.mockResolvedValue(null as never);
+
+            await expect(service.refreshTokens('valid-refresh-token')).rejects.toThrow(UnauthorizedException);
         });
     });
 
@@ -125,7 +173,7 @@ describe('AuthService', () => {
                 encoding: 'base32',
                 token: '123456',
             });
-            expect(usersService.create).toHaveBeenCalledWith('new@example.com', 'new-hashed-password');
+            expect(usersService.create).toHaveBeenCalledWith('new@example.com', 'new-hashed-password', UserRole.Admin);
             expect(registrationRequestsService.createAutoApprovedRequest).toHaveBeenCalledWith('new@example.com');
         });
 
@@ -138,7 +186,7 @@ describe('AuthService', () => {
 
         it('should create user when registration request is approved and no TOTP provided', async () => {
             const newUser = { ...mockUser, _id: 'new-user-id', email: 'approved@example.com' };
-            const approvedRequest = { status: RegistrationRequestStatus.Approved };
+            const approvedRequest = { status: RegistrationRequestStatus.Approved, role: UserRole.Resident };
             registrationRequestsService.getRequestByEmail.mockResolvedValue(approvedRequest as never);
             (argon2.hash as jest.Mock).mockResolvedValue('new-hashed-password');
             usersService.create.mockResolvedValue(newUser as never);
@@ -146,7 +194,7 @@ describe('AuthService', () => {
             const result = await service.register('approved@example.com', 'password');
 
             expect(result).toEqual({ email: 'approved@example.com' });
-            expect(usersService.create).toHaveBeenCalledWith('approved@example.com', 'new-hashed-password');
+            expect(usersService.create).toHaveBeenCalledWith('approved@example.com', 'new-hashed-password', UserRole.Resident);
         });
 
         it('should throw FieldValidationException when no TOTP and no registration request exists', async () => {

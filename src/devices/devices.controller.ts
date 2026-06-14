@@ -9,6 +9,8 @@ import {
     ExternalIdParam,
 } from 'common/decorators';
 import { PaginationResponseDto } from 'common/dto';
+import { Roles } from 'auth/decorators';
+import { UserRole } from 'users/interfaces';
 import { DevicesService } from 'devices/devices.service';
 import {
     CreateDeviceDto,
@@ -24,6 +26,7 @@ import {
 import { PairableDevice } from 'zigbee/interfaces';
 
 @Controller('devices')
+@Roles(UserRole.Resident)
 @ApiBearerAuth()
 @ApiUnauthorized()
 @ApiNotFound('device')

@@ -38,15 +38,26 @@ describe('AuthController', () => {
     });
 
     describe('login', () => {
-        it('should return access token and set cookie', async () => {
+        it('should return tokens and set cookies when credentials are provided', async () => {
             const loginDto = { email: 'test@example.com', password: 'password123' };
-            mockAuthService.login.mockResolvedValue({ accessToken: 'jwt-token' });
+            mockAuthService.login.mockResolvedValue({ accessToken: 'jwt-token', refreshToken: 'refresh-token' });
 
             const result = await controller.login(loginDto, mockResponse as Response);
 
-            expect(result).toEqual({ accessToken: 'jwt-token' });
-            expect(mockAuthService.login).toHaveBeenCalledWith('test@example.com', 'password123');
+            expect(result).toEqual({ accessToken: 'jwt-token', refreshToken: 'refresh-token' });
+            expect(mockAuthService.login).toHaveBeenCalledWith('test@example.com', 'password123', undefined);
             expect(mockResponse.cookie).toHaveBeenCalledWith('accessToken', 'jwt-token', { httpOnly: true });
+            expect(mockResponse.cookie).toHaveBeenCalledWith('refreshToken', 'refresh-token', { httpOnly: true });
+        });
+
+        it('should return tokens when a refresh token is provided', async () => {
+            const loginDto = { refreshToken: 'old-refresh-token' };
+            mockAuthService.login.mockResolvedValue({ accessToken: 'jwt-token', refreshToken: 'new-refresh-token' });
+
+            const result = await controller.login(loginDto, mockResponse as Response);
+
+            expect(result).toEqual({ accessToken: 'jwt-token', refreshToken: 'new-refresh-token' });
+            expect(mockAuthService.login).toHaveBeenCalledWith(undefined, undefined, 'old-refresh-token');
         });
     });
 
