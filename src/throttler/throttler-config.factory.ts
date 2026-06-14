@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { seconds, ThrottlerModuleOptions, ThrottlerOptions, ThrottlerOptionsFactory } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
@@ -7,11 +7,13 @@ import { THROTTLER_DEFINITIONS } from 'throttler/throttler.constants';
 
 @Injectable()
 export class ThrottlerConfigFactory implements ThrottlerOptionsFactory {
-    private get isEnabled(): boolean {
+    private readonly logger = new Logger(ThrottlerConfigFactory.name);
+
+    private get throttlerEnabled(): boolean {
         return this.configService.get<string>('THROTTLE_ENABLED') === 'true';
     }
 
-    private get getRedis(): Redis {
+    private get redis(): Redis {
         const host = this.configService.get<string>('REDIS_DOMAIN');
         const port = +this.configService.get<string>('REDIS_PORT');
         return new Redis({ host, port });
@@ -20,14 +22,17 @@ export class ThrottlerConfigFactory implements ThrottlerOptionsFactory {
     constructor(private readonly configService: ConfigService) {}
 
     createThrottlerOptions(): ThrottlerModuleOptions {
-        if (!this.isEnabled) {
+        if (!this.throttlerEnabled) {
             return { throttlers: [] };
         }
 
-        return {
-            throttlers: THROTTLER_DEFINITIONS.map(name => this.getDefinition(name)).filter(Boolean),
-            storage: new ThrottlerStorageRedisService(this.getRedis),
-        };
+        const throttlers = THROTTLER_DEFINITIONS.map(name => this.getDefinition(name)).filter(Boolean);
+        if (!throttlers.length) {
+            this.logger.warn(
+                'Throttler rate limiter is enabled but no definition variables provided (e.g. THROTTLE_SHORT_TTL_SEC, THROTTLE_SHORT_LIMIT, etc.',
+            );
+        }
+        return { throttlers, storage: new ThrottlerStorageRedisService(this.redis) };
     }
 
     private getDefinition(name: string): ThrottlerOptions | null {

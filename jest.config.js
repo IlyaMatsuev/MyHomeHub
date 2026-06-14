@@ -27,6 +27,7 @@ module.exports = {
         '^scenarios/(.*)$': '<rootDir>/scenarios/$1',
         '^scheduler/(.*)$': '<rootDir>/scheduler/$1',
         '^discovery/(.*)$': '<rootDir>/discovery/$1',
+        '^throttler/(.*)$': '<rootDir>/throttler/$1',
         '^users/(.*)$': '<rootDir>/users/$1',
         '^zigbee/(.*)$': '<rootDir>/zigbee/$1',
     },

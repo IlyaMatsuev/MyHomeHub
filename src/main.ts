@@ -23,6 +23,7 @@ async function bootstrap() {
     if (config.get<string>('TRUST_PROXY') === 'true') {
         app.set('trust proxy', true);
     }
+
     app.useLogger(setupLogger(config));
     app.connectMicroservice<MicroserviceOptions>({
         transport: Transport.MQTT,
