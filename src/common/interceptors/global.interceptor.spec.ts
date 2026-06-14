@@ -1,4 +1,4 @@
-import { CallHandler, ExecutionContext } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Logger } from '@nestjs/common';
 import { Observable, of, throwError, firstValueFrom } from 'rxjs';
 import { GlobalInterceptor } from './global.interceptor';
 
@@ -6,16 +6,20 @@ describe('GlobalInterceptor', () => {
     let interceptor: GlobalInterceptor;
     let mockExecutionContext: ExecutionContext;
     let mockCallHandler: CallHandler;
+    let debugSpy: jest.SpyInstance;
+
+    const mockRequest = { method: 'GET', originalUrl: '/devices', ip: '127.0.0.1' };
 
     beforeEach(() => {
         interceptor = new GlobalInterceptor();
         mockExecutionContext = {
             getType: jest.fn().mockReturnValue('http'),
             switchToHttp: jest.fn().mockReturnValue({
-                getRequest: jest.fn(),
+                getRequest: jest.fn().mockReturnValue(mockRequest),
                 getResponse: jest.fn(),
             }),
         } as unknown as ExecutionContext;
+        debugSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined);
     });
 
     afterEach(() => {
@@ -58,6 +62,27 @@ describe('GlobalInterceptor', () => {
             const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler) as Observable<object>;
 
             await expect(firstValueFrom(result$)).rejects.toThrow(testError);
+        });
+
+        it('should log the request method, url, and ip for http context', async () => {
+            mockCallHandler = { handle: () => of({}) };
+
+            const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler) as Observable<object>;
+            await firstValueFrom(result$);
+
+            expect(debugSpy).toHaveBeenCalledTimes(1);
+            expect(debugSpy).toHaveBeenCalledWith('GET /devices from "127.0.0.1"');
+        });
+
+        it('should not log or read the http request when context is not http', async () => {
+            (mockExecutionContext.getType as jest.Mock).mockReturnValue('rpc');
+            mockCallHandler = { handle: () => of({}) };
+
+            const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler) as Observable<object>;
+            await firstValueFrom(result$);
+
+            expect(debugSpy).not.toHaveBeenCalled();
+            expect(mockExecutionContext.switchToHttp).not.toHaveBeenCalled();
         });
     });
 
