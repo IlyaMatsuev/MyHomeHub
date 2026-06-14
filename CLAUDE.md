@@ -71,7 +71,8 @@ AppModule
 ├── ScenariosModule       # Automation scenarios with triggers and actions
 │   └── SchedulerModule   # Cron-based scenario scheduling
 ├── MqttModule            # MQTT broker communication
-└── DiscoveryModule       # UDP broadcast discovery and GET /info endpoint
+├── DiscoveryModule       # UDP broadcast discovery and GET /info endpoint
+└── ThrottlerModule       # Rate limiting with Redis storage (short/medium/long tiers)
 ```
 
 ### Device Control Architecture
@@ -109,6 +110,7 @@ common/*        → src/common/*
 scheduler/*     → src/scheduler/*
 db/*            → src/db/*
 discovery/*     → src/discovery/*
+throttler/*     → src/throttler/*
 ```
 
 ## Environment Configuration
@@ -125,6 +127,9 @@ Key variables:
 - `USER_PASSWORD_SECRET`, `USER_PASSWORD_SALT` - Argon2 hashing
 - `MONGO_*` - MongoDB connection
 - `MQTT_*` - MQTT broker connection
+- `REDIS_*` - Redis connection (for rate limiting)
+- `THROTTLE_*` - Rate limiting configuration (enabled, TTL/limit for short/medium/long tiers)
+- `TRUST_PROXY` - Enable proxy support to rate limit by real client IP
 
 ## Code Style
 

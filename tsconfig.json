@@ -11,7 +11,8 @@
       "common/*": ["src/common/*"],
       "scheduler/*": ["src/scheduler/*"],
       "db/*": ["src/db/*"],
-      "discovery/*": ["src/discovery/*"]
+      "discovery/*": ["src/discovery/*"],
+      "throttler/*": ["src/throttler/*"]
     },
     "module": "commonjs",
     "declaration": true,

@@ -19,6 +19,11 @@ async function bootstrap() {
     app.useStaticAssets(path.join(__dirname, '..', 'public'));
 
     const config = app.get<ConfigService>(ConfigService);
+
+    if (config.get<string>('TRUST_PROXY') === 'true') {
+        app.set('trust proxy', true);
+    }
+
     app.useLogger(setupLogger(config));
     app.connectMicroservice<MicroserviceOptions>({
         transport: Transport.MQTT,
