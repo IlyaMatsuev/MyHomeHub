@@ -1,7 +1,7 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { IsBoolean, IsNotEmpty, IsOptional } from 'class-validator';
-import { REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED } from 'users/users.constants';
 import { IsBooleanValue } from 'common/decorators';
+import { REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED } from 'users/users.constants';
 
 @ApiSchema({ name: 'Auth.UpdateRegistrationRequest', description: 'Payload used to approve or reject a registration request' })
 export class UpdateRegistrationRequestDto {
