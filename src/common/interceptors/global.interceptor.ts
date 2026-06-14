@@ -1,5 +1,6 @@
-import { CallHandler, ExecutionContext, Global, Injectable, NestInterceptor } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Global, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import { catchError, map, Observable } from 'rxjs';
+import { Request } from 'express';
 import { exceptionHandlers } from 'common/interceptors/exception.handlers';
 
 const EXCLUDED_INTERNAL_FIELDS = ['_id', '__v'];
@@ -7,7 +8,14 @@ const EXCLUDED_INTERNAL_FIELDS = ['_id', '__v'];
 @Global()
 @Injectable()
 export class GlobalInterceptor implements NestInterceptor {
+    private readonly logger = new Logger(GlobalInterceptor.name);
+
     intercept(context: ExecutionContext, next: CallHandler): Observable<object> | Promise<Observable<object>> {
+        if (context.getType() === 'http') {
+            const req = context.switchToHttp().getRequest<Request>();
+            this.logger.debug(`${req.method} ${req.originalUrl} from "${req.ip}"`);
+        }
+
         return next.handle().pipe(
             map(response => this.removeInternalFields(response)),
             catchError((error: Error) => this.handleException(error, context)),
