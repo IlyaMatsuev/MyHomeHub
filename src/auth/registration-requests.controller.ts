@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Put, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { ApiInternalError, ApiNotFound, ApiUnauthorized, ApiValidationError } from 'common/decorators';
 import { ApiOkPaginationResponse, PaginationResponseDto } from 'common/dto';
 import { Public } from 'auth/decorators';
@@ -12,6 +12,7 @@ import {
 } from 'users/dto';
 
 @Controller('auth/register/requests')
+@ApiTags('Auth')
 @ApiUnauthorized()
 @ApiInternalError()
 export class RegistrationRequestsController {

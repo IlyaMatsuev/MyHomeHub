@@ -25,5 +25,5 @@ export class UpdateRegistrationRequestDto {
         description: 'If true, future registration requests from this email will be automatically denied',
         example: REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED,
     })
-    blackListed: boolean = REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED;
+    blackListed?: boolean = REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED;
 }

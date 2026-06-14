@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Res } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ApiInternalError, ApiUnauthorized } from 'common/decorators';
 import { LoginDto, RegisterDto, LoginResponseDto, RegisterResponseDto } from 'auth/dto';
@@ -7,6 +7,7 @@ import { AuthService } from 'auth/auth.service';
 import { Public } from 'auth/decorators';
 
 @Controller('auth')
+@ApiTags('Auth')
 @ApiUnauthorized()
 @ApiInternalError()
 export class AuthController {
