@@ -1,17 +1,17 @@
 import { Document } from 'mongoose';
 
 export enum RegistrationRequestStatus {
-    PENDING = 'pending',
-    APPROVED = 'approved',
-    REJECTED = 'rejected',
+    Pending = 'pending',
+    Approved = 'approved',
+    Rejected = 'rejected',
 }
 
 export interface RegistrationRequest extends Document<string> {
     externalId: string;
-    userEmail: string;
+    requesterEmail: string;
+    requesterComment?: string;
     status: RegistrationRequestStatus;
-    comment?: string;
-    blackListed: boolean;
+    blackListed?: boolean;
     createdAt: Date;
     updatedAt: Date;
 }

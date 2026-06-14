@@ -7,17 +7,17 @@ export class RegistrationRequestResponseDto {
     externalId: string;
 
     @ApiProperty({ description: 'The email of the user who requested registration', example: 'user@example.com' })
-    userEmail: string;
+    requesterEmail: string;
 
     @ApiProperty({
         description: 'The current status of the registration request',
         enum: RegistrationRequestStatus,
-        example: RegistrationRequestStatus.PENDING,
+        example: RegistrationRequestStatus.Pending,
     })
     status: RegistrationRequestStatus;
 
-    @ApiProperty({ description: 'Optional comment provided by the user', example: 'Please approve my account', required: false })
-    comment?: string;
+    @ApiProperty({ description: 'Optional comment provided by the requester', example: 'Please approve my account', required: false })
+    requesterComment?: string;
 
     @ApiProperty({ description: 'When the registration request was created' })
     createdAt: Date;
@@ -27,9 +27,9 @@ export class RegistrationRequestResponseDto {
 
     constructor(request: RegistrationRequest) {
         this.externalId = request.externalId;
-        this.userEmail = request.userEmail;
+        this.requesterEmail = request.requesterEmail;
         this.status = request.status;
-        this.comment = request.comment;
+        this.requesterComment = request.requesterComment;
         this.createdAt = request.createdAt;
         this.updatedAt = request.updatedAt;
     }

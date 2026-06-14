@@ -1,5 +1,7 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { IsBoolean, IsNotEmpty, IsOptional } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED } from 'users/users.constants';
 
 @ApiSchema({ name: 'Auth.UpdateRegistrationRequest', description: 'Payload used to approve or reject a registration request' })
 export class UpdateRegistrationRequestDto {
@@ -14,11 +16,14 @@ export class UpdateRegistrationRequestDto {
 
     @IsOptional()
     @IsBoolean()
+    // "false" is implicitly converted to boolean before @Transform, so it's always true. Hence, the explicit String type
+    @Type(() => String)
+    @Transform(({ value }) => value === 'true' || value === '1' || value === true)
     @ApiProperty({
         required: false,
-        default: false,
+        default: REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED,
         description: 'If true, future registration requests from this email will be automatically denied',
-        example: false,
+        example: REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED,
     })
-    blackListed?: boolean;
+    blackListed: boolean = REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED;
 }

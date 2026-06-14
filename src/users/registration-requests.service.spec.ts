@@ -15,9 +15,9 @@ describe('RegistrationRequestsService', () => {
 
     const createMockRequest = (overrides = {}): Partial<RegistrationRequest> => ({
         externalId: 'test-uuid',
-        userEmail: 'test@example.com',
-        status: RegistrationRequestStatus.PENDING,
-        comment: 'Test comment',
+        requesterEmail: 'test@example.com',
+        status: RegistrationRequestStatus.Pending,
+        requesterComment: 'Test comment',
         blackListed: false,
         createdAt: new Date('2026-01-01'),
         updatedAt: new Date('2026-01-01'),
@@ -59,7 +59,7 @@ describe('RegistrationRequestsService', () => {
 
     describe('getRequests', () => {
         it('should return paginated requests', async () => {
-            const mockRequests = [createMockRequest(), createMockRequest({ userEmail: 'test2@example.com' })];
+            const mockRequests = [createMockRequest(), createMockRequest({ requesterEmail: 'test2@example.com' })];
             mockRegistrationRequestModel.find.mockReturnValue({
                 skip: jest.fn().mockReturnValue({
                     limit: jest.fn().mockReturnValue({
@@ -94,9 +94,9 @@ describe('RegistrationRequestsService', () => {
                 exec: jest.fn().mockResolvedValue(1),
             });
 
-            await service.getRequests({ page: 1, pageSize: 10, skipRecords: 0, status: RegistrationRequestStatus.PENDING });
+            await service.getRequests({ page: 1, pageSize: 10, skipRecords: 0, status: RegistrationRequestStatus.Pending });
 
-            expect(mockRegistrationRequestModel.find).toHaveBeenCalledWith({ status: RegistrationRequestStatus.PENDING });
+            expect(mockRegistrationRequestModel.find).toHaveBeenCalledWith({ status: RegistrationRequestStatus.Pending });
         });
     });
 
@@ -110,7 +110,7 @@ describe('RegistrationRequestsService', () => {
             const result = await service.getRequest('test-uuid');
 
             expect(result.externalId).toBe('test-uuid');
-            expect(result.userEmail).toBe('test@example.com');
+            expect(result.requesterEmail).toBe('test@example.com');
         });
 
         it('should throw NotFoundException when request not found', async () => {
@@ -132,12 +132,12 @@ describe('RegistrationRequestsService', () => {
 
             const result = await service.createRequest({ email: 'new@example.com', comment: 'Please approve' });
 
-            expect(result.userEmail).toBe('test@example.com');
+            expect(result.requesterEmail).toBe('test@example.com');
             expect(mockSaveFn).toHaveBeenCalled();
         });
 
         it('should throw BadRequestException when pending request exists', async () => {
-            const pendingRequest = createMockRequest({ status: RegistrationRequestStatus.PENDING });
+            const pendingRequest = createMockRequest({ status: RegistrationRequestStatus.Pending });
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(pendingRequest),
             });
@@ -149,7 +149,7 @@ describe('RegistrationRequestsService', () => {
         });
 
         it('should throw BadRequestException when approved request exists', async () => {
-            const approvedRequest = createMockRequest({ status: RegistrationRequestStatus.APPROVED });
+            const approvedRequest = createMockRequest({ status: RegistrationRequestStatus.Approved });
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(approvedRequest),
             });
@@ -162,23 +162,23 @@ describe('RegistrationRequestsService', () => {
 
         it('should update rejected request to pending when not blacklisted', async () => {
             const rejectedRequest = createMockRequest({
-                status: RegistrationRequestStatus.REJECTED,
+                status: RegistrationRequestStatus.Rejected,
                 blackListed: false,
             });
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(rejectedRequest),
             });
-            const updatedRequest = { ...rejectedRequest, status: RegistrationRequestStatus.PENDING };
+            const updatedRequest = { ...rejectedRequest, status: RegistrationRequestStatus.Pending };
             mockSaveFn.mockResolvedValue(updatedRequest);
 
             const result = await service.createRequest({ email: 'test@example.com', comment: 'Retry please' });
 
-            expect(result.status).toBe(RegistrationRequestStatus.PENDING);
+            expect(result.status).toBe(RegistrationRequestStatus.Pending);
         });
 
         it('should throw ForbiddenException when rejected and blacklisted', async () => {
             const blacklistedRequest = createMockRequest({
-                status: RegistrationRequestStatus.REJECTED,
+                status: RegistrationRequestStatus.Rejected,
                 blackListed: true,
             });
             mockRegistrationRequestModel.findOne.mockReturnValue({
@@ -198,12 +198,12 @@ describe('RegistrationRequestsService', () => {
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockRequest),
             });
-            const approvedRequest = { ...mockRequest, status: RegistrationRequestStatus.APPROVED };
+            const approvedRequest = { ...mockRequest, status: RegistrationRequestStatus.Approved };
             mockSaveFn.mockResolvedValue(approvedRequest);
 
             const result = await service.updateRequest('test-uuid', { approve: true });
 
-            expect(result.status).toBe(RegistrationRequestStatus.APPROVED);
+            expect(result.status).toBe(RegistrationRequestStatus.Approved);
         });
 
         it('should reject request', async () => {
@@ -211,12 +211,12 @@ describe('RegistrationRequestsService', () => {
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockRequest),
             });
-            const rejectedRequest = { ...mockRequest, status: RegistrationRequestStatus.REJECTED };
+            const rejectedRequest = { ...mockRequest, status: RegistrationRequestStatus.Rejected };
             mockSaveFn.mockResolvedValue(rejectedRequest);
 
             const result = await service.updateRequest('test-uuid', { approve: false });
 
-            expect(result.status).toBe(RegistrationRequestStatus.REJECTED);
+            expect(result.status).toBe(RegistrationRequestStatus.Rejected);
         });
 
         it('should reject and blacklist request', async () => {
@@ -224,12 +224,12 @@ describe('RegistrationRequestsService', () => {
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockRequest),
             });
-            const rejectedRequest = { ...mockRequest, status: RegistrationRequestStatus.REJECTED, blackListed: true };
+            const rejectedRequest = { ...mockRequest, status: RegistrationRequestStatus.Rejected, blackListed: true };
             mockSaveFn.mockResolvedValue(rejectedRequest);
 
             const result = await service.updateRequest('test-uuid', { approve: false, blackListed: true });
 
-            expect(result.status).toBe(RegistrationRequestStatus.REJECTED);
+            expect(result.status).toBe(RegistrationRequestStatus.Rejected);
         });
 
         it('should throw BadRequestException when trying to approve and blacklist', async () => {
@@ -254,15 +254,15 @@ describe('RegistrationRequestsService', () => {
                 exec: jest.fn().mockResolvedValue(null),
             });
             const savedRequest = createMockRequest({
-                status: RegistrationRequestStatus.APPROVED,
-                comment: REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
+                status: RegistrationRequestStatus.Approved,
+                requesterComment: REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
             });
             mockSaveFn.mockResolvedValue(savedRequest);
 
             const result = await service.createAutoApprovedRequest('new@example.com');
 
-            expect(result.status).toBe(RegistrationRequestStatus.APPROVED);
-            expect(result.comment).toBe(REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT);
+            expect(result.status).toBe(RegistrationRequestStatus.Approved);
+            expect(result.requesterComment).toBe(REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT);
         });
 
         it('should update existing request to approved', async () => {
@@ -272,15 +272,15 @@ describe('RegistrationRequestsService', () => {
             });
             const updatedRequest = {
                 ...existingRequest,
-                status: RegistrationRequestStatus.APPROVED,
-                comment: REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
+                status: RegistrationRequestStatus.Approved,
+                requesterComment: REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
             };
             mockSaveFn.mockResolvedValue(updatedRequest);
 
             const result = await service.createAutoApprovedRequest('test@example.com');
 
-            expect(result.status).toBe(RegistrationRequestStatus.APPROVED);
-            expect(result.comment).toBe(REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT);
+            expect(result.status).toBe(RegistrationRequestStatus.Approved);
+            expect(result.requesterComment).toBe(REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT);
         });
     });
 
@@ -293,7 +293,7 @@ describe('RegistrationRequestsService', () => {
 
             const result = await service.findByEmail('test@example.com');
 
-            expect(result?.userEmail).toBe('test@example.com');
+            expect(result?.requesterEmail).toBe('test@example.com');
         });
 
         it('should return null when not found', async () => {

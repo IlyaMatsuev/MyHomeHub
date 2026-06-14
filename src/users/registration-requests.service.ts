@@ -45,30 +45,30 @@ export class RegistrationRequestsService {
     }
 
     async createRequest(dto: CreateRegistrationRequestDto): Promise<RegistrationRequestResponseDto> {
-        const existingRequest = await this.registrationRequestModel.findOne({ userEmail: dto.email.toLowerCase() }).exec();
+        const existingRequest = await this.registrationRequestModel.findOne({ requesterEmail: dto.email.toLowerCase() }).exec();
 
         if (existingRequest) {
-            if (existingRequest.status === RegistrationRequestStatus.PENDING) {
+            if (existingRequest.status === RegistrationRequestStatus.Pending) {
                 throw new BadRequestException('A pending registration request for this email already exists');
             }
-            if (existingRequest.status === RegistrationRequestStatus.APPROVED) {
+            if (existingRequest.status === RegistrationRequestStatus.Approved) {
                 throw new BadRequestException('A registration request for this email has already been approved');
             }
-            if (existingRequest.status === RegistrationRequestStatus.REJECTED) {
+            if (existingRequest.status === RegistrationRequestStatus.Rejected) {
                 if (existingRequest.blackListed) {
                     throw new ForbiddenException('Registration requests from this email are not allowed');
                 }
-                existingRequest.status = RegistrationRequestStatus.PENDING;
-                existingRequest.comment = dto.comment;
+                existingRequest.status = RegistrationRequestStatus.Pending;
+                existingRequest.requesterComment = dto.comment;
                 const updatedRequest = await existingRequest.save();
                 return new RegistrationRequestResponseDto(updatedRequest);
             }
         }
 
         const newRequest = new this.registrationRequestModel({
-            userEmail: dto.email.toLowerCase(),
-            status: RegistrationRequestStatus.PENDING,
-            comment: dto.comment,
+            requesterEmail: dto.email.toLowerCase(),
+            status: RegistrationRequestStatus.Pending,
+            requesterComment: dto.comment,
         });
         const savedRequest = await newRequest.save({ validateBeforeSave: true });
         return new RegistrationRequestResponseDto(savedRequest);
@@ -84,7 +84,7 @@ export class RegistrationRequestsService {
             throw new NotFoundException('Registration request not found');
         }
 
-        request.status = dto.approve ? RegistrationRequestStatus.APPROVED : RegistrationRequestStatus.REJECTED;
+        request.status = dto.approve ? RegistrationRequestStatus.Approved : RegistrationRequestStatus.Rejected;
         if (dto.blackListed !== undefined) {
             request.blackListed = dto.blackListed;
         }
@@ -94,30 +94,30 @@ export class RegistrationRequestsService {
     }
 
     async createAutoApprovedRequest(email: string): Promise<RegistrationRequest> {
-        const existingRequest = await this.registrationRequestModel.findOne({ userEmail: email.toLowerCase() }).exec();
+        const existingRequest = await this.registrationRequestModel.findOne({ requesterEmail: email.toLowerCase() }).exec();
 
         if (existingRequest) {
-            existingRequest.status = RegistrationRequestStatus.APPROVED;
-            existingRequest.comment = REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT;
+            existingRequest.status = RegistrationRequestStatus.Approved;
+            existingRequest.requesterComment = REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT;
             return existingRequest.save();
         }
 
         const newRequest = new this.registrationRequestModel({
-            userEmail: email.toLowerCase(),
-            status: RegistrationRequestStatus.APPROVED,
-            comment: REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
+            requesterEmail: email.toLowerCase(),
+            status: RegistrationRequestStatus.Approved,
+            requesterComment: REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
         });
         return newRequest.save({ validateBeforeSave: true });
     }
 
     async findByEmail(email: string): Promise<RegistrationRequest | null> {
-        return this.registrationRequestModel.findOne({ userEmail: email.toLowerCase() }).exec();
+        return this.registrationRequestModel.findOne({ requesterEmail: email.toLowerCase() }).exec();
     }
 
     private async findByExternalIdOrEmail(externalIdOrEmail: string): Promise<RegistrationRequest | null> {
         return this.registrationRequestModel
             .findOne({
-                $or: [{ externalId: externalIdOrEmail }, { userEmail: externalIdOrEmail.toLowerCase() }],
+                $or: [{ externalId: externalIdOrEmail }, { requestermail: externalIdOrEmail.toLowerCase() }],
             })
             .exec();
     }

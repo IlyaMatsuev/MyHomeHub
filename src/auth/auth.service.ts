@@ -47,11 +47,11 @@ export class AuthService {
             throw new BadRequestException('No registration request found for this email. Please submit a registration request first.');
         }
 
-        if (registrationRequest.status === RegistrationRequestStatus.PENDING) {
+        if (registrationRequest.status === RegistrationRequestStatus.Pending) {
             throw new BadRequestException('Your registration request has not been reviewed yet. Please wait for admin approval.');
         }
 
-        if (registrationRequest.status === RegistrationRequestStatus.REJECTED) {
+        if (registrationRequest.status === RegistrationRequestStatus.Rejected) {
             throw new BadRequestException('Your registration request has been rejected.');
         }
 

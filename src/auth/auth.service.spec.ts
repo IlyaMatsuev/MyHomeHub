@@ -137,7 +137,7 @@ describe('AuthService', () => {
 
         it('should create user when registration request is approved and no TOTP provided', async () => {
             const newUser = { ...mockUser, _id: 'new-user-id', email: 'approved@example.com' };
-            const approvedRequest = { status: RegistrationRequestStatus.APPROVED };
+            const approvedRequest = { status: RegistrationRequestStatus.Approved };
             registrationRequestsService.findByEmail.mockResolvedValue(approvedRequest as never);
             (argon2.hash as jest.Mock).mockResolvedValue('new-hashed-password');
             usersService.create.mockResolvedValue(newUser as never);
@@ -159,7 +159,7 @@ describe('AuthService', () => {
         });
 
         it('should throw BadRequestException when registration request is pending', async () => {
-            const pendingRequest = { status: RegistrationRequestStatus.PENDING };
+            const pendingRequest = { status: RegistrationRequestStatus.Pending };
             registrationRequestsService.findByEmail.mockResolvedValue(pendingRequest as never);
 
             await expect(service.register('pending@example.com', 'password')).rejects.toThrow(BadRequestException);
@@ -170,7 +170,7 @@ describe('AuthService', () => {
         });
 
         it('should throw BadRequestException when registration request is rejected', async () => {
-            const rejectedRequest = { status: RegistrationRequestStatus.REJECTED };
+            const rejectedRequest = { status: RegistrationRequestStatus.Rejected };
             registrationRequestsService.findByEmail.mockResolvedValue(rejectedRequest as never);
 
             await expect(service.register('rejected@example.com', 'password')).rejects.toThrow(BadRequestException);

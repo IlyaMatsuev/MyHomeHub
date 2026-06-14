@@ -11,7 +11,7 @@ export const RegistrationRequestSchema = new mongoose.Schema(
             default: uuidv4,
             index: true,
         },
-        userEmail: {
+        requesterEmail: {
             type: String,
             required: true,
             unique: true,
@@ -19,16 +19,16 @@ export const RegistrationRequestSchema = new mongoose.Schema(
             lowercase: true,
             index: true,
         },
+        requesterComment: {
+            type: String,
+            trim: true,
+            maxlength: 100,
+        },
         status: {
             type: String,
             required: true,
             enum: Object.values(RegistrationRequestStatus),
-            default: RegistrationRequestStatus.PENDING,
-        },
-        comment: {
-            type: String,
-            trim: true,
-            maxlength: 100,
+            default: RegistrationRequestStatus.Pending,
         },
         blackListed: {
             type: Boolean,

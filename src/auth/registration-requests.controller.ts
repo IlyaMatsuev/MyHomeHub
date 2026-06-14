@@ -28,23 +28,23 @@ export class RegistrationRequestsController {
     }
 
     @Public()
-    @Get('/:requestExternalIdOrUserEmail')
+    @Get('/:externalIdOrRequesterEmail')
     @ApiParam({
-        name: 'requestExternalIdOrUserEmail',
+        name: 'externalIdOrRequesterEmail',
         description: 'The external ID or email address of the registration request',
         example: 'f3cec07c-9834-4a02-990d-28b0d99534ab',
     })
     @ApiOperation({ summary: 'Get a registration request by external ID or email' })
     @ApiOkResponse({ type: RegistrationRequestResponseDto })
     @ApiNotFound('registration request')
-    getRequest(@Param('requestExternalIdOrUserEmail') requestExternalIdOrUserEmail: string): Promise<RegistrationRequestResponseDto> {
-        return this.registrationRequestsService.getRequest(requestExternalIdOrUserEmail);
+    getRequest(@Param('externalIdOrRequesterEmail') externalIdOrRequesterEmail: string): Promise<RegistrationRequestResponseDto> {
+        return this.registrationRequestsService.getRequest(externalIdOrRequesterEmail);
     }
 
-    @Put('/:requestExternalIdOrUserEmail')
+    @Put('/:externalIdOrRequesterEmail')
     @ApiBearerAuth()
     @ApiParam({
-        name: 'requestExternalIdOrUserEmail',
+        name: 'externalIdOrRequesterEmail',
         description: 'The external ID or email address of the registration request',
         example: 'f3cec07c-9834-4a02-990d-28b0d99534ab',
     })
@@ -53,10 +53,10 @@ export class RegistrationRequestsController {
     @ApiNotFound('registration request')
     @ApiValidationError()
     updateRequest(
-        @Param('requestExternalIdOrUserEmail') requestExternalIdOrUserEmail: string,
+        @Param('externalIdOrRequesterEmail') externalIdOrRequesterEmail: string,
         @Body() dto: UpdateRegistrationRequestDto,
     ): Promise<RegistrationRequestResponseDto> {
-        return this.registrationRequestsService.updateRequest(requestExternalIdOrUserEmail, dto);
+        return this.registrationRequestsService.updateRequest(externalIdOrRequesterEmail, dto);
     }
 
     @Get()

@@ -16,9 +16,9 @@ describe('RegistrationRequestsController', () => {
 
     const mockRequestResponse: RegistrationRequestResponseDto = {
         externalId: 'test-uuid',
-        userEmail: 'test@example.com',
-        status: RegistrationRequestStatus.PENDING,
-        comment: 'Test comment',
+        requesterEmail: 'test@example.com',
+        status: RegistrationRequestStatus.Pending,
+        requesterComment: 'Test comment',
         createdAt: new Date('2026-01-01'),
         updatedAt: new Date('2026-01-01'),
     };
@@ -57,7 +57,7 @@ describe('RegistrationRequestsController', () => {
             expect(result).toEqual(mockRequestResponse);
             expect(mockRegistrationRequestsService.createRequest).toHaveBeenCalledWith({
                 email: 'test@example.com',
-                comment: 'Test comment',
+                requesterComment: 'Test comment',
             });
         });
     });
@@ -84,32 +84,32 @@ describe('RegistrationRequestsController', () => {
 
     describe('updateRequest', () => {
         it('should approve a registration request', async () => {
-            const approvedResponse = { ...mockRequestResponse, status: RegistrationRequestStatus.APPROVED };
+            const approvedResponse = { ...mockRequestResponse, status: RegistrationRequestStatus.Approved };
             mockRegistrationRequestsService.updateRequest.mockResolvedValue(approvedResponse);
 
             const result = await controller.updateRequest('test-uuid', { approve: true });
 
-            expect(result.status).toBe(RegistrationRequestStatus.APPROVED);
+            expect(result.status).toBe(RegistrationRequestStatus.Approved);
             expect(mockRegistrationRequestsService.updateRequest).toHaveBeenCalledWith('test-uuid', { approve: true });
         });
 
         it('should reject a registration request', async () => {
-            const rejectedResponse = { ...mockRequestResponse, status: RegistrationRequestStatus.REJECTED };
+            const rejectedResponse = { ...mockRequestResponse, status: RegistrationRequestStatus.Rejected };
             mockRegistrationRequestsService.updateRequest.mockResolvedValue(rejectedResponse);
 
             const result = await controller.updateRequest('test-uuid', { approve: false });
 
-            expect(result.status).toBe(RegistrationRequestStatus.REJECTED);
+            expect(result.status).toBe(RegistrationRequestStatus.Rejected);
             expect(mockRegistrationRequestsService.updateRequest).toHaveBeenCalledWith('test-uuid', { approve: false });
         });
 
         it('should reject and blacklist a registration request', async () => {
-            const rejectedResponse = { ...mockRequestResponse, status: RegistrationRequestStatus.REJECTED };
+            const rejectedResponse = { ...mockRequestResponse, status: RegistrationRequestStatus.Rejected };
             mockRegistrationRequestsService.updateRequest.mockResolvedValue(rejectedResponse);
 
             const result = await controller.updateRequest('test-uuid', { approve: false, blackListed: true });
 
-            expect(result.status).toBe(RegistrationRequestStatus.REJECTED);
+            expect(result.status).toBe(RegistrationRequestStatus.Rejected);
             expect(mockRegistrationRequestsService.updateRequest).toHaveBeenCalledWith('test-uuid', {
                 approve: false,
                 blackListed: true,
@@ -133,13 +133,13 @@ describe('RegistrationRequestsController', () => {
             const paginatedResponse = new PaginationResponseDto([mockRequestResponse], 1, 10, 1);
             mockRegistrationRequestsService.getRequests.mockResolvedValue(paginatedResponse);
 
-            await controller.getRequests({ page: 1, pageSize: 10, skipRecords: 0, status: RegistrationRequestStatus.PENDING });
+            await controller.getRequests({ page: 1, pageSize: 10, skipRecords: 0, status: RegistrationRequestStatus.Pending });
 
             expect(mockRegistrationRequestsService.getRequests).toHaveBeenCalledWith({
                 page: 1,
                 pageSize: 10,
                 skipRecords: 0,
-                status: RegistrationRequestStatus.PENDING,
+                status: RegistrationRequestStatus.Pending,
             });
         });
     });
