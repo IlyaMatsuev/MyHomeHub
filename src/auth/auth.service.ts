@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
@@ -35,15 +35,14 @@ export class AuthService {
         if (totp) {
             if (!this.verifyTotp(totp)) {
                 this.logger.debug(`Registration one-time password is not valid`);
-                throw new UnauthorizedException();
+                throw new ForbiddenException();
             }
             const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password));
             await this.registrationRequestsService.createAutoApprovedRequest(email);
             return { email: newUser.email };
         }
 
-        const registrationRequest = await this.registrationRequestsService.findByEmail(email);
-
+        const registrationRequest = await this.registrationRequestsService.getRequestByEmail(email);
         if (!registrationRequest) {
             throw new FieldValidationException(
                 'No registration request found for this email. Please submit a registration request first.',

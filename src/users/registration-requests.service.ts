@@ -3,13 +3,13 @@ import { Model, FilterQuery } from 'mongoose';
 import { PaginationResponseDto } from 'common/dto';
 import { FieldValidationException } from 'common/exceptions';
 import { RegistrationRequest, RegistrationRequestStatus } from 'users/interfaces';
+import { REGISTRATION_REQUEST_MODEL_PROVIDER_NAME, REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT } from 'users/users.constants';
 import {
     CreateRegistrationRequestDto,
     GetRegistrationRequestsDto,
     RegistrationRequestResponseDto,
     UpdateRegistrationRequestDto,
 } from 'users/dto';
-import { REGISTRATION_REQUEST_MODEL_PROVIDER_NAME, REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT } from 'users/users.constants';
 
 @Injectable()
 export class RegistrationRequestsService {
@@ -37,17 +37,27 @@ export class RegistrationRequestsService {
         );
     }
 
-    async getRequest(externalIdOrEmail: string): Promise<RegistrationRequestResponseDto> {
-        const request = await this.findByExternalIdOrEmail(externalIdOrEmail);
-        if (!request) {
+    async getRequestByEmail(email: string, options: { strict: boolean } = { strict: false }): Promise<RegistrationRequest | null> {
+        const request = await this.registrationRequestModel.findOne({ requesterEmail: email.toLowerCase() }).exec();
+        if (!request && options.strict) {
             throw new NotFoundException('Registration request not found');
         }
-        return new RegistrationRequestResponseDto(request);
+        return request;
+    }
+
+    async getRequestByExternalId(
+        externalId: string,
+        options: { strict: boolean } = { strict: false },
+    ): Promise<RegistrationRequest | null> {
+        const request = await this.registrationRequestModel.findOne({ externalId }).exec();
+        if (!request && options.strict) {
+            throw new NotFoundException('Registration request not found');
+        }
+        return request;
     }
 
     async createRequest(dto: CreateRegistrationRequestDto): Promise<RegistrationRequestResponseDto> {
-        const existingRequest = await this.registrationRequestModel.findOne({ requesterEmail: dto.email.toLowerCase() }).exec();
-
+        const existingRequest = await this.getRequestByEmail(dto.email);
         if (existingRequest) {
             if (existingRequest.status === RegistrationRequestStatus.Pending) {
                 throw new FieldValidationException('A pending registration request for this email already exists', 'email');
@@ -61,65 +71,46 @@ export class RegistrationRequestsService {
                 }
                 existingRequest.status = RegistrationRequestStatus.Pending;
                 existingRequest.requesterComment = dto.comment;
-                const updatedRequest = await existingRequest.save();
-                return new RegistrationRequestResponseDto(updatedRequest);
+                return new RegistrationRequestResponseDto(await existingRequest.save());
             }
         }
-
-        const newRequest = new this.registrationRequestModel({
-            requesterEmail: dto.email.toLowerCase(),
-            status: RegistrationRequestStatus.Pending,
-            requesterComment: dto.comment,
-        });
-        const savedRequest = await newRequest.save({ validateBeforeSave: true });
-        return new RegistrationRequestResponseDto(savedRequest);
+        return this.createNewRequest(dto.email, RegistrationRequestStatus.Pending, dto.comment);
     }
 
-    async updateRequest(externalIdOrEmail: string, dto: UpdateRegistrationRequestDto): Promise<RegistrationRequestResponseDto> {
+    async createAutoApprovedRequest(email: string): Promise<RegistrationRequestResponseDto> {
+        const existingRequest = await this.getRequestByEmail(email);
+        if (existingRequest) {
+            existingRequest.status = RegistrationRequestStatus.Approved;
+            existingRequest.requesterComment = REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT;
+            return new RegistrationRequestResponseDto(await existingRequest.save());
+        }
+        return this.createNewRequest(email, RegistrationRequestStatus.Approved, REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT);
+    }
+
+    async updateRequest(externalId: string, dto: UpdateRegistrationRequestDto): Promise<RegistrationRequestResponseDto> {
         if (dto.approve && dto.blackListed) {
             throw new FieldValidationException('Cannot approve and blacklist at the same time', 'blackListed');
         }
 
-        const request = await this.findByExternalIdOrEmail(externalIdOrEmail);
-        if (!request) {
-            throw new NotFoundException('Registration request not found');
-        }
-
+        const request = await this.getRequestByExternalId(externalId, { strict: true });
         request.status = dto.approve ? RegistrationRequestStatus.Approved : RegistrationRequestStatus.Rejected;
         if (dto.blackListed !== undefined) {
             request.blackListed = dto.blackListed;
         }
 
-        const updatedRequest = await request.save();
-        return new RegistrationRequestResponseDto(updatedRequest);
+        return new RegistrationRequestResponseDto(await request.save());
     }
 
-    async createAutoApprovedRequest(email: string): Promise<RegistrationRequest> {
-        const existingRequest = await this.registrationRequestModel.findOne({ requesterEmail: email.toLowerCase() }).exec();
-
-        if (existingRequest) {
-            existingRequest.status = RegistrationRequestStatus.Approved;
-            existingRequest.requesterComment = REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT;
-            return existingRequest.save();
-        }
-
-        const newRequest = new this.registrationRequestModel({
-            requesterEmail: email.toLowerCase(),
-            status: RegistrationRequestStatus.Approved,
-            requesterComment: REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
+    private async createNewRequest(
+        requesterEmail: string,
+        status: RegistrationRequestStatus,
+        requesterComment?: string,
+    ): Promise<RegistrationRequestResponseDto> {
+        const request = new this.registrationRequestModel({
+            requesterEmail: requesterEmail.toLowerCase(),
+            status,
+            requesterComment: requesterComment,
         });
-        return newRequest.save({ validateBeforeSave: true });
-    }
-
-    async findByEmail(email: string): Promise<RegistrationRequest | null> {
-        return this.registrationRequestModel.findOne({ requesterEmail: email.toLowerCase() }).exec();
-    }
-
-    private async findByExternalIdOrEmail(externalIdOrEmail: string): Promise<RegistrationRequest | null> {
-        return this.registrationRequestModel
-            .findOne({
-                $or: [{ externalId: externalIdOrEmail }, { requestermail: externalIdOrEmail.toLowerCase() }],
-            })
-            .exec();
+        return new RegistrationRequestResponseDto(await request.save({ validateBeforeSave: true }));
     }
 }

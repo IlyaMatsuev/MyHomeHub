@@ -101,25 +101,35 @@ describe('RegistrationRequestsService', () => {
         });
     });
 
-    describe('getRequest', () => {
-        it('should return request when found', async () => {
+    describe('getRequestByExternalId', () => {
+        it('should return the request when found', async () => {
             const mockRequest = createMockRequest();
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockRequest),
             });
 
-            const result = await service.getRequest('test-uuid');
+            const result = await service.getRequestByExternalId('test-uuid');
 
-            expect(result.externalId).toBe('test-uuid');
-            expect(result.requesterEmail).toBe('test@example.com');
+            expect(result?.externalId).toBe('test-uuid');
+            expect(mockRegistrationRequestModel.findOne).toHaveBeenCalledWith({ externalId: 'test-uuid' });
         });
 
-        it('should throw NotFoundException when request not found', async () => {
+        it('should return null when not found and not strict', async () => {
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(null),
             });
 
-            await expect(service.getRequest('non-existent')).rejects.toThrow(NotFoundException);
+            const result = await service.getRequestByExternalId('non-existent');
+
+            expect(result).toBeNull();
+        });
+
+        it('should throw NotFoundException when not found and strict', async () => {
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            await expect(service.getRequestByExternalId('non-existent', { strict: true })).rejects.toThrow(NotFoundException);
         });
     });
 
@@ -237,6 +247,7 @@ describe('RegistrationRequestsService', () => {
             const result = await service.updateRequest('test-uuid', { approve: false, blackListed: true });
 
             expect(result.status).toBe(RegistrationRequestStatus.Rejected);
+            expect(result.blackListed).toBe(true);
         });
 
         it('should throw FieldValidationException when trying to approve and blacklist', async () => {
@@ -296,26 +307,35 @@ describe('RegistrationRequestsService', () => {
         });
     });
 
-    describe('findByEmail', () => {
-        it('should return request when found', async () => {
+    describe('getRequestByEmail', () => {
+        it('should return the request when found and lowercase the email', async () => {
             const mockRequest = createMockRequest();
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockRequest),
             });
 
-            const result = await service.findByEmail('test@example.com');
+            const result = await service.getRequestByEmail('Test@Example.com');
 
             expect(result?.requesterEmail).toBe('test@example.com');
+            expect(mockRegistrationRequestModel.findOne).toHaveBeenCalledWith({ requesterEmail: 'test@example.com' });
         });
 
-        it('should return null when not found', async () => {
+        it('should return null when not found and not strict', async () => {
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(null),
             });
 
-            const result = await service.findByEmail('nonexistent@example.com');
+            const result = await service.getRequestByEmail('nonexistent@example.com');
 
             expect(result).toBeNull();
+        });
+
+        it('should throw NotFoundException when not found and strict', async () => {
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            await expect(service.getRequestByEmail('nonexistent@example.com', { strict: true })).rejects.toThrow(NotFoundException);
         });
     });
 });

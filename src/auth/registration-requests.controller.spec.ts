@@ -9,7 +9,7 @@ describe('RegistrationRequestsController', () => {
     let controller: RegistrationRequestsController;
     let mockRegistrationRequestsService: {
         getRequests: jest.Mock;
-        getRequest: jest.Mock;
+        getRequestByExternalId: jest.Mock;
         createRequest: jest.Mock;
         updateRequest: jest.Mock;
     };
@@ -19,6 +19,7 @@ describe('RegistrationRequestsController', () => {
         requesterEmail: 'test@example.com',
         status: RegistrationRequestStatus.Pending,
         requesterComment: 'Test comment',
+        blackListed: false,
         createdAt: new Date('2026-01-01'),
         updatedAt: new Date('2026-01-01'),
     };
@@ -26,7 +27,7 @@ describe('RegistrationRequestsController', () => {
     beforeEach(async () => {
         mockRegistrationRequestsService = {
             getRequests: jest.fn(),
-            getRequest: jest.fn(),
+            getRequestByExternalId: jest.fn(),
             createRequest: jest.fn(),
             updateRequest: jest.fn(),
         };
@@ -64,21 +65,12 @@ describe('RegistrationRequestsController', () => {
 
     describe('getRequest', () => {
         it('should return a registration request by external ID', async () => {
-            mockRegistrationRequestsService.getRequest.mockResolvedValue(mockRequestResponse);
+            mockRegistrationRequestsService.getRequestByExternalId.mockResolvedValue(mockRequestResponse);
 
             const result = await controller.getRequest('test-uuid');
 
             expect(result).toEqual(mockRequestResponse);
-            expect(mockRegistrationRequestsService.getRequest).toHaveBeenCalledWith('test-uuid');
-        });
-
-        it('should return a registration request by email', async () => {
-            mockRegistrationRequestsService.getRequest.mockResolvedValue(mockRequestResponse);
-
-            const result = await controller.getRequest('test@example.com');
-
-            expect(result).toEqual(mockRequestResponse);
-            expect(mockRegistrationRequestsService.getRequest).toHaveBeenCalledWith('test@example.com');
+            expect(mockRegistrationRequestsService.getRequestByExternalId).toHaveBeenCalledWith('test-uuid', { strict: true });
         });
     });
 

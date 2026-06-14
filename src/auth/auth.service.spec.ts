@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { FieldValidationException } from 'common/exceptions';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -59,7 +59,7 @@ describe('AuthService', () => {
                 {
                     provide: RegistrationRequestsService,
                     useValue: {
-                        findByEmail: jest.fn(),
+                        getRequestByEmail: jest.fn(),
                         createAutoApprovedRequest: jest.fn(),
                     },
                 },
@@ -129,17 +129,17 @@ describe('AuthService', () => {
             expect(registrationRequestsService.createAutoApprovedRequest).toHaveBeenCalledWith('new@example.com');
         });
 
-        it('should throw UnauthorizedException when TOTP is invalid', async () => {
+        it('should throw ForbiddenException when TOTP is invalid', async () => {
             (speakeasy.totp.verify as jest.Mock).mockReturnValue(false);
 
-            await expect(service.register('new@example.com', 'password', 'invalid-totp')).rejects.toThrow(UnauthorizedException);
+            await expect(service.register('new@example.com', 'password', 'invalid-totp')).rejects.toThrow(ForbiddenException);
             expect(usersService.create).not.toHaveBeenCalled();
         });
 
         it('should create user when registration request is approved and no TOTP provided', async () => {
             const newUser = { ...mockUser, _id: 'new-user-id', email: 'approved@example.com' };
             const approvedRequest = { status: RegistrationRequestStatus.Approved };
-            registrationRequestsService.findByEmail.mockResolvedValue(approvedRequest as never);
+            registrationRequestsService.getRequestByEmail.mockResolvedValue(approvedRequest as never);
             (argon2.hash as jest.Mock).mockResolvedValue('new-hashed-password');
             usersService.create.mockResolvedValue(newUser as never);
 
@@ -150,7 +150,7 @@ describe('AuthService', () => {
         });
 
         it('should throw FieldValidationException when no TOTP and no registration request exists', async () => {
-            registrationRequestsService.findByEmail.mockResolvedValue(null);
+            registrationRequestsService.getRequestByEmail.mockResolvedValue(null);
 
             await expect(service.register('new@example.com', 'password')).rejects.toThrow(FieldValidationException);
             await expect(service.register('new@example.com', 'password')).rejects.toMatchObject({
@@ -171,7 +171,7 @@ describe('AuthService', () => {
 
         it('should throw FieldValidationException when registration request is pending', async () => {
             const pendingRequest = { status: RegistrationRequestStatus.Pending };
-            registrationRequestsService.findByEmail.mockResolvedValue(pendingRequest as never);
+            registrationRequestsService.getRequestByEmail.mockResolvedValue(pendingRequest as never);
 
             await expect(service.register('pending@example.com', 'password')).rejects.toThrow(FieldValidationException);
             await expect(service.register('pending@example.com', 'password')).rejects.toMatchObject({
@@ -192,7 +192,7 @@ describe('AuthService', () => {
 
         it('should throw FieldValidationException when registration request is rejected', async () => {
             const rejectedRequest = { status: RegistrationRequestStatus.Rejected };
-            registrationRequestsService.findByEmail.mockResolvedValue(rejectedRequest as never);
+            registrationRequestsService.getRequestByEmail.mockResolvedValue(rejectedRequest as never);
 
             await expect(service.register('rejected@example.com', 'password')).rejects.toThrow(FieldValidationException);
             await expect(service.register('rejected@example.com', 'password')).rejects.toMatchObject({

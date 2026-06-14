@@ -1,5 +1,6 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { RegistrationRequestStatus, RegistrationRequest } from 'users/interfaces';
+import { REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED } from 'users/users.constants';
 
 @ApiSchema({ name: 'Auth.RegistrationRequestResponse', description: 'The registration request details' })
 export class RegistrationRequestResponseDto {
@@ -19,6 +20,12 @@ export class RegistrationRequestResponseDto {
     @ApiProperty({ description: 'Optional comment provided by the requester', example: 'Please approve my account', required: false })
     requesterComment?: string;
 
+    @ApiProperty({
+        description: 'If true, future registration requests from this email will be automatically rejected',
+        example: REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED,
+    })
+    blackListed: boolean;
+
     @ApiProperty({ description: 'When the registration request was created' })
     createdAt: Date;
 
@@ -28,8 +35,9 @@ export class RegistrationRequestResponseDto {
     constructor(request: RegistrationRequest) {
         this.externalId = request.externalId;
         this.requesterEmail = request.requesterEmail;
-        this.status = request.status;
         this.requesterComment = request.requesterComment;
+        this.status = request.status;
+        this.blackListed = request.blackListed;
         this.createdAt = request.createdAt;
         this.updatedAt = request.updatedAt;
     }
