@@ -16,12 +16,23 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     private buildResponseBody(exception: HttpException): object {
         const exceptionResponse = exception.getResponse();
+
         if (typeof exceptionResponse === 'object') {
-            if ('message' in exceptionResponse && Array.isArray(exceptionResponse.message)) {
-                return { messages: exceptionResponse.message, ...exceptionResponse, message: undefined };
+            // Custom validation exceptions already carry the `messages`/`details` shape — pass them through.
+            if ('message' in exceptionResponse) {
+                return this.normalizeMessages(exceptionResponse.message as string | Array<string>);
             }
             return exceptionResponse;
         }
-        return { messages: [exceptionResponse] };
+
+        return this.normalizeMessages(exceptionResponse);
+    }
+
+    private normalizeMessages(message: string | Array<string>): object {
+        const messages = Array.isArray(message) ? message : [message];
+        return {
+            messages,
+            details: { errors: messages.map(singleMessage => ({ message: singleMessage })) },
+        };
     }
 }

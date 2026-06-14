@@ -1,6 +1,7 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Model, FilterQuery } from 'mongoose';
 import { PaginationResponseDto } from 'common/dto';
+import { FieldValidationException } from 'common/exceptions';
 import { RegistrationRequest, RegistrationRequestStatus } from 'users/interfaces';
 import {
     CreateRegistrationRequestDto,
@@ -49,10 +50,10 @@ export class RegistrationRequestsService {
 
         if (existingRequest) {
             if (existingRequest.status === RegistrationRequestStatus.Pending) {
-                throw new BadRequestException('A pending registration request for this email already exists');
+                throw new FieldValidationException('A pending registration request for this email already exists', 'email');
             }
             if (existingRequest.status === RegistrationRequestStatus.Approved) {
-                throw new BadRequestException('A registration request for this email has already been approved');
+                throw new FieldValidationException('A registration request for this email has already been approved', 'email');
             }
             if (existingRequest.status === RegistrationRequestStatus.Rejected) {
                 if (existingRequest.blackListed) {
@@ -76,7 +77,7 @@ export class RegistrationRequestsService {
 
     async updateRequest(externalIdOrEmail: string, dto: UpdateRegistrationRequestDto): Promise<RegistrationRequestResponseDto> {
         if (dto.approve && dto.blackListed) {
-            throw new BadRequestException('Cannot approve and blacklist at the same time');
+            throw new FieldValidationException('Cannot approve and blacklist at the same time', 'blackListed');
         }
 
         const request = await this.findByExternalIdOrEmail(externalIdOrEmail);

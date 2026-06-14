@@ -6,7 +6,7 @@ export class ValidationErrorDto {
     @ApiProperty({ description: 'Human-readable error message', example: 'name must be longer than or equal to 3 characters' })
     message: string;
 
-    @ApiProperty({ description: 'Dot-separated path to the invalid field in the request', example: 'name' })
+    @ApiProperty({ description: 'Dot-separated path to the invalid field in the request', example: 'name', required: false })
     path: string;
 }
 

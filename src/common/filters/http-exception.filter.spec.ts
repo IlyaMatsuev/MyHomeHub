@@ -34,6 +34,20 @@ describe('HttpExceptionFilter', () => {
         expect(mockResponse.status).toHaveBeenCalledWith(400);
         expect(mockResponse.json).toHaveBeenCalledWith({
             messages: ['Test error message'],
+            details: { errors: [{ message: 'Test error message' }] },
+            statusCode: 400,
+        });
+    });
+
+    it('should normalize BadRequestException with a single string message', () => {
+        const exception = new BadRequestException("Scenario with the same name ('Main ceiling light On') already exists");
+
+        filter.catch(exception, mockHost);
+
+        expect(mockResponse.status).toHaveBeenCalledWith(400);
+        expect(mockResponse.json).toHaveBeenCalledWith({
+            messages: ["Scenario with the same name ('Main ceiling light On') already exists"],
+            details: { errors: [{ message: "Scenario with the same name ('Main ceiling light On') already exists" }] },
             statusCode: 400,
         });
     });
@@ -62,8 +76,7 @@ describe('HttpExceptionFilter', () => {
         expect(mockResponse.status).toHaveBeenCalledWith(400);
         expect(mockResponse.json).toHaveBeenCalledWith({
             messages: ['Error 1', 'Error 2'],
-            message: undefined,
-            error: 'Bad Request',
+            details: { errors: [{ message: 'Error 1' }, { message: 'Error 2' }] },
             statusCode: 400,
         });
     });
@@ -84,6 +97,7 @@ describe('HttpExceptionFilter', () => {
         expect(mockResponse.status).toHaveBeenCalledWith(500);
         expect(mockResponse.json).toHaveBeenCalledWith({
             messages: ['Internal Server Error'],
+            details: { errors: [{ message: 'Internal Server Error' }] },
             statusCode: 500,
         });
     });

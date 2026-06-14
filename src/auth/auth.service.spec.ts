@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
+import { FieldValidationException } from 'common/exceptions';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
@@ -148,35 +149,58 @@ describe('AuthService', () => {
             expect(usersService.create).toHaveBeenCalledWith('approved@example.com', 'new-hashed-password');
         });
 
-        it('should throw BadRequestException when no TOTP and no registration request exists', async () => {
+        it('should throw FieldValidationException when no TOTP and no registration request exists', async () => {
             registrationRequestsService.findByEmail.mockResolvedValue(null);
 
-            await expect(service.register('new@example.com', 'password')).rejects.toThrow(BadRequestException);
-            await expect(service.register('new@example.com', 'password')).rejects.toThrow(
-                'No registration request found for this email. Please submit a registration request first.',
-            );
+            await expect(service.register('new@example.com', 'password')).rejects.toThrow(FieldValidationException);
+            await expect(service.register('new@example.com', 'password')).rejects.toMatchObject({
+                response: {
+                    messages: ['No registration request found for this email. Please submit a registration request first.'],
+                    details: {
+                        errors: [
+                            {
+                                message: 'No registration request found for this email. Please submit a registration request first.',
+                                path: 'email',
+                            },
+                        ],
+                    },
+                },
+            });
             expect(usersService.create).not.toHaveBeenCalled();
         });
 
-        it('should throw BadRequestException when registration request is pending', async () => {
+        it('should throw FieldValidationException when registration request is pending', async () => {
             const pendingRequest = { status: RegistrationRequestStatus.Pending };
             registrationRequestsService.findByEmail.mockResolvedValue(pendingRequest as never);
 
-            await expect(service.register('pending@example.com', 'password')).rejects.toThrow(BadRequestException);
-            await expect(service.register('pending@example.com', 'password')).rejects.toThrow(
-                'Your registration request has not been reviewed yet. Please wait for admin approval.',
-            );
+            await expect(service.register('pending@example.com', 'password')).rejects.toThrow(FieldValidationException);
+            await expect(service.register('pending@example.com', 'password')).rejects.toMatchObject({
+                response: {
+                    messages: ['Your registration request has not been reviewed yet. Please wait for admin approval.'],
+                    details: {
+                        errors: [
+                            {
+                                message: 'Your registration request has not been reviewed yet. Please wait for admin approval.',
+                                path: 'status',
+                            },
+                        ],
+                    },
+                },
+            });
             expect(usersService.create).not.toHaveBeenCalled();
         });
 
-        it('should throw BadRequestException when registration request is rejected', async () => {
+        it('should throw FieldValidationException when registration request is rejected', async () => {
             const rejectedRequest = { status: RegistrationRequestStatus.Rejected };
             registrationRequestsService.findByEmail.mockResolvedValue(rejectedRequest as never);
 
-            await expect(service.register('rejected@example.com', 'password')).rejects.toThrow(BadRequestException);
-            await expect(service.register('rejected@example.com', 'password')).rejects.toThrow(
-                'Your registration request has been rejected.',
-            );
+            await expect(service.register('rejected@example.com', 'password')).rejects.toThrow(FieldValidationException);
+            await expect(service.register('rejected@example.com', 'password')).rejects.toMatchObject({
+                response: {
+                    messages: ['Your registration request has been rejected.'],
+                    details: { errors: [{ message: 'Your registration request has been rejected.', path: 'status' }] },
+                },
+            });
             expect(usersService.create).not.toHaveBeenCalled();
         });
     });

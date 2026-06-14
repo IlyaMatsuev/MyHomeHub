@@ -1,13 +1,4 @@
-import {
-    BadRequestException,
-    forwardRef,
-    Inject,
-    Injectable,
-    InternalServerErrorException,
-    Logger,
-    NotFoundException,
-    OnModuleInit,
-} from '@nestjs/common';
+import { forwardRef, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { Model, RootFilterQuery } from 'mongoose';
 import { DevicesService } from 'devices/devices.service';
 import { GetScenarioOptions, Scenario, ScenarioCronTriggerSource, ScenarioFilter, ScenarioTriggerSourceType } from 'scenarios/interfaces';
@@ -17,6 +8,7 @@ import { SchedulerService } from 'scheduler/scheduler.service';
 import { ScenariosExecutionService } from 'scenarios/scenarios-execution.service';
 import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
 import { PaginationResponseDto } from 'common/dto';
+import { FieldValidationException } from 'common/exceptions';
 
 @Injectable()
 export class ScenariosService implements OnModuleInit {
@@ -99,7 +91,7 @@ export class ScenariosService implements OnModuleInit {
     async addScenario(scenarioDto: CreateScenarioDto): Promise<Scenario> {
         const existingScenario = await this.getScenario({ name: scenarioDto.name }, { strict: false });
         if (existingScenario) {
-            throw new BadRequestException(`Scenario with the same name ('${scenarioDto.name}') already exists`);
+            throw new FieldValidationException(`Scenario with the same name ('${scenarioDto.name}') already exists`, 'name');
         }
         const cronSource = this.findScenarioCronSource(scenarioDto);
         if (cronSource && cronSource.adjustTo) {

@@ -1,7 +1,14 @@
 import { Body, Controller, Param, Query, Delete, Get, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { PaginationResponseDto } from 'common/dto';
-import { ApiOkPaginationResponse, ApiInternalError, ApiNotFound, ApiUnauthorized, ApiValidationError } from 'common/decorators';
+import {
+    ApiOkPaginationResponse,
+    ApiInternalError,
+    ApiNotFound,
+    ApiUnauthorized,
+    ApiValidationError,
+    ExternalIdParam,
+} from 'common/decorators';
 import { ScenariosService } from 'scenarios/scenarios.service';
 import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
 import {
@@ -85,7 +92,7 @@ export class ScenariosController {
     @ApiParam({ name: 'externalId', description: 'External ID of the scenario to find', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Get a specific scenario by the provided external ID' })
     @ApiOkResponse({ type: ScenarioResponseDto })
-    async getScenario(@Param('externalId') externalId: string): Promise<ScenarioResponseDto> {
+    async getScenario(@ExternalIdParam() externalId: string): Promise<ScenarioResponseDto> {
         return this.scenariosService.getScenarioByExternalId(externalId);
     }
 
@@ -103,7 +110,7 @@ export class ScenariosController {
     @ApiOkResponse({ type: ScenarioResponseDto })
     @ApiValidationError()
     async updateScenario(
-        @Param('externalId') externalId: string,
+        @ExternalIdParam() externalId: string,
         @Body() updateScenarioDto: UpdateScenarioDto,
     ): Promise<ScenarioResponseDto> {
         return this.scenariosService.updateScenario(externalId, updateScenarioDto);
@@ -114,7 +121,7 @@ export class ScenariosController {
     @ApiOperation({ summary: 'Delete an existing scenario by the provided external ID' })
     @ApiOkResponse({ type: ScenarioResponseDto })
     @ApiValidationError()
-    async removeScenario(@Param('externalId') externalId: string): Promise<ScenarioResponseDto> {
+    async removeScenario(@ExternalIdParam() externalId: string): Promise<ScenarioResponseDto> {
         return this.scenariosService.removeScenario(externalId);
     }
 }

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { FieldValidationException } from 'common/exceptions';
 import { ScenariosService } from './scenarios.service';
 import { ScenarioGroupsService } from './scenario-groups.service';
 import { SCENARIO_MODEL_PROVIDER_NAME } from './scenarios.constants';
@@ -399,7 +400,7 @@ describe('ScenariosService', () => {
             expect(mockScenarioGroupsService.syncGroupOnCreate).toHaveBeenCalledWith('test_group');
         });
 
-        it('should throw BadRequestException when scenario with same name exists', async () => {
+        it('should throw FieldValidationException when scenario with same name exists', async () => {
             mockScenarioModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockScenario),
             });
@@ -410,7 +411,13 @@ describe('ScenariosService', () => {
                 devices: [],
             } as unknown as CreateScenarioDto;
 
-            await expect(service.addScenario(createDto)).rejects.toThrow(BadRequestException);
+            await expect(service.addScenario(createDto)).rejects.toThrow(FieldValidationException);
+            await expect(service.addScenario(createDto)).rejects.toMatchObject({
+                response: {
+                    messages: ["Scenario with the same name ('Test Scenario') already exists"],
+                    details: { errors: [{ message: "Scenario with the same name ('Test Scenario') already exists", path: 'name' }] },
+                },
+            });
         });
 
         it('should adjust cron time when adjustTo is specified', async () => {

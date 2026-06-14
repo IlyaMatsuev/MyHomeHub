@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
@@ -7,6 +7,7 @@ import { UsersService } from 'users/users.service';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
 import { RegistrationRequestStatus } from 'users/interfaces';
 import { LoginResponseDto, RegisterResponseDto } from 'auth/dto';
+import { FieldValidationException } from 'common/exceptions';
 
 @Injectable()
 export class AuthService {
@@ -44,15 +45,21 @@ export class AuthService {
         const registrationRequest = await this.registrationRequestsService.findByEmail(email);
 
         if (!registrationRequest) {
-            throw new BadRequestException('No registration request found for this email. Please submit a registration request first.');
+            throw new FieldValidationException(
+                'No registration request found for this email. Please submit a registration request first.',
+                'email',
+            );
         }
 
         if (registrationRequest.status === RegistrationRequestStatus.Pending) {
-            throw new BadRequestException('Your registration request has not been reviewed yet. Please wait for admin approval.');
+            throw new FieldValidationException(
+                'Your registration request has not been reviewed yet. Please wait for admin approval.',
+                'status',
+            );
         }
 
         if (registrationRequest.status === RegistrationRequestStatus.Rejected) {
-            throw new BadRequestException('Your registration request has been rejected.');
+            throw new FieldValidationException('Your registration request has been rejected.', 'status');
         }
 
         const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password));

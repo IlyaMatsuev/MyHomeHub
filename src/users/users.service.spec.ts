@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
+import { FieldValidationException } from 'common/exceptions';
 import { UsersService } from './users.service';
 import { USER_MODEL_PROVIDER_NAME } from './users.constants';
 import { User } from './interfaces';
@@ -83,15 +83,18 @@ describe('UsersService', () => {
             expect(result.password).toBe('hashed-password');
         });
 
-        it('should throw BadRequestException when user with email already exists', async () => {
+        it('should throw FieldValidationException when user with email already exists', async () => {
             mockUserModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockUser),
             });
 
-            await expect(service.create('test@example.com', 'hashed-password')).rejects.toThrow(BadRequestException);
-            await expect(service.create('test@example.com', 'hashed-password')).rejects.toThrow(
-                'User with the provided email already exists',
-            );
+            await expect(service.create('test@example.com', 'hashed-password')).rejects.toThrow(FieldValidationException);
+            await expect(service.create('test@example.com', 'hashed-password')).rejects.toMatchObject({
+                response: {
+                    messages: ['User with the provided email already exists'],
+                    details: { errors: [{ message: 'User with the provided email already exists', path: 'email' }] },
+                },
+            });
         });
     });
 });

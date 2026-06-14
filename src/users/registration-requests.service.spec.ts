@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { FieldValidationException } from 'common/exceptions';
 import { RegistrationRequestsService } from './registration-requests.service';
 import { RegistrationRequestStatus, RegistrationRequest } from 'users/interfaces';
 import { REGISTRATION_REQUEST_MODEL_PROVIDER_NAME, REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT } from 'users/users.constants';
@@ -136,28 +137,34 @@ describe('RegistrationRequestsService', () => {
             expect(mockSaveFn).toHaveBeenCalled();
         });
 
-        it('should throw BadRequestException when pending request exists', async () => {
+        it('should throw FieldValidationException when pending request exists', async () => {
             const pendingRequest = createMockRequest({ status: RegistrationRequestStatus.Pending });
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(pendingRequest),
             });
 
-            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(BadRequestException);
-            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(
-                'A pending registration request for this email already exists',
-            );
+            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(FieldValidationException);
+            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toMatchObject({
+                response: {
+                    messages: ['A pending registration request for this email already exists'],
+                    details: { errors: [{ message: 'A pending registration request for this email already exists', path: 'email' }] },
+                },
+            });
         });
 
-        it('should throw BadRequestException when approved request exists', async () => {
+        it('should throw FieldValidationException when approved request exists', async () => {
             const approvedRequest = createMockRequest({ status: RegistrationRequestStatus.Approved });
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(approvedRequest),
             });
 
-            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(BadRequestException);
-            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(
-                'A registration request for this email has already been approved',
-            );
+            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(FieldValidationException);
+            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toMatchObject({
+                response: {
+                    messages: ['A registration request for this email has already been approved'],
+                    details: { errors: [{ message: 'A registration request for this email has already been approved', path: 'email' }] },
+                },
+            });
         });
 
         it('should update rejected request to pending when not blacklisted', async () => {
@@ -232,11 +239,16 @@ describe('RegistrationRequestsService', () => {
             expect(result.status).toBe(RegistrationRequestStatus.Rejected);
         });
 
-        it('should throw BadRequestException when trying to approve and blacklist', async () => {
-            await expect(service.updateRequest('test-uuid', { approve: true, blackListed: true })).rejects.toThrow(BadRequestException);
+        it('should throw FieldValidationException when trying to approve and blacklist', async () => {
             await expect(service.updateRequest('test-uuid', { approve: true, blackListed: true })).rejects.toThrow(
-                'Cannot approve and blacklist at the same time',
+                FieldValidationException,
             );
+            await expect(service.updateRequest('test-uuid', { approve: true, blackListed: true })).rejects.toMatchObject({
+                response: {
+                    messages: ['Cannot approve and blacklist at the same time'],
+                    details: { errors: [{ message: 'Cannot approve and blacklist at the same time', path: 'blackListed' }] },
+                },
+            });
         });
 
         it('should throw NotFoundException when request not found', async () => {

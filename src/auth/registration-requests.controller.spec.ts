@@ -57,7 +57,7 @@ describe('RegistrationRequestsController', () => {
             expect(result).toEqual(mockRequestResponse);
             expect(mockRegistrationRequestsService.createRequest).toHaveBeenCalledWith({
                 email: 'test@example.com',
-                requesterComment: 'Test comment',
+                comment: 'Test comment',
             });
         });
     });

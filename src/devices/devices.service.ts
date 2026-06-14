@@ -1,4 +1,4 @@
-import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { Model, RootFilterQuery } from 'mongoose';
 import { DevicesControlServiceFactory } from 'devices-control/devices-control-service.factory';
@@ -21,6 +21,7 @@ import { PairableDevice } from 'zigbee/interfaces';
 import { ZigbeePairableDevices } from 'zigbee/store';
 import { PaginationResponseDto } from 'common/dto';
 import { MAX_PAGE_SIZE } from 'common/common.constants';
+import { FieldValidationException } from 'common/exceptions';
 
 @Injectable()
 export class DevicesService {
@@ -106,11 +107,12 @@ export class DevicesService {
     async addDevice(deviceDto: CreateDeviceDto): Promise<DeviceResponseDto> {
         const existingDevice = await this.getDevice({ name: deviceDto.name }, { strict: false });
         if (existingDevice) {
-            throw new BadRequestException(`Device with the same name ('${deviceDto.name}') already exists`);
+            throw new FieldValidationException(`Device with the same name ('${deviceDto.name}') already exists`, 'name');
         }
         if (deviceDto.zigbeeIeeeAddress && !ZigbeePairableDevices.has(deviceDto.zigbeeIeeeAddress)) {
-            throw new BadRequestException(
+            throw new FieldValidationException(
                 `Device with the provided zigbee Ieee ('${deviceDto.zigbeeIeeeAddress}') is not discoverable. Make sure it's pairable first`,
+                'zigbeeIeeeAddress',
             );
         }
 

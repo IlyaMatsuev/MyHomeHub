@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { FieldValidationException } from 'common/exceptions';
 import { ScenarioGroupsService } from './scenario-groups.service';
 import { SCENARIO_GROUP_MODEL_PROVIDER_NAME, SCENARIO_MODEL_PROVIDER_NAME } from './scenarios.constants';
 import { ScenarioGroup } from './interfaces';
@@ -133,6 +134,22 @@ describe('ScenarioGroupsService', () => {
             });
 
             await expect(service.getGroupByName('nonexistent')).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('createGroup', () => {
+        it('should throw FieldValidationException when group with the same name exists', async () => {
+            mockScenarioGroupModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockGroup),
+            });
+
+            await expect(service.createGroup('test_group')).rejects.toThrow(FieldValidationException);
+            await expect(service.createGroup('test_group')).rejects.toMatchObject({
+                response: {
+                    messages: ["Scenario group 'test_group' already exists"],
+                    details: { errors: [{ message: "Scenario group 'test_group' already exists", path: 'name' }] },
+                },
+            });
         });
     });
 
