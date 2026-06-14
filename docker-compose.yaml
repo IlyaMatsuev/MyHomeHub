@@ -16,7 +16,8 @@ services:
     depends_on:
       - mongodb
       - mqtt-broker
-      - redis
+      # redis should not be part of dependencies because it can be started from another smarthome-related project
+      # - redis
     # Host mode is required to allow proper UDP packets exchange
     network_mode: host
 
@@ -40,7 +41,7 @@ services:
     container_name: smarthome-redis
     restart: unless-stopped
     volumes:
-      - ./data/redis:/data
+      - smarthome-redis-data:/data
     ports:
       - "${REDIS_PORT}:6379"
 
@@ -104,3 +105,7 @@ services:
 networks:
   smarthome-network:
     driver: bridge
+
+volumes:
+  smarthome-redis-data:
+    name: smarthome-redis-data

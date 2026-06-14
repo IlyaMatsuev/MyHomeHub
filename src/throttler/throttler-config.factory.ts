@@ -14,9 +14,10 @@ export class ThrottlerConfigFactory implements ThrottlerOptionsFactory {
     }
 
     private get redis(): Redis {
+        const keyPrefix = this.configService.get<string>('REDIS_KEY_PREFIX');
         const host = this.configService.get<string>('REDIS_DOMAIN');
         const port = +this.configService.get<string>('REDIS_PORT');
-        return new Redis({ host, port });
+        return new Redis({ keyPrefix, host, port });
     }
 
     constructor(private readonly configService: ConfigService) {}
