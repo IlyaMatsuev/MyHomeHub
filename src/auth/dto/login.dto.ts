@@ -1,5 +1,6 @@
 import { ApiPropertyOptional, ApiSchema } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, registerDecorator, ValidateIf, ValidationOptions } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, registerDecorator, ValidateIf } from 'class-validator';
+import type { ValidationOptions } from 'class-validator';
 
 function CredentialsXorRefreshToken(validationOptions?: ValidationOptions) {
     return function (object: object, propertyName: string) {
