@@ -11,6 +11,7 @@ services:
     volumes:
       - ./.env:/usr/src/app/.env
       - ./public:/usr/src/app/public
+      - ./configs/devices:/usr/src/app/configs/devices
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     depends_on:

@@ -42,6 +42,9 @@ coverage/
 .claudeignore
 CLAUDE.md
 
+# Device configs (mounted as a volume at runtime instead of being baked into the image)
+configs/devices/
+
 # Secrets
 configs/mqtt/mosquitto.conf
 configs/mqtt/pwfile.*

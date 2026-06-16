@@ -6,6 +6,7 @@ import { CommonModule } from 'common/common.module';
 import { AuthModule } from 'auth/auth.module';
 import { UsersModule } from 'users/users.module';
 import { DevicesModule } from 'devices/devices.module';
+import { DeviceConfigsModule } from 'device-configs/device-configs.module';
 import { ScenariosModule } from 'scenarios/scenarios.module';
 import { MqttModule } from 'mqtt/mqtt.module';
 import { ZigbeeModule } from 'zigbee/zigbee.module';
@@ -18,6 +19,7 @@ import { ThrottlerModule } from 'throttler/throttler.module';
         AuthModule,
         UsersModule,
         DevicesModule,
+        DeviceConfigsModule,
         ScenariosModule,
         MqttModule,
         ZigbeeModule,

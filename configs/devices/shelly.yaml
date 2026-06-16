@@ -1,0 +1,49 @@
+plug:
+  http:
+    controls:
+      - label: "On"
+        name: "on"
+        type: boolean
+        description: "Switch on/off state"
+    measurements:
+      - label: "Voltage"
+        name: "voltage"
+        type: number
+        description: "The currently consumed voltage (volts) while the device is on"
+      - label: "Current"
+        name: "current"
+        type: number
+        description: "The currently consumed current (amperes) while the device is on"
+      - label: "Power"
+        name: "power"
+        type: number
+        description: "The currently consumed power (watts) while the device is on"
+        path: "apower"
+
+remote:
+  zigbee:
+    commands:
+      - label: "On"
+        name: "on"
+        path: "action"
+        description: "Switch on/off state"
+        type: boolean
+        values:
+          - label: "On"
+            name: "true"
+            path: "on_press"
+          - label: "Off"
+            name: "false"
+            path: "off_press"
+      - label: "Brightness"
+        name: "brightness"
+        path: "action"
+        description: "Change brightness one step up/down"
+        type: boolean
+        values:
+          - label: "Up"
+            name: "true"
+            path: "up_press"
+          - label: "Down"
+            name: "false"
+            path: "down_press"
