@@ -117,27 +117,15 @@ describe('AuthService', () => {
 
             await expect(service.login('test@example.com', 'wrong-password')).rejects.toThrow(UnauthorizedException);
         });
-
-        it('should refresh tokens when a refresh token is provided', async () => {
-            jwtService.verifyAsync.mockResolvedValue({ sub: 'user-id-123', email: 'test@example.com', role: UserRole.Resident } as never);
-            usersService.findByEmail.mockResolvedValue(mockUser as never);
-            jwtService.signAsync.mockResolvedValueOnce('new-access-token').mockResolvedValueOnce('new-refresh-token');
-
-            const result = await service.login(undefined, undefined, 'valid-refresh-token');
-
-            expect(result).toEqual({ accessToken: 'new-access-token', refreshToken: 'new-refresh-token' });
-            expect(jwtService.verifyAsync).toHaveBeenCalledWith('valid-refresh-token', { secret: 'test-jwt-refresh-secret' });
-            expect(argon2.verify).not.toHaveBeenCalled();
-        });
     });
 
-    describe('refreshTokens', () => {
+    describe('refreshToken', () => {
         it('should issue new tokens for a valid refresh token', async () => {
             jwtService.verifyAsync.mockResolvedValue({ sub: 'user-id-123', email: 'test@example.com', role: UserRole.Resident } as never);
             usersService.findByEmail.mockResolvedValue(mockUser as never);
             jwtService.signAsync.mockResolvedValueOnce('access-token').mockResolvedValueOnce('refresh-token');
 
-            const result = await service.refreshTokens('valid-refresh-token');
+            const result = await service.refreshToken('valid-refresh-token');
 
             expect(result).toEqual({ accessToken: 'access-token', refreshToken: 'refresh-token' });
             expect(usersService.findByEmail).toHaveBeenCalledWith('test@example.com');
@@ -146,14 +134,14 @@ describe('AuthService', () => {
         it('should throw UnauthorizedException when refresh token is invalid', async () => {
             jwtService.verifyAsync.mockRejectedValue(new Error('invalid token'));
 
-            await expect(service.refreshTokens('invalid-token')).rejects.toThrow(UnauthorizedException);
+            await expect(service.refreshToken('invalid-token')).rejects.toThrow(UnauthorizedException);
         });
 
         it('should throw UnauthorizedException when the user no longer exists', async () => {
             jwtService.verifyAsync.mockResolvedValue({ sub: 'user-id-123', email: 'test@example.com', role: UserRole.Resident } as never);
             usersService.findByEmail.mockResolvedValue(null as never);
 
-            await expect(service.refreshTokens('valid-refresh-token')).rejects.toThrow(UnauthorizedException);
+            await expect(service.refreshToken('valid-refresh-token')).rejects.toThrow(UnauthorizedException);
         });
     });
 

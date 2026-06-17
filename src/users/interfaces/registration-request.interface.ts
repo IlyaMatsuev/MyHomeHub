@@ -1,5 +1,5 @@
 import { Document } from 'mongoose';
-import { UserRole } from 'users/interfaces/user.interface';
+import { UserRole } from './user.interface';
 
 export enum RegistrationRequestStatus {
     Pending = 'pending',

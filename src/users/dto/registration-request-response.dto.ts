@@ -1,6 +1,6 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { RegistrationRequestStatus, RegistrationRequest, UserRole } from 'users/interfaces';
-import { REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED } from 'users/users.constants';
+import { DEFAULT_USER_ROLE, REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED } from 'users/users.constants';
 
 @ApiSchema({ name: 'Auth.RegistrationRequestResponse', description: 'The registration request details' })
 export class RegistrationRequestResponseDto {
@@ -20,7 +20,7 @@ export class RegistrationRequestResponseDto {
     @ApiProperty({
         description: 'The role that will be assigned to the user once the registration request is approved',
         enum: UserRole,
-        example: UserRole.Guest,
+        example: DEFAULT_USER_ROLE,
     })
     role: UserRole;
 

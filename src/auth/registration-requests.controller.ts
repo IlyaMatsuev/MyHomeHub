@@ -9,7 +9,7 @@ import {
     ExternalIdParam,
 } from 'common/decorators';
 import { PaginationResponseDto } from 'common/dto';
-import { Public, Roles } from 'auth/decorators';
+import { Public, ForRoles } from 'auth/decorators';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
 import { UserRole } from 'users/interfaces';
 import {
@@ -42,7 +42,7 @@ export class RegistrationRequestsController {
     }
 
     @Get()
-    @Roles(UserRole.Admin)
+    @ForRoles(UserRole.Admin)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get all registration requests' })
     @ApiOkPaginationResponse(RegistrationRequestResponseDto, 'Paginated list of registration requests')
@@ -62,7 +62,7 @@ export class RegistrationRequestsController {
     }
 
     @Put('/:externalId')
-    @Roles(UserRole.Admin)
+    @ForRoles(UserRole.Admin)
     @ApiBearerAuth()
     @ApiParam({
         name: 'externalId',

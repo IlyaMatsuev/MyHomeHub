@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
-import { REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED, REGISTRATION_REQUEST_DEFAULT_ROLE } from 'users/users.constants';
+import { REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED, DEFAULT_USER_ROLE } from 'users/users.constants';
 import { RegistrationRequestStatus, UserRole } from 'users/interfaces';
 
 export const RegistrationRequestSchema = new mongoose.Schema(
@@ -35,7 +35,7 @@ export const RegistrationRequestSchema = new mongoose.Schema(
             type: String,
             required: true,
             enum: Object.values(UserRole),
-            default: REGISTRATION_REQUEST_DEFAULT_ROLE,
+            default: DEFAULT_USER_ROLE,
         },
         blackListed: {
             type: Boolean,

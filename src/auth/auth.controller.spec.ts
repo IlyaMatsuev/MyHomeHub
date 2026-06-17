@@ -1,23 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { Response } from 'express';
+import { CookiesConfigService } from 'common/services';
 
 describe('AuthController', () => {
     let controller: AuthController;
     let mockAuthService: {
         login: jest.Mock;
+        refreshToken: jest.Mock;
         register: jest.Mock;
     };
-    let mockResponse: Partial<Response>;
 
     beforeEach(async () => {
         mockAuthService = {
             login: jest.fn(),
+            refreshToken: jest.fn(),
             register: jest.fn(),
-        };
-        mockResponse = {
-            cookie: jest.fn(),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -26,6 +24,10 @@ describe('AuthController', () => {
                 {
                     provide: AuthService,
                     useValue: mockAuthService,
+                },
+                {
+                    provide: CookiesConfigService,
+                    useValue: { get: jest.fn(() => ({})) },
                 },
             ],
         }).compile();
@@ -38,26 +40,28 @@ describe('AuthController', () => {
     });
 
     describe('login', () => {
-        it('should return tokens and set cookies when credentials are provided', async () => {
+        it('should call authService.login with credentials and return tokens', async () => {
             const loginDto = { email: 'test@example.com', password: 'password123' };
-            mockAuthService.login.mockResolvedValue({ accessToken: 'jwt-token', refreshToken: 'refresh-token' });
+            const tokens = { accessToken: 'jwt-token', refreshToken: 'refresh-token' };
+            mockAuthService.login.mockResolvedValue(tokens);
 
-            const result = await controller.login(loginDto, mockResponse as Response);
+            const result = await controller.login(loginDto);
 
-            expect(result).toEqual({ accessToken: 'jwt-token', refreshToken: 'refresh-token' });
-            expect(mockAuthService.login).toHaveBeenCalledWith('test@example.com', 'password123', undefined);
-            expect(mockResponse.cookie).toHaveBeenCalledWith('accessToken', 'jwt-token', { httpOnly: true });
-            expect(mockResponse.cookie).toHaveBeenCalledWith('refreshToken', 'refresh-token', { httpOnly: true });
+            expect(result).toEqual(tokens);
+            expect(mockAuthService.login).toHaveBeenCalledWith('test@example.com', 'password123');
         });
+    });
 
-        it('should return tokens when a refresh token is provided', async () => {
-            const loginDto = { refreshToken: 'old-refresh-token' };
-            mockAuthService.login.mockResolvedValue({ accessToken: 'jwt-token', refreshToken: 'new-refresh-token' });
+    describe('loginWithToken', () => {
+        it('should call authService.refreshToken with the refresh token and return tokens', async () => {
+            const refreshDto = { refreshToken: 'old-refresh-token' };
+            const tokens = { accessToken: 'jwt-token', refreshToken: 'new-refresh-token' };
+            mockAuthService.refreshToken.mockResolvedValue(tokens);
 
-            const result = await controller.login(loginDto, mockResponse as Response);
+            const result = await controller.loginWithToken(refreshDto);
 
-            expect(result).toEqual({ accessToken: 'jwt-token', refreshToken: 'new-refresh-token' });
-            expect(mockAuthService.login).toHaveBeenCalledWith(undefined, undefined, 'old-refresh-token');
+            expect(result).toEqual(tokens);
+            expect(mockAuthService.refreshToken).toHaveBeenCalledWith('old-refresh-token');
         });
     });
 

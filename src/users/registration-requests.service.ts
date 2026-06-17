@@ -4,10 +4,10 @@ import { PaginationResponseDto } from 'common/dto';
 import { FieldValidationException } from 'common/exceptions';
 import { RegistrationRequest, RegistrationRequestStatus, UserRole } from 'users/interfaces';
 import {
-    REGISTRATION_REQUEST_DEFAULT_ROLE,
+    DEFAULT_USER_ROLE,
     REGISTRATION_REQUEST_MODEL_PROVIDER_NAME,
     REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
-    TOTP_REGISTRATION_ROLE,
+    TOTP_REGISTERED_USER_ROLE,
 } from 'users/users.constants';
 import {
     CreateRegistrationRequestDto,
@@ -82,7 +82,7 @@ export class RegistrationRequestsService {
         return this.createNewRequest({
             requesterEmail: dto.email,
             status: RegistrationRequestStatus.Pending,
-            role: REGISTRATION_REQUEST_DEFAULT_ROLE,
+            role: DEFAULT_USER_ROLE,
             requesterComment: dto.comment,
         });
     }
@@ -91,14 +91,14 @@ export class RegistrationRequestsService {
         const existingRequest = await this.getRequestByEmail(email);
         if (existingRequest) {
             existingRequest.status = RegistrationRequestStatus.Approved;
-            existingRequest.role = TOTP_REGISTRATION_ROLE;
+            existingRequest.role = TOTP_REGISTERED_USER_ROLE;
             existingRequest.requesterComment = REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT;
             return new RegistrationRequestResponseDto(await existingRequest.save());
         }
         return this.createNewRequest({
             requesterEmail: email,
             status: RegistrationRequestStatus.Approved,
-            role: TOTP_REGISTRATION_ROLE,
+            role: TOTP_REGISTERED_USER_ROLE,
             requesterComment: REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
         });
     }

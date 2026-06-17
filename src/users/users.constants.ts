@@ -13,5 +13,5 @@ export const REGISTRATION_REQUEST_DEFAULT_BLACK_LISTED = false;
 export const REGISTRATION_REQUEST_COMMENT_MAX_LENGTH = 100;
 export const REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT = 'Automatically approved via TOTP';
 
-export const REGISTRATION_REQUEST_DEFAULT_ROLE = UserRole.Guest;
-export const TOTP_REGISTRATION_ROLE = UserRole.Admin;
+export const DEFAULT_USER_ROLE = UserRole.Guest;
+export const TOTP_REGISTERED_USER_ROLE = UserRole.Admin;

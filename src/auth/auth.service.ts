@@ -6,7 +6,7 @@ import * as speakeasy from 'speakeasy';
 import { UsersService } from 'users/users.service';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
 import { RegistrationRequestStatus, User } from 'users/interfaces';
-import { TOTP_REGISTRATION_ROLE } from 'users/users.constants';
+import { TOTP_REGISTERED_USER_ROLE } from 'users/users.constants';
 import { LoginResponseDto, RegisterResponseDto } from 'auth/dto';
 import { JwtPayload } from 'auth/interfaces';
 import { FieldValidationException } from 'common/exceptions';
@@ -22,11 +22,7 @@ export class AuthService {
         private readonly registrationRequestsService: RegistrationRequestsService,
     ) {}
 
-    async login(email?: string, password?: string, refreshToken?: string): Promise<LoginResponseDto> {
-        if (refreshToken) {
-            return this.refreshTokens(refreshToken);
-        }
-
+    async login(email: string, password: string): Promise<LoginResponseDto> {
         const user = await this.usersService.findByEmail(email);
         if (!user || !(await this.verifyUserPasswordHash(user.password, password))) {
             throw new UnauthorizedException();
@@ -35,7 +31,7 @@ export class AuthService {
         return this.generateTokens(user);
     }
 
-    async refreshTokens(refreshToken: string): Promise<LoginResponseDto> {
+    async refreshToken(refreshToken: string): Promise<LoginResponseDto> {
         let payload: JwtPayload;
         try {
             payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
@@ -59,7 +55,7 @@ export class AuthService {
                 this.logger.debug(`Registration one-time password is not valid`);
                 throw new ForbiddenException();
             }
-            const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password), TOTP_REGISTRATION_ROLE);
+            const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password), TOTP_REGISTERED_USER_ROLE);
             await this.registrationRequestsService.createAutoApprovedRequest(email);
             return { email: newUser.email };
         }

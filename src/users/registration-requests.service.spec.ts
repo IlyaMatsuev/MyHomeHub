@@ -4,10 +4,10 @@ import { FieldValidationException } from 'common/exceptions';
 import { RegistrationRequestsService } from './registration-requests.service';
 import { RegistrationRequestStatus, RegistrationRequest, UserRole } from 'users/interfaces';
 import {
-    REGISTRATION_REQUEST_DEFAULT_ROLE,
+    DEFAULT_USER_ROLE,
     REGISTRATION_REQUEST_MODEL_PROVIDER_NAME,
     REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
-    TOTP_REGISTRATION_ROLE,
+    TOTP_REGISTERED_USER_ROLE,
 } from 'users/users.constants';
 
 describe('RegistrationRequestsService', () => {
@@ -163,8 +163,8 @@ describe('RegistrationRequestsService', () => {
 
             const result = await service.createRequest({ email: 'new@example.com' });
 
-            expect(result.role).toBe(REGISTRATION_REQUEST_DEFAULT_ROLE);
-            expect(REGISTRATION_REQUEST_DEFAULT_ROLE).toBe(UserRole.Guest);
+            expect(result.role).toBe(DEFAULT_USER_ROLE);
+            expect(DEFAULT_USER_ROLE).toBe(UserRole.Guest);
         });
 
         it('should throw FieldValidationException when pending request exists', async () => {
@@ -333,8 +333,8 @@ describe('RegistrationRequestsService', () => {
 
             const result = await service.createAutoApprovedRequest('new@example.com');
 
-            expect(result.role).toBe(TOTP_REGISTRATION_ROLE);
-            expect(TOTP_REGISTRATION_ROLE).toBe(UserRole.Admin);
+            expect(result.role).toBe(TOTP_REGISTERED_USER_ROLE);
+            expect(TOTP_REGISTERED_USER_ROLE).toBe(UserRole.Admin);
         });
 
         it('should update existing request to approved with admin role', async () => {
@@ -355,7 +355,7 @@ describe('RegistrationRequestsService', () => {
 
             expect(result.status).toBe(RegistrationRequestStatus.Approved);
             expect(result.requesterComment).toBe(REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT);
-            expect(existingRequest.role).toBe(TOTP_REGISTRATION_ROLE);
+            expect(existingRequest.role).toBe(TOTP_REGISTERED_USER_ROLE);
         });
     });
 

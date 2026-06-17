@@ -9,7 +9,7 @@ import {
     ApiValidationError,
     ExternalIdParam,
 } from 'common/decorators';
-import { Roles } from 'auth/decorators';
+import { ForRoles } from 'auth/decorators';
 import { UserRole } from 'users/interfaces';
 import { ScenariosService } from 'scenarios/scenarios.service';
 import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
@@ -25,7 +25,7 @@ import {
 
 @ApiBearerAuth()
 @Controller('scenarios')
-@Roles(UserRole.Resident)
+@ForRoles(UserRole.Resident)
 @ApiUnauthorized()
 @ApiNotFound('scenario')
 @ApiInternalError()

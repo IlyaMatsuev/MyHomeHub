@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 import { UserRole } from 'users/interfaces';
-import { REGISTRATION_REQUEST_DEFAULT_ROLE } from 'users/users.constants';
+import { DEFAULT_USER_ROLE } from 'users/users.constants';
 
 export const UserSchema = new mongoose.Schema(
     {
@@ -22,7 +22,7 @@ export const UserSchema = new mongoose.Schema(
             type: String,
             required: true,
             enum: Object.values(UserRole),
-            default: REGISTRATION_REQUEST_DEFAULT_ROLE,
+            default: DEFAULT_USER_ROLE,
         },
     },
     { timestamps: true },
