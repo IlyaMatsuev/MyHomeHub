@@ -18,7 +18,7 @@ export class RolesGuard implements CanActivate {
         }
 
         const requiredRoles = this.reflector.getAllAndOverride<Array<UserRole>>(ROLES_KEY, [context.getHandler(), context.getClass()]);
-        if (!requiredRoles || requiredRoles.length === 0) {
+        if (!requiredRoles || !requiredRoles.length) {
             return true;
         }
 
