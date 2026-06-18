@@ -1,9 +1,9 @@
 import { Reflector } from '@nestjs/core';
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
-import { map, Observable } from 'rxjs';
-import { WITH_COOKIES_KEY, WithCookiesMetadata } from 'common/decorators';
 import { Response } from 'express';
-import { CookiesConfigService } from 'common/services';
+import { map, Observable } from 'rxjs';
+import { WITH_COOKIES_KEY, WithCookiesMetadata } from 'auth/decorators';
+import { CookiesConfigService } from 'auth/cookies-config.service';
 
 @Injectable()
 export class CookiesInterceptor implements NestInterceptor {

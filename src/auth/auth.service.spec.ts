@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { FieldValidationException } from 'common/exceptions';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
+import { AuthConfigService } from './auth-config.service';
 import { UsersService } from 'users/users.service';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
 import { RegistrationRequestStatus, UserRole } from 'users/interfaces';
@@ -28,14 +28,14 @@ describe('AuthService', () => {
         role: UserRole.Resident,
     };
 
-    const mockConfig: Record<string, string> = {
-        JWT_SECRET: 'test-jwt-secret',
-        JWT_EXPIRATION_TIMEOUT: '900',
-        JWT_REFRESH_SECRET: 'test-jwt-refresh-secret',
-        JWT_REFRESH_EXPIRATION_TIMEOUT: '604800',
-        REGISTRATION_TOTP_SECRET: 'test-totp-secret',
-        USER_PASSWORD_SECRET: 'test-password-secret',
-        USER_PASSWORD_SALT: 'test-salt',
+    const mockAuthConfig = {
+        getJwtSecret: jest.fn().mockReturnValue('test-jwt-secret'),
+        getJwtExpTimeout: jest.fn().mockReturnValue(900),
+        getJwtRefreshSecret: jest.fn().mockReturnValue('test-jwt-refresh-secret'),
+        getJwtRefreshExpTimeout: jest.fn().mockReturnValue(604800),
+        getTotpSecret: jest.fn().mockReturnValue('test-totp-secret'),
+        getUserPasswordSecret: jest.fn().mockReturnValue('test-password-secret'),
+        getUserPasswordSalt: jest.fn().mockReturnValue('test-salt'),
     };
 
     beforeEach(async () => {
@@ -58,10 +58,8 @@ describe('AuthService', () => {
                     },
                 },
                 {
-                    provide: ConfigService,
-                    useValue: {
-                        get: jest.fn((key: string) => mockConfig[key]),
-                    },
+                    provide: AuthConfigService,
+                    useValue: mockAuthConfig,
                 },
                 {
                     provide: RegistrationRequestsService,

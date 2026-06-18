@@ -1,12 +1,10 @@
 import { ExecutionContext } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
+import { AuthConfigService } from 'auth/auth-config.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 describe('JwtAuthGuard', () => {
     let guard: JwtAuthGuard;
-    let mockReflector: { getAllAndOverride: jest.Mock };
-    let mockConfigService: { get: jest.Mock };
+    let mockAuthConfig: { isPublicEndpoint: jest.Mock; isAuthEnabled: jest.Mock };
 
     const createMockContext = (): ExecutionContext =>
         ({
@@ -18,9 +16,11 @@ describe('JwtAuthGuard', () => {
         }) as unknown as ExecutionContext;
 
     beforeEach(() => {
-        mockReflector = { getAllAndOverride: jest.fn() };
-        mockConfigService = { get: jest.fn().mockReturnValue('prod') };
-        guard = new JwtAuthGuard(mockReflector as unknown as Reflector, mockConfigService as unknown as ConfigService);
+        mockAuthConfig = {
+            isPublicEndpoint: jest.fn().mockReturnValue(false),
+            isAuthEnabled: jest.fn().mockReturnValue(true),
+        };
+        guard = new JwtAuthGuard(mockAuthConfig as unknown as AuthConfigService);
     });
 
     afterEach(() => {
@@ -28,20 +28,18 @@ describe('JwtAuthGuard', () => {
     });
 
     it('should allow public endpoints without delegating to passport', () => {
-        mockReflector.getAllAndOverride.mockReturnValue(true);
+        mockAuthConfig.isPublicEndpoint.mockReturnValue(true);
 
         expect(guard.canActivate(createMockContext())).toBe(true);
     });
 
-    it('should allow requests when local auth bypass is enabled', () => {
-        mockReflector.getAllAndOverride.mockReturnValue(false);
-        mockConfigService.get.mockImplementation((key: string) => (key === 'NODE_ENV' ? 'local' : 'false'));
+    it('should allow requests when auth is disabled', () => {
+        mockAuthConfig.isAuthEnabled.mockReturnValue(false);
 
         expect(guard.canActivate(createMockContext())).toBe(true);
     });
 
     it('should delegate to passport for protected endpoints', () => {
-        mockReflector.getAllAndOverride.mockReturnValue(false);
         const superCanActivate = jest
             .spyOn(Object.getPrototypeOf(Object.getPrototypeOf(guard)), 'canActivate')
             .mockReturnValue('passport-result');

@@ -1,7 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { UsersService } from 'users/users.service';
+import { AuthConfigService } from 'auth/auth-config.service';
 import { UserRole } from 'users/interfaces';
 
 describe('JwtStrategy', () => {
@@ -15,9 +15,9 @@ describe('JwtStrategy', () => {
     };
 
     beforeEach(() => {
-        const configService = { get: jest.fn().mockReturnValue('test-jwt-secret') } as unknown as ConfigService;
+        const authConfig = { getJwtSecret: jest.fn().mockReturnValue('test-jwt-secret') } as unknown as AuthConfigService;
         mockUsersService = { findByExternalId: jest.fn() };
-        strategy = new JwtStrategy(configService, mockUsersService as unknown as UsersService);
+        strategy = new JwtStrategy(authConfig, mockUsersService as unknown as UsersService);
     });
 
     afterEach(() => {

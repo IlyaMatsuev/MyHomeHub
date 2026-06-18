@@ -2,8 +2,8 @@ import { CallHandler, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Response } from 'express';
 import { Observable, firstValueFrom, of } from 'rxjs';
-import { WITH_COOKIES_KEY, WithCookiesMetadata } from 'common/decorators';
-import { CookiesConfigService } from 'common/services';
+import { WITH_COOKIES_KEY, WithCookiesMetadata } from 'auth/decorators';
+import { CookiesConfigService } from 'auth/cookies-config.service';
 import { CookiesInterceptor } from './cookies.interceptor';
 
 describe('CookiesInterceptor', () => {

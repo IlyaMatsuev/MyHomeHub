@@ -9,6 +9,8 @@ import { JwtAuthGuard, RolesGuard } from 'auth/guards';
 import { JwtStrategy } from 'auth/strategies';
 import { RegistrationRequestsController } from 'auth/registration-requests.controller';
 import { UsersModule } from 'users/users.module';
+import { AuthConfigService } from 'auth/auth-config.service';
+import { CookiesConfigService } from 'auth/cookies-config.service';
 
 @Module({
     imports: [
@@ -25,6 +27,8 @@ import { UsersModule } from 'users/users.module';
     ],
     controllers: [AuthController, RegistrationRequestsController],
     providers: [
+        AuthConfigService,
+        CookiesConfigService,
         AuthService,
         JwtStrategy,
         {

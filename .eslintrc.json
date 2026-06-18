@@ -32,6 +32,7 @@
     "no-nested-ternary": "warn",
     "no-useless-return": "error",
     "import/no-duplicates": "error",
-    "import/no-unresolved": "off"
+    "import/no-unresolved": "off",
+    "import/no-cycle": ["error", { "maxDepth": 10, "ignoreExternal": true }]
   }
 }

@@ -1,6 +1,6 @@
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
+import { AuthConfigService } from 'auth/auth-config.service';
 import { RolesGuard } from './roles.guard';
 import { ROLES_KEY } from 'auth/decorators';
 import { UserRole } from 'users/interfaces';
@@ -8,7 +8,7 @@ import { UserRole } from 'users/interfaces';
 describe('RolesGuard', () => {
     let guard: RolesGuard;
     let mockReflector: { getAllAndOverride: jest.Mock };
-    let mockConfigService: { get: jest.Mock };
+    let mockAuthConfig: { isPublicEndpoint: jest.Mock; isAuthEnabled: jest.Mock };
 
     const createMockContext = (user?: { role: UserRole }): ExecutionContext =>
         ({
@@ -21,8 +21,11 @@ describe('RolesGuard', () => {
 
     beforeEach(() => {
         mockReflector = { getAllAndOverride: jest.fn() };
-        mockConfigService = { get: jest.fn().mockReturnValue('prod') };
-        guard = new RolesGuard(mockReflector as unknown as Reflector, mockConfigService as unknown as ConfigService);
+        mockAuthConfig = {
+            isPublicEndpoint: jest.fn().mockReturnValue(false),
+            isAuthEnabled: jest.fn().mockReturnValue(true),
+        };
+        guard = new RolesGuard(mockReflector as unknown as Reflector, mockAuthConfig as unknown as AuthConfigService);
     });
 
     afterEach(() => {
@@ -30,14 +33,13 @@ describe('RolesGuard', () => {
     });
 
     it('should allow public endpoints', () => {
-        mockReflector.getAllAndOverride.mockImplementation((key: string) => key === 'isPublic');
+        mockAuthConfig.isPublicEndpoint.mockReturnValue(true);
 
         expect(guard.canActivate(createMockContext())).toBe(true);
     });
 
-    it('should allow when local auth bypass is enabled', () => {
-        mockReflector.getAllAndOverride.mockReturnValue(false);
-        mockConfigService.get.mockImplementation((key: string) => (key === 'NODE_ENV' ? 'local' : 'false'));
+    it('should allow when auth is disabled', () => {
+        mockAuthConfig.isAuthEnabled.mockReturnValue(false);
 
         expect(guard.canActivate(createMockContext())).toBe(true);
     });

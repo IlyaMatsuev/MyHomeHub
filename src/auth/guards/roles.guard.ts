@@ -1,20 +1,19 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
 import { AuthenticatedUser } from 'auth/interfaces';
 import { ROLES_KEY } from 'auth/decorators';
-import { isLocalAuthBypass, isPublicEndpoint } from 'auth/guards/auth-bypass.helper';
 import { UserRole } from 'users/interfaces';
+import { AuthConfigService } from 'auth/auth-config.service';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
     constructor(
         private readonly reflector: Reflector,
-        private readonly configService: ConfigService,
+        private readonly authConfig: AuthConfigService,
     ) {}
 
     canActivate(context: ExecutionContext): boolean {
-        if (isPublicEndpoint(this.reflector, context) || isLocalAuthBypass(this.configService)) {
+        if (this.authConfig.isPublicEndpoint(context) || !this.authConfig.isAuthEnabled()) {
             return true;
         }
 

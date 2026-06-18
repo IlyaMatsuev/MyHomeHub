@@ -1,22 +1,29 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
+import { AuthConfigService } from 'auth/auth-config.service';
 import { CookiesConfigService } from './cookies-config.service';
+
+interface AuthConfigOverrides {
+    isProdEnv?: boolean;
+    jwtExpTimeout?: number;
+    jwtRefreshExpTimeout?: number;
+}
 
 describe('CookiesConfigService', () => {
     let service: CookiesConfigService;
-    let mockConfigService: { get: jest.Mock };
 
-    const buildService = async (env: Record<string, string | undefined>): Promise<CookiesConfigService> => {
-        mockConfigService = {
-            get: jest.fn((key: string) => env[key]),
+    const buildService = async (overrides: AuthConfigOverrides = {}): Promise<CookiesConfigService> => {
+        const authConfig = {
+            isProdEnv: jest.fn().mockReturnValue(overrides.isProdEnv ?? false),
+            getJwtExpTimeout: jest.fn().mockReturnValue(overrides.jwtExpTimeout),
+            getJwtRefreshExpTimeout: jest.fn().mockReturnValue(overrides.jwtRefreshExpTimeout),
         };
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 CookiesConfigService,
                 {
-                    provide: ConfigService,
-                    useValue: mockConfigService,
+                    provide: AuthConfigService,
+                    useValue: authConfig,
                 },
             ],
         }).compile();
@@ -30,11 +37,7 @@ describe('CookiesConfigService', () => {
 
     describe('get', () => {
         beforeEach(async () => {
-            service = await buildService({
-                NODE_ENV: 'development',
-                JWT_EXPIRATION_TIMEOUT: '3600',
-                JWT_REFRESH_EXPIRATION_TIMEOUT: '86400',
-            });
+            service = await buildService({ jwtExpTimeout: 3600, jwtRefreshExpTimeout: 86400 });
         });
 
         it('should return accessToken options with maxAge in milliseconds', () => {
@@ -73,11 +76,7 @@ describe('CookiesConfigService', () => {
 
     describe('production environment', () => {
         beforeEach(async () => {
-            service = await buildService({
-                NODE_ENV: 'production',
-                JWT_EXPIRATION_TIMEOUT: '3600',
-                JWT_REFRESH_EXPIRATION_TIMEOUT: '86400',
-            });
+            service = await buildService({ isProdEnv: true, jwtExpTimeout: 3600, jwtRefreshExpTimeout: 86400 });
         });
 
         it('should set secure: true on every cookie config', () => {
@@ -87,16 +86,16 @@ describe('CookiesConfigService', () => {
         });
     });
 
-    describe('missing token timeout env vars', () => {
+    describe('missing token timeout config', () => {
         beforeEach(async () => {
-            service = await buildService({ NODE_ENV: 'development' });
+            service = await buildService();
         });
 
         it('should not throw at construction time', () => {
             expect(service).toBeDefined();
         });
 
-        it('should leave maxAge as NaN when the underlying env var is missing', () => {
+        it('should leave maxAge as NaN when the underlying timeout is unset', () => {
             expect(service.get('accessToken').maxAge).toBeNaN();
             expect(service.get('refreshToken').maxAge).toBeNaN();
         });
