@@ -14,7 +14,6 @@ export class AuthController {
     constructor(private authService: AuthService) {}
 
     @Put('login')
-    @HttpCode(HttpStatus.OK)
     @WithCookies(LoginResponseDto, 'accessToken', 'refreshToken')
     @ApiOperation({ summary: 'Get an access token using registered user credentials' })
     @ApiOkResponse({ type: LoginResponseDto })

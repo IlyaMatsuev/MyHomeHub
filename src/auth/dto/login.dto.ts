@@ -1,17 +1,17 @@
-import { ApiPropertyOptional, ApiSchema } from '@nestjs/swagger';
+import { ApiSchema, ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty } from 'class-validator';
 
 @ApiSchema({ name: 'Auth.Login', description: 'Payload used to login and get an access token used for authentication' })
 export class LoginDto {
     @IsEmail()
     @IsNotEmpty()
-    @ApiPropertyOptional({
-        description: 'User email used during the registration. Required when no refreshToken is provided',
+    @ApiProperty({
+        description: 'User email used during the registration',
         example: 'some.email@example.com',
     })
-    email?: string;
+    email: string;
 
     @IsNotEmpty()
-    @ApiPropertyOptional({ description: 'User password used during the registration. Required when no refreshToken is provided' })
-    password?: string;
+    @ApiProperty({ description: 'User password used during the registration' })
+    password: string;
 }

@@ -15,6 +15,10 @@ export class UsersService {
         return this.userModel.findOne({ email }).exec();
     }
 
+    async findByExternalId(externalId: string): Promise<User | undefined> {
+        return this.userModel.findOne({ externalId }).exec();
+    }
+
     async create(email: string, passwordHash: string, role: UserRole): Promise<User> {
         const user = await this.findByEmail(email);
         if (user) {

@@ -27,7 +27,6 @@ export class AuthService {
         if (!user || !(await this.verifyUserPasswordHash(user.password, password))) {
             throw new UnauthorizedException();
         }
-
         return this.generateTokens(user);
     }
 
@@ -41,7 +40,7 @@ export class AuthService {
             throw new UnauthorizedException();
         }
 
-        const user = await this.usersService.findByEmail(payload.email);
+        const user = await this.usersService.findByExternalId(payload.sub);
         if (!user) {
             throw new UnauthorizedException();
         }
@@ -55,9 +54,10 @@ export class AuthService {
                 this.logger.debug(`Registration one-time password is not valid`);
                 throw new ForbiddenException();
             }
-            const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password), TOTP_REGISTERED_USER_ROLE);
+            const passwordHash = await this.generateUserPasswordHash(password);
+            const newUser = await this.usersService.create(email, passwordHash, TOTP_REGISTERED_USER_ROLE);
             await this.registrationRequestsService.createAutoApprovedRequest(email);
-            return { email: newUser.email };
+            return { externalId: newUser.externalId, email: newUser.email };
         }
 
         const registrationRequest = await this.registrationRequestsService.getRequestByEmail(email);
@@ -80,7 +80,7 @@ export class AuthService {
         }
 
         const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password), registrationRequest.role);
-        return { email: newUser.email };
+        return { externalId: newUser.externalId, email: newUser.email };
     }
 
     verifyTotp(token: string): boolean {
@@ -99,12 +99,15 @@ export class AuthService {
     }
 
     private async generateTokens(user: User): Promise<LoginResponseDto> {
-        const payload: JwtPayload = { sub: user.id, email: user.email, role: user.role };
-        const accessToken = await this.jwtService.signAsync(payload, { secret: this.configService.get<string>('JWT_SECRET') });
+        const payload: JwtPayload = { sub: user.externalId };
+        const accessToken = await this.jwtService.signAsync(payload, {
+            secret: this.configService.get<string>('JWT_SECRET'),
+            expiresIn: Number(this.configService.get('JWT_EXPIRATION_TIMEOUT')),
+        });
         const refreshToken = await this.jwtService.signAsync(payload, {
             secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
             expiresIn: Number(this.configService.get('JWT_REFRESH_EXPIRATION_TIMEOUT')),
         });
-        return { accessToken, refreshToken };
+        return { externalId: user.externalId, accessToken, refreshToken };
     }
 }

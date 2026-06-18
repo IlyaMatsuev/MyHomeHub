@@ -1,4 +1,4 @@
-import { ApiPropertyOptional, ApiSchema } from '@nestjs/swagger';
+import { ApiSchema, ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 
 @ApiSchema({
@@ -7,7 +7,7 @@ import { IsString } from 'class-validator';
 })
 export class LoginRefreshDto {
     @IsString()
-    @ApiPropertyOptional({
+    @ApiProperty({
         description: 'Refresh token used to obtain a new access token without providing the credentials again',
     })
     refreshToken: string;

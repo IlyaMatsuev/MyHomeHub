@@ -42,7 +42,7 @@ describe('AuthController', () => {
     describe('login', () => {
         it('should call authService.login with credentials and return tokens', async () => {
             const loginDto = { email: 'test@example.com', password: 'password123' };
-            const tokens = { accessToken: 'jwt-token', refreshToken: 'refresh-token' };
+            const tokens = { externalId: 'user-external-id', accessToken: 'jwt-token', refreshToken: 'refresh-token' };
             mockAuthService.login.mockResolvedValue(tokens);
 
             const result = await controller.login(loginDto);
@@ -55,7 +55,7 @@ describe('AuthController', () => {
     describe('loginWithToken', () => {
         it('should call authService.refreshToken with the refresh token and return tokens', async () => {
             const refreshDto = { refreshToken: 'old-refresh-token' };
-            const tokens = { accessToken: 'jwt-token', refreshToken: 'new-refresh-token' };
+            const tokens = { externalId: 'user-external-id', accessToken: 'jwt-token', refreshToken: 'new-refresh-token' };
             mockAuthService.refreshToken.mockResolvedValue(tokens);
 
             const result = await controller.loginWithToken(refreshDto);
@@ -66,9 +66,9 @@ describe('AuthController', () => {
     });
 
     describe('register', () => {
-        it('should register new user and return only the email', async () => {
+        it('should register new user and return the externalId and email', async () => {
             const registerDto = { email: 'new@example.com', password: 'password123', totp: '123456' };
-            const registerResponse = { email: 'new@example.com' };
+            const registerResponse = { externalId: 'new-user-external-id', email: 'new@example.com' };
             mockAuthService.register.mockResolvedValue(registerResponse);
 
             const result = await controller.register(registerDto);

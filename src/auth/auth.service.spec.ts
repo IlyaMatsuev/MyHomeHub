@@ -22,6 +22,7 @@ describe('AuthService', () => {
     const mockUser = {
         _id: 'user-id-123',
         id: 'user-id-123',
+        externalId: 'user-external-id',
         email: 'test@example.com',
         password: 'hashed-password',
         role: UserRole.Resident,
@@ -29,6 +30,7 @@ describe('AuthService', () => {
 
     const mockConfig: Record<string, string> = {
         JWT_SECRET: 'test-jwt-secret',
+        JWT_EXPIRATION_TIMEOUT: '900',
         JWT_REFRESH_SECRET: 'test-jwt-refresh-secret',
         JWT_REFRESH_EXPIRATION_TIMEOUT: '604800',
         REGISTRATION_TOTP_SECRET: 'test-totp-secret',
@@ -44,6 +46,7 @@ describe('AuthService', () => {
                     provide: UsersService,
                     useValue: {
                         findByEmail: jest.fn(),
+                        findByExternalId: jest.fn(),
                         create: jest.fn(),
                     },
                 },
@@ -88,19 +91,19 @@ describe('AuthService', () => {
 
             const result = await service.login('test@example.com', 'password');
 
-            expect(result).toEqual({ accessToken: 'access-token', refreshToken: 'refresh-token' });
+            expect(result).toEqual({ externalId: 'user-external-id', accessToken: 'access-token', refreshToken: 'refresh-token' });
             expect(usersService.findByEmail).toHaveBeenCalledWith('test@example.com');
             expect(argon2.verify).toHaveBeenCalledWith('hashed-password', 'password', {
                 secret: Buffer.from('test-password-secret'),
             });
             expect(jwtService.signAsync).toHaveBeenNthCalledWith(
                 1,
-                { sub: 'user-id-123', email: 'test@example.com', role: UserRole.Resident },
-                { secret: 'test-jwt-secret' },
+                { sub: 'user-external-id' },
+                { secret: 'test-jwt-secret', expiresIn: 900 },
             );
             expect(jwtService.signAsync).toHaveBeenNthCalledWith(
                 2,
-                { sub: 'user-id-123', email: 'test@example.com', role: UserRole.Resident },
+                { sub: 'user-external-id' },
                 { secret: 'test-jwt-refresh-secret', expiresIn: 604800 },
             );
         });
@@ -121,14 +124,14 @@ describe('AuthService', () => {
 
     describe('refreshToken', () => {
         it('should issue new tokens for a valid refresh token', async () => {
-            jwtService.verifyAsync.mockResolvedValue({ sub: 'user-id-123', email: 'test@example.com', role: UserRole.Resident } as never);
-            usersService.findByEmail.mockResolvedValue(mockUser as never);
+            jwtService.verifyAsync.mockResolvedValue({ sub: 'user-external-id' } as never);
+            usersService.findByExternalId.mockResolvedValue(mockUser as never);
             jwtService.signAsync.mockResolvedValueOnce('access-token').mockResolvedValueOnce('refresh-token');
 
             const result = await service.refreshToken('valid-refresh-token');
 
-            expect(result).toEqual({ accessToken: 'access-token', refreshToken: 'refresh-token' });
-            expect(usersService.findByEmail).toHaveBeenCalledWith('test@example.com');
+            expect(result).toEqual({ externalId: 'user-external-id', accessToken: 'access-token', refreshToken: 'refresh-token' });
+            expect(usersService.findByExternalId).toHaveBeenCalledWith('user-external-id');
         });
 
         it('should throw UnauthorizedException when refresh token is invalid', async () => {
@@ -138,8 +141,8 @@ describe('AuthService', () => {
         });
 
         it('should throw UnauthorizedException when the user no longer exists', async () => {
-            jwtService.verifyAsync.mockResolvedValue({ sub: 'user-id-123', email: 'test@example.com', role: UserRole.Resident } as never);
-            usersService.findByEmail.mockResolvedValue(null as never);
+            jwtService.verifyAsync.mockResolvedValue({ sub: 'user-external-id' } as never);
+            usersService.findByExternalId.mockResolvedValue(null as never);
 
             await expect(service.refreshToken('valid-refresh-token')).rejects.toThrow(UnauthorizedException);
         });
@@ -155,7 +158,7 @@ describe('AuthService', () => {
 
             const result = await service.register('new@example.com', 'password', '123456');
 
-            expect(result).toEqual({ email: 'test@example.com' });
+            expect(result).toEqual({ externalId: 'user-external-id', email: 'test@example.com' });
             expect(speakeasy.totp.verify).toHaveBeenCalledWith({
                 secret: 'test-totp-secret',
                 encoding: 'base32',
@@ -181,7 +184,7 @@ describe('AuthService', () => {
 
             const result = await service.register('approved@example.com', 'password');
 
-            expect(result).toEqual({ email: 'approved@example.com' });
+            expect(result).toEqual({ externalId: 'user-external-id', email: 'approved@example.com' });
             expect(usersService.create).toHaveBeenCalledWith('approved@example.com', 'new-hashed-password', UserRole.Resident);
         });
 

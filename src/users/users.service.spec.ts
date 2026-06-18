@@ -14,6 +14,7 @@ describe('UsersService', () => {
     const mockUser: Partial<User> = {
         _id: 'user-id-123',
         id: 'user-id-123',
+        externalId: 'user-external-id',
         email: 'test@example.com',
         password: 'hashed-password',
         role: UserRole.Guest,
@@ -67,6 +68,29 @@ describe('UsersService', () => {
             });
 
             const result = await service.findByEmail('nonexistent@example.com');
+
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('findByExternalId', () => {
+        it('should return user when found', async () => {
+            mockUserModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockUser),
+            });
+
+            const result = await service.findByExternalId('user-external-id');
+
+            expect(result).toEqual(mockUser);
+            expect(mockUserModel.findOne).toHaveBeenCalledWith({ externalId: 'user-external-id' });
+        });
+
+        it('should return null when user not found', async () => {
+            mockUserModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            const result = await service.findByExternalId('nonexistent-external-id');
 
             expect(result).toBeNull();
         });
