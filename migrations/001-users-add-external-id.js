@@ -8,8 +8,6 @@ function uuidv4() {
     });
 }
 
-print(uuidv4());
-
 db.users.find({ externalId: { $exists: false } }).forEach(doc => {
     db.users.updateOne({ _id: doc._id }, { $set: { externalId: uuidv4() } });
 });
