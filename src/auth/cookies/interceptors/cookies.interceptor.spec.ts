@@ -2,9 +2,9 @@ import { CallHandler, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Response } from 'express';
 import { Observable, firstValueFrom, of } from 'rxjs';
-import { WITH_COOKIES_KEY, WithCookiesMetadata } from 'auth/decorators';
-import { CookiesConfigService } from 'auth/cookies-config.service';
-import { CookiesInterceptor } from './cookies.interceptor';
+import { WITH_COOKIES_KEY, WithCookiesMetadata } from 'auth/cookies/decorators';
+import { CookiesInterceptor } from 'auth/cookies/interceptors';
+import { CookiesConfigService } from 'auth/cookies/cookies-config.service';
 
 describe('CookiesInterceptor', () => {
     let interceptor: CookiesInterceptor;

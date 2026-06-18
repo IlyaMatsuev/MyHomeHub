@@ -1,5 +1,5 @@
 import { applyDecorators, SetMetadata, Type, UseInterceptors } from '@nestjs/common';
-import { CookiesInterceptor } from 'auth/interceptors';
+import { CookiesInterceptor } from 'auth/cookies/interceptors';
 
 export const WITH_COOKIES_KEY = 'withCookies';
 

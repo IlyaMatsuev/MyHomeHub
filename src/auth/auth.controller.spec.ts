@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { CookiesConfigService } from 'auth/cookies-config.service';
+import { CookiesConfigService } from 'auth/cookies/cookies-config.service';
 
 describe('AuthController', () => {
     let controller: AuthController;

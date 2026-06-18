@@ -1,7 +1,7 @@
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
-import { IS_PUBLIC_KEY } from 'auth/decorators/public.decorator';
+import { IS_PUBLIC_KEY } from 'auth/decorators';
 
 @Injectable()
 export class AuthConfigService {

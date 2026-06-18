@@ -1,7 +1,8 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Put } from '@nestjs/common';
 import { ApiForbiddenResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiInternalError, ApiUnauthorized, ApiValidationError } from 'common/decorators';
-import { Public, WithCookies } from 'auth/decorators';
+import { Public } from 'auth/decorators';
+import { WithCookies } from 'auth/cookies/decorators';
 import { LoginDto, RegisterDto, LoginResponseDto, RegisterResponseDto, LoginRefreshDto } from 'auth/dto';
 import { AuthService } from 'auth/auth.service';
 

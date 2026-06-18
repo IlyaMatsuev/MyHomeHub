@@ -10,7 +10,7 @@ import { JwtStrategy } from 'auth/strategies';
 import { RegistrationRequestsController } from 'auth/registration-requests.controller';
 import { UsersModule } from 'users/users.module';
 import { AuthConfigService } from 'auth/auth-config.service';
-import { CookiesConfigService } from 'auth/cookies-config.service';
+import { CookiesConfigService } from 'auth/cookies/cookies-config.service';
 
 @Module({
     imports: [
