@@ -5,6 +5,8 @@
 
 A NestJS-based SmartHome Hub that controls, stores, and provides information about IoT devices. The hub communicates with devices via multiple protocols (MQTT, Tuya API, HTTP) and provides a REST API for control and monitoring.
 
+![My Home Banner](./public/banner.png)
+
 ## Overview
 
 - **Multi-Protocol Device Support**: Control devices via MQTT, Tuya local API, HTTP, and Google Cast
