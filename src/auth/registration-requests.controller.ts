@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiForbiddenResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import {
     ApiOkPaginationResponse,
     ApiInternalError,
@@ -9,9 +9,8 @@ import {
     ExternalIdParam,
 } from 'common/decorators';
 import { PaginationResponseDto } from 'common/dto';
-import { Public, ForRoles } from 'auth/decorators';
+import { Public } from 'auth/decorators';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
-import { UserRole } from 'users/interfaces';
 import {
     CreateRegistrationRequestDto,
     GetRegistrationRequestsDto,
@@ -25,6 +24,9 @@ import {
 export class RegistrationRequestsController {
     constructor(private readonly registrationRequestsService: RegistrationRequestsService) {}
 
+    // TODO: When creating a registration request, I need to respond with some kind of JWT token with a baked in request id
+    //  Then, when trying to get request, I need to provide this token and check the user for which it was made in the guards
+    //  To exclude the possibility to guess external id of request of the users
     @Public()
     @Get('/:externalId')
     @ApiParam({
@@ -42,7 +44,6 @@ export class RegistrationRequestsController {
     }
 
     @Get()
-    @ForRoles(UserRole.Admin)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get all registration requests' })
     @ApiOkPaginationResponse(RegistrationRequestResponseDto, 'Paginated list of registration requests')
@@ -57,12 +58,12 @@ export class RegistrationRequestsController {
     @ApiOperation({ summary: 'Submit a new registration request' })
     @ApiOkResponse({ type: RegistrationRequestResponseDto })
     @ApiValidationError()
+    @ApiForbiddenResponse()
     createRequest(@Body() dto: CreateRegistrationRequestDto): Promise<RegistrationRequestResponseDto> {
         return this.registrationRequestsService.createRequest(dto);
     }
 
     @Put('/:externalId')
-    @ForRoles(UserRole.Admin)
     @ApiBearerAuth()
     @ApiParam({
         name: 'externalId',

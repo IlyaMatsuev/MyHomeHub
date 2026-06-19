@@ -44,10 +44,23 @@ describe('RolesGuard', () => {
         expect(guard.canActivate(createMockContext())).toBe(true);
     });
 
-    it('should allow when no roles are required', () => {
+    it('should allow admins when no roles are required', () => {
         mockReflector.getAllAndOverride.mockImplementation((key: string) => (key === ROLES_KEY ? undefined : false));
 
-        expect(guard.canActivate(createMockContext({ role: UserRole.Guest }))).toBe(true);
+        expect(guard.canActivate(createMockContext({ role: UserRole.Admin }))).toBe(true);
+    });
+
+    it('should throw ForbiddenException for non-admins when no roles are required', () => {
+        mockReflector.getAllAndOverride.mockImplementation((key: string) => (key === ROLES_KEY ? undefined : false));
+
+        expect(() => guard.canActivate(createMockContext({ role: UserRole.Resident }))).toThrow(ForbiddenException);
+        expect(() => guard.canActivate(createMockContext({ role: UserRole.Guest }))).toThrow(ForbiddenException);
+    });
+
+    it('should throw ForbiddenException for non-admins when required roles is an empty array', () => {
+        mockReflector.getAllAndOverride.mockImplementation((key: string) => (key === ROLES_KEY ? [] : false));
+
+        expect(() => guard.canActivate(createMockContext({ role: UserRole.Resident }))).toThrow(ForbiddenException);
     });
 
     it('should always allow admins', () => {

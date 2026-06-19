@@ -17,16 +17,13 @@ export class RolesGuard implements CanActivate {
             return true;
         }
 
-        const requiredRoles = this.reflector.getAllAndOverride<Array<UserRole>>(ROLES_KEY, [context.getHandler(), context.getClass()]);
-        if (!requiredRoles || !requiredRoles.length) {
-            return true;
-        }
-
         const { user } = context.switchToHttp().getRequest<{ user?: AuthenticatedUser }>();
         if (!user) {
             throw new ForbiddenException();
         }
-        if (user.role === UserRole.Admin || requiredRoles.includes(user.role)) {
+
+        const requiredRoles = this.reflector.getAllAndOverride<Array<UserRole>>(ROLES_KEY, [context.getHandler(), context.getClass()]);
+        if (user.role === UserRole.Admin || (requiredRoles?.length && requiredRoles.includes(user.role))) {
             return true;
         }
 

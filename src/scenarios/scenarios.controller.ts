@@ -1,10 +1,10 @@
-import { Body, Controller, Param, Query, Delete, Get, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { PaginationResponseDto } from 'common/dto';
 import {
-    ApiOkPaginationResponse,
     ApiInternalError,
     ApiNotFound,
+    ApiOkPaginationResponse,
     ApiUnauthorized,
     ApiValidationError,
     ExternalIdParam,
@@ -25,7 +25,6 @@ import {
 
 @ApiBearerAuth()
 @Controller('scenarios')
-@ForRoles(UserRole.Resident)
 @ApiUnauthorized()
 @ApiNotFound('scenario')
 @ApiInternalError()
@@ -36,6 +35,7 @@ export class ScenariosController {
     ) {}
 
     @Get('/groups')
+    @ForRoles(UserRole.Resident, UserRole.Guest)
     @ApiOperation({ summary: 'Get all scenario groups' })
     @ApiOkPaginationResponse(ScenarioGroupResponseDto, 'Paginated list of scenario groups')
     @ApiNotFound('scenario group')
@@ -44,6 +44,7 @@ export class ScenariosController {
     }
 
     @Get('/groups/:name')
+    @ForRoles(UserRole.Resident, UserRole.Guest)
     @ApiParam({
         name: 'name',
         description: 'Name of the scenario group',
@@ -57,6 +58,7 @@ export class ScenariosController {
     }
 
     @Post('/groups/:name')
+    @ForRoles(UserRole.Resident)
     @ApiParam({
         name: 'name',
         description: 'Name of the scenario group to create',
@@ -71,6 +73,7 @@ export class ScenariosController {
     }
 
     @Delete('/groups/:name')
+    @ForRoles(UserRole.Resident)
     @ApiParam({
         name: 'name',
         description: 'Name of the scenario group to delete',
@@ -85,6 +88,7 @@ export class ScenariosController {
     }
 
     @Get()
+    @ForRoles(UserRole.Resident, UserRole.Guest)
     @ApiOperation({ summary: 'Get all added scenarios' })
     @ApiOkPaginationResponse(ScenarioResponseDto, 'Paginated list of scenarios')
     async getScenarios(@Query() query: GetScenariosDto): Promise<PaginationResponseDto<ScenarioResponseDto>> {
@@ -92,6 +96,7 @@ export class ScenariosController {
     }
 
     @Get('/:externalId')
+    @ForRoles(UserRole.Resident, UserRole.Guest)
     @ApiParam({ name: 'externalId', description: 'External ID of the scenario to find', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Get a specific scenario by the provided external ID' })
     @ApiOkResponse({ type: ScenarioResponseDto })
@@ -100,6 +105,7 @@ export class ScenariosController {
     }
 
     @Post()
+    @ForRoles(UserRole.Resident)
     @ApiOperation({ summary: 'Add a new scenario' })
     @ApiCreatedResponse({ type: ScenarioResponseDto })
     @ApiValidationError()
@@ -108,6 +114,7 @@ export class ScenariosController {
     }
 
     @Put('/:externalId')
+    @ForRoles(UserRole.Resident)
     @ApiParam({ name: 'externalId', description: 'External ID of the scenario to update', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Update an existing scenario by the provided external ID' })
     @ApiOkResponse({ type: ScenarioResponseDto })
@@ -120,6 +127,7 @@ export class ScenariosController {
     }
 
     @Delete('/:externalId')
+    @ForRoles(UserRole.Resident)
     @ApiParam({ name: 'externalId', description: 'External ID of the scenario to delete', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Delete an existing scenario by the provided external ID' })
     @ApiOkResponse({ type: ScenarioResponseDto })
