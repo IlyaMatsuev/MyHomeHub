@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { FieldValidationException } from 'common/exceptions';
 import { UsersService } from './users.service';
 import { USER_MODEL_PROVIDER_NAME } from './users.constants';
@@ -73,24 +74,32 @@ describe('UsersService', () => {
         });
     });
 
-    describe('findByExternalId', () => {
+    describe('getUserByExternalId', () => {
         it('should return user when found', async () => {
             mockUserModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockUser),
             });
 
-            const result = await service.findByExternalId('user-external-id');
+            const result = await service.getUserByExternalId('user-external-id');
 
             expect(result).toEqual(mockUser);
             expect(mockUserModel.findOne).toHaveBeenCalledWith({ externalId: 'user-external-id' });
         });
 
-        it('should return null when user not found', async () => {
+        it('should throw NotFoundException when user not found in strict mode', async () => {
             mockUserModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(null),
             });
 
-            const result = await service.findByExternalId('nonexistent-external-id');
+            await expect(service.getUserByExternalId('nonexistent-external-id')).rejects.toThrow(NotFoundException);
+        });
+
+        it('should return null when user not found in non-strict mode', async () => {
+            mockUserModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            const result = await service.getUserByExternalId('nonexistent-external-id', { strict: false });
 
             expect(result).toBeNull();
         });

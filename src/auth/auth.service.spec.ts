@@ -46,7 +46,7 @@ describe('AuthService', () => {
                     provide: UsersService,
                     useValue: {
                         findByEmail: jest.fn(),
-                        findByExternalId: jest.fn(),
+                        getUserByExternalId: jest.fn(),
                         create: jest.fn(),
                     },
                 },
@@ -123,13 +123,13 @@ describe('AuthService', () => {
     describe('refreshToken', () => {
         it('should issue new tokens for a valid refresh token', async () => {
             jwtService.verifyAsync.mockResolvedValue({ sub: 'user-external-id' } as never);
-            usersService.findByExternalId.mockResolvedValue(mockUser as never);
+            usersService.getUserByExternalId.mockResolvedValue(mockUser as never);
             jwtService.signAsync.mockResolvedValueOnce('access-token').mockResolvedValueOnce('refresh-token');
 
             const result = await service.refreshToken('valid-refresh-token');
 
             expect(result).toEqual({ externalId: 'user-external-id', accessToken: 'access-token', refreshToken: 'refresh-token' });
-            expect(usersService.findByExternalId).toHaveBeenCalledWith('user-external-id');
+            expect(usersService.getUserByExternalId).toHaveBeenCalledWith('user-external-id', { strict: false });
         });
 
         it('should throw UnauthorizedException when refresh token is invalid', async () => {
@@ -140,7 +140,7 @@ describe('AuthService', () => {
 
         it('should throw UnauthorizedException when the user no longer exists', async () => {
             jwtService.verifyAsync.mockResolvedValue({ sub: 'user-external-id' } as never);
-            usersService.findByExternalId.mockResolvedValue(null as never);
+            usersService.getUserByExternalId.mockResolvedValue(null as never);
 
             await expect(service.refreshToken('valid-refresh-token')).rejects.toThrow(UnauthorizedException);
         });
@@ -156,7 +156,8 @@ describe('AuthService', () => {
 
             const result = await service.register('new@example.com', 'password', '123456');
 
-            expect(result).toEqual({ externalId: 'user-external-id', email: 'test@example.com' });
+            // role is undefined because UserRole[newUser.role] has no reverse lookup for string enums
+            expect(result).toEqual({ externalId: 'user-external-id', email: 'test@example.com', role: undefined });
             expect(speakeasy.totp.verify).toHaveBeenCalledWith({
                 secret: 'test-totp-secret',
                 encoding: 'base32',
@@ -182,7 +183,8 @@ describe('AuthService', () => {
 
             const result = await service.register('approved@example.com', 'password');
 
-            expect(result).toEqual({ externalId: 'user-external-id', email: 'approved@example.com' });
+            // role is undefined because UserRole[newUser.role] has no reverse lookup for string enums
+            expect(result).toEqual({ externalId: 'user-external-id', email: 'approved@example.com', role: undefined });
             expect(usersService.create).toHaveBeenCalledWith('approved@example.com', 'new-hashed-password', UserRole.Resident);
         });
 

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { FieldValidationException } from 'common/exceptions';
 import { User, UserRole } from 'users/interfaces';
@@ -15,8 +15,12 @@ export class UsersService {
         return this.userModel.findOne({ email }).exec();
     }
 
-    async findByExternalId(externalId: string): Promise<User | undefined> {
-        return this.userModel.findOne({ externalId }).exec();
+    async getUserByExternalId(externalId: string, options: { strict: boolean } = { strict: true }): Promise<User> {
+        const user = await this.userModel.findOne({ externalId }).exec();
+        if (!user && options.strict) {
+            throw new NotFoundException('There is no user matching these criteria');
+        }
+        return user;
     }
 
     async create(email: string, passwordHash: string, role: UserRole): Promise<User> {

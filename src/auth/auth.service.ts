@@ -4,7 +4,7 @@ import * as argon2 from 'argon2';
 import * as speakeasy from 'speakeasy';
 import { UsersService } from 'users/users.service';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
-import { RegistrationRequestStatus, User } from 'users/interfaces';
+import { RegistrationRequestStatus, User, UserRole } from 'users/interfaces';
 import { TOTP_REGISTERED_USER_ROLE } from 'users/users.constants';
 import { LoginResponseDto, RegisterResponseDto } from 'auth/dto';
 import { JwtPayload } from 'auth/interfaces';
@@ -40,7 +40,7 @@ export class AuthService {
             throw new UnauthorizedException();
         }
 
-        const user = await this.usersService.findByExternalId(payload.sub);
+        const user = await this.usersService.getUserByExternalId(payload.sub, { strict: false });
         if (!user) {
             throw new UnauthorizedException();
         }
@@ -57,7 +57,7 @@ export class AuthService {
             const passwordHash = await this.generateUserPasswordHash(password);
             const newUser = await this.usersService.create(email, passwordHash, TOTP_REGISTERED_USER_ROLE);
             await this.registrationRequestsService.createAutoApprovedRequest(email);
-            return { externalId: newUser.externalId, email: newUser.email };
+            return { externalId: newUser.externalId, email: newUser.email, role: UserRole[newUser.role] };
         }
 
         const registrationRequest = await this.registrationRequestsService.getRequestByEmail(email);
@@ -80,7 +80,7 @@ export class AuthService {
         }
 
         const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password), registrationRequest.role);
-        return { externalId: newUser.externalId, email: newUser.email };
+        return { externalId: newUser.externalId, email: newUser.email, role: UserRole[newUser.role] };
     }
 
     verifyTotp(token: string): boolean {
