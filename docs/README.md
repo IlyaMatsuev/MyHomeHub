@@ -20,7 +20,7 @@ The Swagger documentation includes all REST endpoints for:
 
 A Postman collection with pre-configured API requests is available in the `/api` directory:
 
-- File: [`smarthome-hub.postman_collection.json`](../api/smarthome-hub.postman_collection.json)
+- File: [`my-home-hub.postman_collection.json`](../api/my-home-hub.postman_collection.json)
 
 Import this collection into Postman for quick API testing and exploration.
 

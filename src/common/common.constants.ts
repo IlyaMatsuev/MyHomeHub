@@ -1,4 +1,4 @@
-export const DEFAULT_SERVER_LABEL = 'SmartHome Hub';
+export const DEFAULT_SERVER_LABEL = 'My Home Hub';
 export const DEFAULT_PORT = 3000;
 
 export const MIN_PAGE_SIZE = 1;

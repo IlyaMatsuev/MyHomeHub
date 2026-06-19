@@ -1,7 +1,7 @@
 {
   "info": {
     "_postman_id": "3a8b9396-b82c-4edc-8c67-8a77b03aaec9",
-    "name": "smarthome-hub",
+    "name": "my-home-hub",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "10132345"
   },
@@ -43,6 +43,16 @@
                 }
               ],
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "GET",
                 "header": [
                   {
@@ -57,7 +67,7 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/auth/register/requests",
+                  "raw": "{{baseUrl}}/auth/register/requests?status=pending",
                   "host": ["{{baseUrl}}"],
                   "path": ["auth", "register", "requests"],
                   "query": [
@@ -73,8 +83,7 @@
                     },
                     {
                       "key": "status",
-                      "value": "pending",
-                      "disabled": true
+                      "value": "pending"
                     }
                   ]
                 }
@@ -156,7 +165,7 @@
                   "script": {
                     "exec": [
                       "if (pm.response.code === 200) {",
-                      "    pm.environment.set('lastQueriedRequestId', pm.response.json().externalId);",
+                      "    pm.environment.set('lastQueriedRegistrationRequestId', pm.response.json().externalId);",
                       "}"
                     ],
                     "type": "text/javascript",
@@ -190,7 +199,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"email\": \"test@test.com\",\n    \"comment\": \"Please approve\"\n}\n",
+                  "raw": "{\n    \"email\": \"ilya1@test.com\",\n    \"comment\": \"Please approve1\"\n}\n",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -232,6 +241,16 @@
                 }
               ],
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "PUT",
                 "header": [
                   {
@@ -278,7 +297,9 @@
               "script": {
                 "exec": [
                   "if (pm.response.code === 200) {",
+                  "    pm.environment.set('userId', pm.response.json().externalId);",
                   "    pm.environment.set('accessToken', pm.response.json().accessToken);",
+                  "    pm.environment.set('refreshToken', pm.response.json().refreshToken);",
                   "}"
                 ],
                 "type": "text/javascript",
@@ -297,7 +318,7 @@
             }
           ],
           "request": {
-            "method": "POST",
+            "method": "PUT",
             "header": [
               {
                 "key": "x-host",
@@ -323,6 +344,65 @@
               "raw": "{{baseUrl}}/auth/login",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Refresh",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.environment.set('userId', pm.response.json().externalId);",
+                  "    pm.environment.set('accessToken', pm.response.json().accessToken);",
+                  "    pm.environment.set('refreshToken', pm.response.json().refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login", "refresh"]
             }
           },
           "response": []
@@ -376,6 +456,60 @@
               "raw": "{{baseUrl}}/auth/register",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
             }
           },
           "response": []
@@ -822,7 +956,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Main light remote\",\n    \"type\": \"remote\",\n    \"brand\": \"philips\",\n    \"room\": \"living-room\",\n    \"controls\": {\n        \"on\": true\n    },\n    \"zigbeeFriendlyName\": \"w\"\n}",
+              "raw": "{\n    \"name\": \"Google Nest\",\n    \"type\": \"speaker\",\n    \"brand\": \"google\",\n    \"transportProtocol\": \"http\",\n    \"ip\": \"198.186.0.12\",\n    \"room\": \"living-room\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1313,7 +1447,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"trigger\": {\n        \"sources\": [\n            {\n                \"type\": \"cron\",\n                \"cron\": \"30 0 * * *\"\n            },\n            {\n                \"type\": \"device\",\n                \"device\": {\n                    \"externalId\": \"7662737f-400b-48c2-9719-45a4a14bad9c\",\n                    \"commands\": {\n                        \"are\": {\n                            \"action\": \"down_press\"\n                        }\n                    }\n                }\n            },\n            {\n                \"type\": \"device\",\n                \"device\": {\n                    \"externalId\": \"5f9ffdce-bf7b-4fdf-9a3e-7c62edf77ca0\",\n                    \"controls\": {\n                        \"are\": {\n                            \"on\": true\n                        }\n                    }\n                }\n            }\n        ],\n        \"logic\": \"(1 OR 2) AND 3\"\n    }\n}",
+              "raw": "{\n            \"name\": \"Main ceiling light On\",\n            \"description\": \"Switches on the main ceiling light on\",\n            \"group\": \"living_room\",\n            \"active\": true,\n            \"trigger\": {\n                \"sources\": [\n                    {\n                        \"type\": \"device\",\n                        \"device\": {\n                            \"externalId\": \"7662737f-400b-48c2-9719-45a4a14bad9c\",\n                            \"commands\": {\n                                \"are\": {\n                                    \"action\": \"on_press\"\n                                }\n                            }\n                        }\n                    }\n                ],\n                \"logic\": \"1\"\n            },\n            \"devices\": [\n                {\n                    \"externalId\": \"980f4053-1dcd-41fa-ba04-6d8bff9499d6\",\n                    \"set\": {\n                        \"controls\": {\n                            \"text\": \"Zalupa\"\n                        }\n                    }\n                }\n            ]\n        }",
               "options": {
                 "raw": {
                   "language": "json"

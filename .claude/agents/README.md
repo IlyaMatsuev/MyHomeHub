@@ -1,4 +1,4 @@
-# SmartHome Development Agents
+# MyHomeHub Development Agents
 
 This directory contains prompt configurations for AI agents that assist with development tasks.
 

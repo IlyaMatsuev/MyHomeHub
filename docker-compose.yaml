@@ -1,8 +1,8 @@
 services:
-  smarthome-hub:
+  my-home-hub:
     build: .
-    image: ilyamatsuev/smarthome-hub-server
-    container_name: smarthome-hub
+    image: ilyamatsuev/my-home-hub
+    container_name: my-home-hub
     restart: always
     # Don't remove port mappings - "network_mode: host" works only for Linux
     ports:
@@ -16,7 +16,7 @@ services:
     depends_on:
       - mongodb
       - mqtt-broker
-      # redis should not be part of dependencies because it can be started from another smarthome-related project
+      # redis should not be part of dependencies because it can be started from another my-home related project
       # - redis
     # Host mode is required to allow proper UDP packets exchange
     network_mode: host
@@ -34,14 +34,14 @@ services:
     volumes:
       - ./data/${NODE_ENV:-local}/:/data/db
     networks:
-      - smarthome-network
+      - my-home-network
 
   redis:
     image: redis:7-alpine
-    container_name: smarthome-redis
+    container_name: my-home-redis
     restart: unless-stopped
     volumes:
-      - smarthome-redis-data:/data
+      - my-home-redis-data:/data
     ports:
       - "${REDIS_PORT}:6379"
 
@@ -56,7 +56,7 @@ services:
       - ./configs/mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:rw
       - ./configs/mqtt/pwfile:/mosquitto/config/pwfile:rw
     networks:
-      - smarthome-network
+      - my-home-network
 
   zigbee2mqtt:
     image: koenkk/zigbee2mqtt
@@ -73,11 +73,11 @@ services:
     depends_on:
       - mqtt-broker
     networks:
-      - smarthome-network
+      - my-home-network
 
-  smarthome-image-watcher:
+  my-home-image-watcher:
     image: ghcr.io/nicholas-fedor/watchtower:latest
-    container_name: smarthome-image-watcher
+    container_name: my-home-image-watcher
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -89,9 +89,9 @@ services:
       - WATCHTOWER_CLEANUP=true
     network_mode: host
 
-  smarthome-image-watcher-once:
+  my-home-image-watcher-once:
     image: ghcr.io/nicholas-fedor/watchtower:latest
-    container_name: smarthome-image-watcher-once
+    container_name: my-home-image-watcher-once
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - $HOME/.docker/config.json:/config.json
@@ -103,9 +103,9 @@ services:
     network_mode: host
 
 networks:
-  smarthome-network:
+  my-home-network:
     driver: bridge
 
 volumes:
-  smarthome-redis-data:
-    name: smarthome-redis-data
+  my-home-redis-data:
+    name: my-home-redis-data

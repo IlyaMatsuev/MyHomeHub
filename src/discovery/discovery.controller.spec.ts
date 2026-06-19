@@ -48,7 +48,7 @@ describe('DiscoveryController', () => {
 
         it('should return default values when not configured', () => {
             const expectedInfo: ServerDto = {
-                label: 'SmartHome Hub',
+                label: 'My Home Hub',
                 address: '127.0.0.1',
                 port: 3000,
             };

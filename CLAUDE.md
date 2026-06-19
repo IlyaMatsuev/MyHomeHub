@@ -57,7 +57,7 @@ npm run build:image
 
 ## Architecture Overview
 
-This is a **NestJS-based SmartHome Hub** that controls IoT devices via multiple protocols (MQTT, Tuya API, HTTP). The hub stores device states in MongoDB and provides a REST API for control.
+This is a **NestJS-based server** that controls IoT devices via multiple protocols (MQTT, Tuya API, HTTP). The hub stores device states in MongoDB and provides a REST API for control.
 
 ### Module Structure
 

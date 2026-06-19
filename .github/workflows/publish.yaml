@@ -11,8 +11,8 @@ on:
 
 env:
   DOCKER_USERNAME: ilyamatsuev
-  DOCKER_IMAGE_NAME: smarthome-hub-server
-  REGISTRY_IMAGE: ilyamatsuev/smarthome-hub-server
+  DOCKER_IMAGE_NAME: my-home-hub
+  REGISTRY_IMAGE: ilyamatsuev/my-home-hub
 
 # Secrets required for this action:
 # 1. DOCKER_ACCESS_TOKEN - docker personal access token used to log in into the registry
