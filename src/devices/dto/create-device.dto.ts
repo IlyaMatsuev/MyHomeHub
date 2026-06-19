@@ -12,6 +12,7 @@ import {
     ValidateNested,
     MinLength,
     MaxLength,
+    ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import {
@@ -102,14 +103,17 @@ export class CreateDeviceDto {
 
     @IsNotEmpty()
     @IsString()
+    @ValidateIf(d => d.brand === DeviceBrand.Tuya)
     @ApiProperty({
         required: false,
         description: 'The device ID of the Tuya smart device',
     })
     tuyaDeviceId?: string;
 
+    @IsOptional()
     @IsNotEmpty()
     @IsString()
+    @ValidateIf(d => d.brand === DeviceBrand.Tuya)
     @ApiProperty({
         required: false,
         description: 'The device local key of the Tuya smart device',
