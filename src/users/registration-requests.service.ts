@@ -2,8 +2,13 @@ import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nest
 import { Model, FilterQuery } from 'mongoose';
 import { PaginationResponseDto } from 'common/dto';
 import { FieldValidationException } from 'common/exceptions';
-import { RegistrationRequest, RegistrationRequestStatus } from 'users/interfaces';
-import { REGISTRATION_REQUEST_MODEL_PROVIDER_NAME, REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT } from 'users/users.constants';
+import { RegistrationRequest, RegistrationRequestStatus, UserRole } from 'users/interfaces';
+import {
+    DEFAULT_USER_ROLE,
+    REGISTRATION_REQUEST_MODEL_PROVIDER_NAME,
+    REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
+    TOTP_REGISTERED_USER_ROLE,
+} from 'users/users.constants';
 import {
     CreateRegistrationRequestDto,
     GetRegistrationRequestsDto,
@@ -74,17 +79,28 @@ export class RegistrationRequestsService {
                 return new RegistrationRequestResponseDto(await existingRequest.save());
             }
         }
-        return this.createNewRequest(dto.email, RegistrationRequestStatus.Pending, dto.comment);
+        return this.createNewRequest({
+            requesterEmail: dto.email,
+            status: RegistrationRequestStatus.Pending,
+            role: DEFAULT_USER_ROLE,
+            requesterComment: dto.comment,
+        });
     }
 
     async createAutoApprovedRequest(email: string): Promise<RegistrationRequestResponseDto> {
         const existingRequest = await this.getRequestByEmail(email);
         if (existingRequest) {
             existingRequest.status = RegistrationRequestStatus.Approved;
+            existingRequest.role = TOTP_REGISTERED_USER_ROLE;
             existingRequest.requesterComment = REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT;
             return new RegistrationRequestResponseDto(await existingRequest.save());
         }
-        return this.createNewRequest(email, RegistrationRequestStatus.Approved, REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT);
+        return this.createNewRequest({
+            requesterEmail: email,
+            status: RegistrationRequestStatus.Approved,
+            role: TOTP_REGISTERED_USER_ROLE,
+            requesterComment: REGISTRATION_REQUEST_TOTP_AUTO_APPROVAL_COMMENT,
+        });
     }
 
     async updateRequest(externalId: string, dto: UpdateRegistrationRequestDto): Promise<RegistrationRequestResponseDto> {
@@ -97,19 +113,24 @@ export class RegistrationRequestsService {
         if (dto.blackListed !== undefined) {
             request.blackListed = dto.blackListed;
         }
+        if (dto.role !== undefined) {
+            request.role = dto.role;
+        }
 
         return new RegistrationRequestResponseDto(await request.save());
     }
 
-    private async createNewRequest(
-        requesterEmail: string,
-        status: RegistrationRequestStatus,
-        requesterComment?: string,
-    ): Promise<RegistrationRequestResponseDto> {
+    private async createNewRequest(data: {
+        requesterEmail: string;
+        status: RegistrationRequestStatus;
+        role: UserRole;
+        requesterComment?: string;
+    }): Promise<RegistrationRequestResponseDto> {
         const request = new this.registrationRequestModel({
-            requesterEmail: requesterEmail.toLowerCase(),
-            status,
-            requesterComment: requesterComment,
+            requesterEmail: data.requesterEmail.toLowerCase(),
+            status: data.status,
+            role: data.role,
+            requesterComment: data.requesterComment,
         });
         return new RegistrationRequestResponseDto(await request.save({ validateBeforeSave: true }));
     }

@@ -1,7 +1,17 @@
 import * as mongoose from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
+import { UserRole } from 'users/interfaces';
+import { DEFAULT_USER_ROLE } from 'users/users.constants';
 
 export const UserSchema = new mongoose.Schema(
     {
+        externalId: {
+            type: String,
+            required: true,
+            unique: true,
+            default: uuidv4,
+            index: true,
+        },
         email: {
             type: String,
             required: true,
@@ -15,6 +25,12 @@ export const UserSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
+        },
+        role: {
+            type: String,
+            required: true,
+            enum: Object.values(UserRole),
+            default: DEFAULT_USER_ROLE,
         },
     },
     { timestamps: true },

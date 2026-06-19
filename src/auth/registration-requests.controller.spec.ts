@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegistrationRequestsController } from './registration-requests.controller';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
-import { RegistrationRequestStatus } from 'users/interfaces';
+import { RegistrationRequestStatus, UserRole } from 'users/interfaces';
 import { PaginationResponseDto } from 'common/dto';
 import { RegistrationRequestResponseDto } from 'users/dto';
 
@@ -18,6 +18,7 @@ describe('RegistrationRequestsController', () => {
         externalId: 'test-uuid',
         requesterEmail: 'test@example.com',
         status: RegistrationRequestStatus.Pending,
+        role: UserRole.Guest,
         requesterComment: 'Test comment',
         blackListed: false,
         createdAt: new Date('2026-01-01'),
@@ -93,6 +94,19 @@ describe('RegistrationRequestsController', () => {
 
             expect(result.status).toBe(RegistrationRequestStatus.Rejected);
             expect(mockRegistrationRequestsService.updateRequest).toHaveBeenCalledWith('test-uuid', { approve: false });
+        });
+
+        it('should approve a registration request with a chosen role', async () => {
+            const approvedResponse = { ...mockRequestResponse, status: RegistrationRequestStatus.Approved, role: UserRole.Resident };
+            mockRegistrationRequestsService.updateRequest.mockResolvedValue(approvedResponse);
+
+            const result = await controller.updateRequest('test-uuid', { approve: true, role: UserRole.Resident });
+
+            expect(result.role).toBe(UserRole.Resident);
+            expect(mockRegistrationRequestsService.updateRequest).toHaveBeenCalledWith('test-uuid', {
+                approve: true,
+                role: UserRole.Resident,
+            });
         });
 
         it('should reject and blacklist a registration request', async () => {

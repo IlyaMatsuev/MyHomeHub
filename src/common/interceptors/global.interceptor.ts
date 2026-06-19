@@ -1,11 +1,10 @@
-import { CallHandler, ExecutionContext, Global, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import { catchError, map, Observable } from 'rxjs';
 import { Request } from 'express';
 import { exceptionHandlers } from 'common/interceptors/exception.handlers';
 
 const EXCLUDED_INTERNAL_FIELDS = ['_id', '__v'];
 
-@Global()
 @Injectable()
 export class GlobalInterceptor implements NestInterceptor {
     private readonly logger = new Logger(GlobalInterceptor.name);

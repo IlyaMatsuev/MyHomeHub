@@ -1,4 +1,5 @@
 import { Document } from 'mongoose';
+import { UserRole } from './user.interface';
 
 export enum RegistrationRequestStatus {
     Pending = 'pending',
@@ -11,6 +12,7 @@ export interface RegistrationRequest extends Document<string> {
     requesterEmail: string;
     requesterComment?: string;
     status: RegistrationRequestStatus;
+    role: UserRole;
     blackListed?: boolean;
     createdAt: Date;
     updatedAt: Date;

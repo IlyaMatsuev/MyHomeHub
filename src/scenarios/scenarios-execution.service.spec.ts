@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ScenariosExecutionService } from './scenarios-execution.service';
 import { ScenariosService } from './scenarios.service';
 import { DevicesService } from 'devices/devices.service';
-import { ConditionsEvaluatorService } from 'common/services/conditions-evaluator.service';
+import { ConditionsEvaluatorService } from 'common/services';
 import { Scenario, ScenarioCronTriggerSource, ScenarioTriggerSourceType } from './interfaces';
 import { Device, DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import { DeviceCommandExecutedEvent, DeviceUpdateCompletedEvent } from 'devices/events';
