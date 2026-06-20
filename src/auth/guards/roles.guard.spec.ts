@@ -10,8 +10,9 @@ describe('RolesGuard', () => {
     let mockReflector: { getAllAndOverride: jest.Mock };
     let mockAuthConfig: { isPublicEndpoint: jest.Mock; isAuthEnabled: jest.Mock };
 
-    const createMockContext = (user?: { role: UserRole }): ExecutionContext =>
+    const createMockContext = (user?: { role: UserRole }, type = 'http'): ExecutionContext =>
         ({
+            getType: jest.fn().mockReturnValue(type),
             switchToHttp: jest.fn().mockReturnValue({
                 getRequest: jest.fn().mockReturnValue({ user }),
             }),
@@ -30,6 +31,12 @@ describe('RolesGuard', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+    });
+
+    it('should allow non-http contexts (e.g. MQTT) without checking roles', () => {
+        expect(guard.canActivate(createMockContext(undefined, 'rpc'))).toBe(true);
+        expect(mockAuthConfig.isPublicEndpoint).not.toHaveBeenCalled();
+        expect(mockReflector.getAllAndOverride).not.toHaveBeenCalled();
     });
 
     it('should allow public endpoints', () => {

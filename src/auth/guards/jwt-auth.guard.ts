@@ -9,6 +9,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     canActivate(context: ExecutionContext) {
+        // Auth only protects the REST API. Non-HTTP contexts (e.g. MQTT/Zigbee
+        // @MessagePattern handlers) carry no JWT, so guarding them would block
+        // internal device state updates from ever reaching DevicesService.
+        if (context.getType() !== 'http') {
+            return true;
+        }
         if (this.authConfig.isPublicEndpoint(context) || !this.authConfig.isAuthEnabled()) {
             return true;
         }

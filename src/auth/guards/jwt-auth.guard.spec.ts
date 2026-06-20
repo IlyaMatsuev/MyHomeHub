@@ -6,8 +6,9 @@ describe('JwtAuthGuard', () => {
     let guard: JwtAuthGuard;
     let mockAuthConfig: { isPublicEndpoint: jest.Mock; isAuthEnabled: jest.Mock };
 
-    const createMockContext = (): ExecutionContext =>
+    const createMockContext = (type = 'http'): ExecutionContext =>
         ({
+            getType: jest.fn().mockReturnValue(type),
             switchToHttp: jest.fn().mockReturnValue({
                 getRequest: jest.fn().mockReturnValue({ headers: {} }),
             }),
@@ -25,6 +26,14 @@ describe('JwtAuthGuard', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+    });
+
+    it('should allow non-http contexts (e.g. MQTT) without delegating to passport', () => {
+        const superCanActivate = jest.spyOn(Object.getPrototypeOf(Object.getPrototypeOf(guard)), 'canActivate');
+
+        expect(guard.canActivate(createMockContext('rpc'))).toBe(true);
+        expect(superCanActivate).not.toHaveBeenCalled();
+        expect(mockAuthConfig.isPublicEndpoint).not.toHaveBeenCalled();
     });
 
     it('should allow public endpoints without delegating to passport', () => {
