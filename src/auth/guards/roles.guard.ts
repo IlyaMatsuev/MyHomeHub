@@ -13,6 +13,11 @@ export class RolesGuard implements CanActivate {
     ) {}
 
     canActivate(context: ExecutionContext): boolean {
+        // Role checks only apply to the REST API
+        // Non-HTTP contexts (e.g. MQTT/Zigbee controllers) have no authenticated user
+        if (context.getType() !== 'http') {
+            return true;
+        }
         if (this.authConfig.isPublicEndpoint(context) || !this.authConfig.isAuthEnabled()) {
             return true;
         }
