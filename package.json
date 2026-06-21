@@ -20,6 +20,7 @@
     "start:dev": "npm run build && NODE_ENV=local nest start --watch",
     "restart": "docker compose up -d my-home-hub --force-recreate",
     "publish": "bash ./scripts/publish.sh",
+    "app:start": "bash ./scripts/app_start.sh",
     "mongo:start": "docker compose up -d mongodb",
     "mongo:restart": "docker compose up -d mongodb --force-recreate",
     "mongo:migrate": "bash ./scripts/mongo_migrate.sh",
