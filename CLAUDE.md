@@ -97,6 +97,13 @@ Scenarios define automation rules with:
 - **Logic**: Conditions evaluated by `ConditionsEvaluatorService`
 - **Actions**: Set device controls/measurements
 
+### API Response Conventions
+
+`GlobalInterceptor` (`src/common/interceptors/global.interceptor.ts`) post-processes every HTTP response:
+
+- Strips Mongoose internal fields (`_id`, `__v`) at any depth.
+- Converts every `Date` instance into a numeric Unix-epoch timestamp (milliseconds). Response DTOs (`*ResponseDto`) declare these fields as `number` to match the wire format, while internal Mongoose interfaces keep `Date`. The interceptor handles the conversion in transit.
+
 ### Authentication & Authorization
 
 Authentication uses **Passport.js** with a `passport-jwt` strategy (`src/auth/strategies/jwt.strategy.ts`):
