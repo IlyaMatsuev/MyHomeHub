@@ -9,30 +9,42 @@ const EXCLUDED_INTERNAL_FIELDS = ['_id', '__v'];
 export class GlobalInterceptor implements NestInterceptor {
     private readonly logger = new Logger(GlobalInterceptor.name);
 
-    intercept(context: ExecutionContext, next: CallHandler): Observable<object> | Promise<Observable<object>> {
+    intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> | Promise<Observable<unknown>> {
         if (context.getType() === 'http') {
             const req = context.switchToHttp().getRequest<Request>();
             this.logger.debug(`${req.method} ${req.originalUrl} from "${req.ip}"`);
         }
 
         return next.handle().pipe(
-            map(response => this.removeInternalFields(response)),
+            map(response => this.transformResponse(response)),
             catchError((error: Error) => this.handleException(error, context)),
         );
     }
 
-    removeInternalFields<T extends object>(data: T): T {
-        if (!data) {
+    transformResponse<T>(data: T): T {
+        if (data === null || data === undefined) {
             return data;
+        }
+        if (data instanceof Date) {
+            return data.getTime() as unknown as T;
         }
         if (Array.isArray(data)) {
-            data.forEach((d: T) => this.removeInternalFields(d));
+            data.forEach((item, index) => {
+                data[index] = this.transformResponse(item);
+            });
             return data;
         }
-        const rawData: T = '_doc' in data ? (data['_doc'] as T) : data;
+        if (typeof data !== 'object') {
+            return data;
+        }
+        const objectData = data as Record<string, unknown>;
+        const rawData: Record<string, unknown> = '_doc' in objectData ? (objectData._doc as Record<string, unknown>) : objectData;
         Object.keys(rawData).forEach(key => {
-            if (Array.isArray(rawData[key]) || typeof rawData[key] === 'object') {
-                this.removeInternalFields(rawData[key]);
+            const value = rawData[key];
+            if (value instanceof Date) {
+                rawData[key] = value.getTime();
+            } else if (value && typeof value === 'object') {
+                rawData[key] = this.transformResponse(value);
             }
         });
 

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegistrationRequestsController } from './registration-requests.controller';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
-import { RegistrationRequestStatus, UserRole } from 'users/interfaces';
+import { RegistrationRequest, RegistrationRequestStatus, UserRole } from 'users/interfaces';
 import { PaginationResponseDto } from 'common/dto';
 import { RegistrationRequestResponseDto } from 'users/dto';
 
@@ -14,7 +14,7 @@ describe('RegistrationRequestsController', () => {
         updateRequest: jest.Mock;
     };
 
-    const mockRequestResponse: RegistrationRequestResponseDto = {
+    const mockRequest = {
         externalId: 'test-uuid',
         requesterEmail: 'test@example.com',
         status: RegistrationRequestStatus.Pending,
@@ -23,6 +23,17 @@ describe('RegistrationRequestsController', () => {
         blackListed: false,
         createdAt: new Date('2026-01-01'),
         updatedAt: new Date('2026-01-01'),
+    } as unknown as RegistrationRequest;
+
+    const mockRequestResponse: RegistrationRequestResponseDto = {
+        externalId: 'test-uuid',
+        requesterEmail: 'test@example.com',
+        status: RegistrationRequestStatus.Pending,
+        role: UserRole.Guest,
+        requesterComment: 'Test comment',
+        blackListed: false,
+        createdAt: new Date('2026-01-01').getTime(),
+        updatedAt: new Date('2026-01-01').getTime(),
     };
 
     beforeEach(async () => {
@@ -65,8 +76,8 @@ describe('RegistrationRequestsController', () => {
     });
 
     describe('getRequest', () => {
-        it('should return a registration request by external ID', async () => {
-            mockRegistrationRequestsService.getRequestByExternalId.mockResolvedValue(mockRequestResponse);
+        it('should return a registration request by external ID with timestamp fields', async () => {
+            mockRegistrationRequestsService.getRequestByExternalId.mockResolvedValue(mockRequest);
 
             const result = await controller.getRequest('test-uuid');
 

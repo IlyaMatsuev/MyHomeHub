@@ -1,9 +1,8 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { ScenarioDeviceDto, ScenarioTriggerDto } from 'scenarios/dto/common.dto';
-import { Scenario } from 'scenarios/interfaces';
 
 @ApiSchema({ name: 'Scenarios.ScenarioResponse', description: 'Scenario entity returned in API responses' })
-export class ScenarioResponseDto implements Scenario {
+export class ScenarioResponseDto {
     @ApiProperty({ description: 'Unique external identifier (UUID)', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     externalId: string;
 
@@ -28,9 +27,9 @@ export class ScenarioResponseDto implements Scenario {
     @ApiProperty({ description: 'Devices affected by this scenario', type: ScenarioDeviceDto, isArray: true })
     devices: Array<ScenarioDeviceDto>;
 
-    @ApiProperty({ description: 'Record creation timestamp' })
-    createdAt: Date;
+    @ApiProperty({ description: 'Record creation timestamp (Unix epoch in milliseconds)', type: Number })
+    createdAt: number;
 
-    @ApiProperty({ description: 'Record update timestamp' })
-    updatedAt: Date;
+    @ApiProperty({ description: 'Record update timestamp (Unix epoch in milliseconds)', type: Number })
+    updatedAt: number;
 }

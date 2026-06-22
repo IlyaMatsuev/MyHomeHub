@@ -1,9 +1,9 @@
 import { ApiProperty, ApiPropertyOptional, ApiSchema } from '@nestjs/swagger';
-import { Device, DeviceBrand, DevicePayload, DeviceType, Room } from 'devices/interfaces';
+import { DeviceBrand, DevicePayload, DeviceType, Room } from 'devices/interfaces';
 import { TransportProtocol } from 'devices-control/interfaces';
 
 @ApiSchema({ name: 'Devices.DeviceResponse', description: 'Device entity returned in API responses' })
-export class DeviceResponseDto implements Device {
+export class DeviceResponseDto {
     @ApiProperty({ description: 'Unique external identifier (UUID)', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     externalId: string;
 
@@ -43,18 +43,18 @@ export class DeviceResponseDto implements Device {
     @ApiPropertyOptional({ description: 'Current device controls state', type: 'object', additionalProperties: true })
     controls?: DevicePayload;
 
-    @ApiProperty({ description: 'Last controls update timestamp', required: false })
-    controlsUpdatedAt?: Date;
+    @ApiProperty({ description: 'Last controls update timestamp (Unix epoch in milliseconds)', type: Number, required: false })
+    controlsUpdatedAt?: number;
 
     @ApiPropertyOptional({ description: 'Current device measurements', type: 'object', additionalProperties: true })
     measurements?: DevicePayload;
 
-    @ApiProperty({ description: 'Last measurements update timestamp', required: false })
-    measurementsUpdatedAt?: Date;
+    @ApiProperty({ description: 'Last measurements update timestamp (Unix epoch in milliseconds)', type: Number, required: false })
+    measurementsUpdatedAt?: number;
 
-    @ApiProperty({ description: 'Record creation timestamp' })
-    createdAt: Date;
+    @ApiProperty({ description: 'Record creation timestamp (Unix epoch in milliseconds)', type: Number })
+    createdAt: number;
 
-    @ApiProperty({ description: 'Record update timestamp' })
-    updatedAt: Date;
+    @ApiProperty({ description: 'Record update timestamp (Unix epoch in milliseconds)', type: Number })
+    updatedAt: number;
 }

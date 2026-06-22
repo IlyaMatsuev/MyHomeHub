@@ -12,7 +12,6 @@ import {
     GetPairableDevicesDto,
     DevicePayloadDto,
     PairingModeStatusResponseDto,
-    DeviceResponseDto,
 } from 'devices/dto';
 import { DeviceUpdateRequestedEvent, DeviceUpdateCompletedEvent, DeviceCommandExecutedEvent } from 'devices/events';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
@@ -96,7 +95,7 @@ export class DevicesService {
         return this.getDevice({ zigbeeFriendlyName: friendlyName }, { strict: false });
     }
 
-    async getDevice(filter: DeviceFilter, options: GetDeviceOptions = { strict: true }): Promise<DeviceResponseDto> {
+    async getDevice(filter: DeviceFilter, options: GetDeviceOptions = { strict: true }): Promise<Device> {
         const device = await this.deviceModel.findOne(filter).exec();
         if (!device && options.strict) {
             throw new NotFoundException('There is no device matching these criteria');
@@ -104,7 +103,7 @@ export class DevicesService {
         return device;
     }
 
-    async addDevice(deviceDto: CreateDeviceDto): Promise<DeviceResponseDto> {
+    async addDevice(deviceDto: CreateDeviceDto): Promise<Device> {
         const existingDevice = await this.getDevice({ name: deviceDto.name }, { strict: false });
         if (existingDevice) {
             throw new FieldValidationException(`Device with the same name ('${deviceDto.name}') already exists`, 'name');

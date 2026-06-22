@@ -23,6 +23,7 @@ import {
     ToggleDevicesPairingModeDto,
     UpdateDeviceDto,
 } from 'devices/dto';
+import { Device } from 'devices/interfaces';
 import { PairableDevice } from 'zigbee/interfaces';
 
 @Controller('devices')
@@ -54,7 +55,7 @@ export class DevicesController {
     @ForRoles(UserRole.Resident, UserRole.Guest)
     @ApiOperation({ summary: 'Get all added devices' })
     @ApiOkPaginationResponse(DeviceResponseDto, 'Paginated list of devices')
-    async getDevices(@Query() query: GetDevicesDto): Promise<PaginationResponseDto<DeviceResponseDto>> {
+    async getDevices(@Query() query: GetDevicesDto): Promise<PaginationResponseDto<Device>> {
         return this.deviceService.getDevices({}, query);
     }
 
@@ -63,7 +64,7 @@ export class DevicesController {
     @ApiParam({ name: 'externalId', description: 'External ID of the device to find', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Get a specific device by the provided external ID' })
     @ApiOkResponse({ type: DeviceResponseDto })
-    async getDevice(@ExternalIdParam() externalId: string): Promise<DeviceResponseDto> {
+    async getDevice(@ExternalIdParam() externalId: string): Promise<Device> {
         return this.deviceService.getDeviceByExternalId(externalId);
     }
 
@@ -72,7 +73,7 @@ export class DevicesController {
     @ApiOperation({ summary: 'Add a new device' })
     @ApiCreatedResponse({ type: DeviceResponseDto })
     @ApiValidationError()
-    async addDevice(@Body() createDeviceDto: CreateDeviceDto): Promise<DeviceResponseDto> {
+    async addDevice(@Body() createDeviceDto: CreateDeviceDto): Promise<Device> {
         return this.deviceService.addDevice(createDeviceDto);
     }
 
@@ -82,7 +83,7 @@ export class DevicesController {
     @ApiOperation({ summary: 'Update an existing device by the provided external ID' })
     @ApiOkResponse({ type: DeviceResponseDto })
     @ApiValidationError()
-    async updateDevice(@ExternalIdParam() externalId: string, @Body() updateDeviceDto: UpdateDeviceDto): Promise<DeviceResponseDto> {
+    async updateDevice(@ExternalIdParam() externalId: string, @Body() updateDeviceDto: UpdateDeviceDto): Promise<Device> {
         return this.deviceService.updateDevice(externalId, updateDeviceDto);
     }
 
@@ -98,7 +99,7 @@ export class DevicesController {
     })
     @ApiOkResponse({ type: DeviceResponseDto })
     @ApiValidationError()
-    async sendCommand(@ExternalIdParam() externalId: string, @Body() commandDto: DevicePayloadDto): Promise<DeviceResponseDto> {
+    async sendCommand(@ExternalIdParam() externalId: string, @Body() commandDto: DevicePayloadDto): Promise<Device> {
         return this.deviceService.sendCommand(externalId, commandDto);
     }
 
@@ -108,7 +109,7 @@ export class DevicesController {
     @ApiOperation({ summary: 'Delete an existing device by the provided external ID' })
     @ApiOkResponse({ type: DeviceResponseDto })
     @ApiValidationError()
-    async removeDevice(@ExternalIdParam() externalId: string): Promise<DeviceResponseDto> {
+    async removeDevice(@ExternalIdParam() externalId: string): Promise<Device> {
         return this.deviceService.removeDevice(externalId);
     }
 }

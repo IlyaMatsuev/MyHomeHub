@@ -33,11 +33,11 @@ export class RegistrationRequestResponseDto {
     })
     blackListed: boolean;
 
-    @ApiProperty({ description: 'When the registration request was created' })
-    createdAt: Date;
+    @ApiProperty({ description: 'When the registration request was created (Unix epoch in milliseconds)', type: Number })
+    createdAt: number;
 
-    @ApiProperty({ description: 'When the registration request was last updated' })
-    updatedAt: Date;
+    @ApiProperty({ description: 'When the registration request was last updated (Unix epoch in milliseconds)', type: Number })
+    updatedAt: number;
 
     constructor(request: RegistrationRequest) {
         this.externalId = request.externalId;
@@ -46,7 +46,7 @@ export class RegistrationRequestResponseDto {
         this.status = request.status;
         this.role = request.role;
         this.blackListed = request.blackListed;
-        this.createdAt = request.createdAt;
-        this.updatedAt = request.updatedAt;
+        this.createdAt = request.createdAt?.getTime();
+        this.updatedAt = request.updatedAt?.getTime();
     }
 }
