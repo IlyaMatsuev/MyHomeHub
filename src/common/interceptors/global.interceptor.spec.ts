@@ -64,10 +64,8 @@ describe('GlobalInterceptor', () => {
             const result$ = interceptor.intercept(mockExecutionContext, mockCallHandler) as Observable<object>;
             const result = (await firstValueFrom(result$)) as { name: string; createdAt: number; updatedAt: number };
 
-            expect(result.createdAt).toBe(createdAt.getTime());
-            expect(result.updatedAt).toBe(updatedAt.getTime());
-            expect(typeof result.createdAt).toBe('number');
-            expect(typeof result.updatedAt).toBe('number');
+            expect(result.createdAt).toBe(Math.floor(createdAt.getTime() / 1000));
+            expect(result.updatedAt).toBe(Math.floor(updatedAt.getTime() / 1000));
         });
 
         it('should handle errors and rethrow', async () => {
@@ -114,7 +112,7 @@ describe('GlobalInterceptor', () => {
 
             const result = interceptor.transformResponse(date as unknown as object);
 
-            expect(result).toBe(date.getTime());
+            expect(result).toBe(Math.floor(date.getTime() / 1000));
         });
 
         it('should return primitives unchanged', () => {
@@ -139,8 +137,7 @@ describe('GlobalInterceptor', () => {
 
             const result = interceptor.transformResponse(data) as unknown as { name: string; createdAt: number };
 
-            expect(result.createdAt).toBe(createdAt.getTime());
-            expect(typeof result.createdAt).toBe('number');
+            expect(result.createdAt).toBe(Math.floor(createdAt.getTime() / 1000));
         });
 
         it('should handle arrays', () => {
@@ -165,8 +162,8 @@ describe('GlobalInterceptor', () => {
 
             const result = interceptor.transformResponse(data);
 
-            expect(result[0]).toBe(first.getTime());
-            expect(result[1]).toBe(second.getTime());
+            expect(result[0]).toBe(Math.floor(first.getTime() / 1000));
+            expect(result[1]).toBe(Math.floor(second.getTime() / 1000));
         });
 
         it('should convert Date fields inside array items', () => {
@@ -175,7 +172,7 @@ describe('GlobalInterceptor', () => {
 
             const result = interceptor.transformResponse(data) as unknown as Array<{ name: string; createdAt: number }>;
 
-            expect(result[0].createdAt).toBe(createdAt.getTime());
+            expect(result[0].createdAt).toBe(Math.floor(createdAt.getTime() / 1000));
         });
 
         it('should handle nested objects', () => {
@@ -208,7 +205,7 @@ describe('GlobalInterceptor', () => {
                 child: { name: string; createdAt: number };
             };
 
-            expect(result.child.createdAt).toBe(childCreatedAt.getTime());
+            expect(result.child.createdAt).toBe(Math.floor(childCreatedAt.getTime() / 1000));
         });
 
         it('should handle Mongoose documents with _doc field', () => {
@@ -227,15 +224,7 @@ describe('GlobalInterceptor', () => {
             expect(result).toBeDefined();
             expect(result._doc).not.toHaveProperty('_id');
             expect(result._doc).not.toHaveProperty('__v');
-            expect(result._doc.createdAt).toBe(createdAt.getTime());
-        });
-    });
-
-    describe('handleException', () => {
-        it('should rethrow error after processing handlers', () => {
-            const testError = new Error('Test error');
-
-            expect(() => interceptor.handleException(testError, mockExecutionContext)).toThrow(testError);
+            expect(result._doc.createdAt).toBe(Math.floor(createdAt.getTime() / 1000));
         });
     });
 });

@@ -27,9 +27,9 @@ export class ScenarioResponseDto {
     @ApiProperty({ description: 'Devices affected by this scenario', type: ScenarioDeviceDto, isArray: true })
     devices: Array<ScenarioDeviceDto>;
 
-    @ApiProperty({ description: 'Record creation timestamp (Unix epoch in milliseconds)', type: Number })
+    @ApiProperty({ description: 'Record creation timestamp (Unix epoch in seconds)' })
     createdAt: number;
 
-    @ApiProperty({ description: 'Record update timestamp (Unix epoch in milliseconds)', type: Number })
+    @ApiProperty({ description: 'Record update timestamp (Unix epoch in seconds)' })
     updatedAt: number;
 }

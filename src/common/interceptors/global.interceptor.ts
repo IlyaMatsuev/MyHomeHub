@@ -9,7 +9,7 @@ const EXCLUDED_INTERNAL_FIELDS = ['_id', '__v'];
 export class GlobalInterceptor implements NestInterceptor {
     private readonly logger = new Logger(GlobalInterceptor.name);
 
-    intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> | Promise<Observable<unknown>> {
+    intercept(context: ExecutionContext, next: CallHandler): Observable<object> | Promise<Observable<object>> {
         if (context.getType() === 'http') {
             const req = context.switchToHttp().getRequest<Request>();
             this.logger.debug(`${req.method} ${req.originalUrl} from "${req.ip}"`);
@@ -21,42 +21,46 @@ export class GlobalInterceptor implements NestInterceptor {
         );
     }
 
-    transformResponse<T>(data: T): T {
-        if (data === null || data === undefined) {
+    transformResponse<T extends object>(data: T): T {
+        if (!data) {
             return data;
         }
         if (data instanceof Date) {
-            return data.getTime() as unknown as T;
+            return this.transformDate(data);
         }
         if (Array.isArray(data)) {
-            data.forEach((item, index) => {
-                data[index] = this.transformResponse(item);
-            });
+            data.forEach((item, index) => (data[index] = this.transformResponse(item)));
             return data;
         }
         if (typeof data !== 'object') {
             return data;
         }
+
         const objectData = data as Record<string, unknown>;
-        const rawData: Record<string, unknown> = '_doc' in objectData ? (objectData._doc as Record<string, unknown>) : objectData;
-        Object.keys(rawData).forEach(key => {
-            const value = rawData[key];
+        const documentData: Record<string, unknown> = '_doc' in objectData ? (objectData._doc as Record<string, unknown>) : objectData;
+
+        Object.keys(documentData).forEach(key => {
+            const value = documentData[key];
             if (value instanceof Date) {
-                rawData[key] = value.getTime();
+                documentData[key] = this.transformDate<number>(value);
             } else if (value && typeof value === 'object') {
-                rawData[key] = this.transformResponse(value);
+                documentData[key] = this.transformResponse(value);
             }
         });
 
         EXCLUDED_INTERNAL_FIELDS.forEach(f => {
-            if (f in rawData) {
-                delete rawData[f];
+            if (f in documentData) {
+                delete documentData[f];
             }
         });
         return data;
     }
 
-    handleException(error: Error, context: ExecutionContext): never {
+    private transformDate<T>(value: Date): T {
+        return Math.floor(value.getTime() / 1000) as unknown as T;
+    }
+
+    private handleException(error: Error, context: ExecutionContext): never {
         exceptionHandlers.forEach(Handler => {
             const handler = new Handler();
             if (error instanceof handler.getExceptionType()) {

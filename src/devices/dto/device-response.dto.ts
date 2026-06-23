@@ -43,18 +43,18 @@ export class DeviceResponseDto {
     @ApiPropertyOptional({ description: 'Current device controls state', type: 'object', additionalProperties: true })
     controls?: DevicePayload;
 
-    @ApiProperty({ description: 'Last controls update timestamp (Unix epoch in milliseconds)', type: Number, required: false })
+    @ApiProperty({ description: 'Last controls update timestamp (Unix epoch in seconds)', required: false })
     controlsUpdatedAt?: number;
 
     @ApiPropertyOptional({ description: 'Current device measurements', type: 'object', additionalProperties: true })
     measurements?: DevicePayload;
 
-    @ApiProperty({ description: 'Last measurements update timestamp (Unix epoch in milliseconds)', type: Number, required: false })
+    @ApiProperty({ description: 'Last measurements update timestamp (Unix epoch in seconds)', required: false })
     measurementsUpdatedAt?: number;
 
-    @ApiProperty({ description: 'Record creation timestamp (Unix epoch in milliseconds)', type: Number })
+    @ApiProperty({ description: 'Record creation timestamp (Unix epoch in seconds)' })
     createdAt: number;
 
-    @ApiProperty({ description: 'Record update timestamp (Unix epoch in milliseconds)', type: Number })
+    @ApiProperty({ description: 'Record update timestamp (Unix epoch in seconds)' })
     updatedAt: number;
 }

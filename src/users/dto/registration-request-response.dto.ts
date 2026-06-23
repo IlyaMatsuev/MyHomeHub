@@ -33,10 +33,10 @@ export class RegistrationRequestResponseDto {
     })
     blackListed: boolean;
 
-    @ApiProperty({ description: 'When the registration request was created (Unix epoch in milliseconds)', type: Number })
+    @ApiProperty({ description: 'When the registration request was created (Unix epoch in seconds)' })
     createdAt: number;
 
-    @ApiProperty({ description: 'When the registration request was last updated (Unix epoch in milliseconds)', type: Number })
+    @ApiProperty({ description: 'When the registration request was last updated (Unix epoch in seconds)' })
     updatedAt: number;
 
     constructor(request: RegistrationRequest) {

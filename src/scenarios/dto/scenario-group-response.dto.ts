@@ -8,9 +8,9 @@ export class ScenarioGroupResponseDto {
     @ApiProperty({ description: 'Number of scenarios in this group', example: 2 })
     scenariosCount: number;
 
-    @ApiProperty({ description: 'Record creation timestamp (Unix epoch in milliseconds)', type: Number })
+    @ApiProperty({ description: 'Record creation timestamp (Unix epoch in seconds)' })
     createdAt: number;
 
-    @ApiProperty({ description: 'Record update timestamp (Unix epoch in milliseconds)', type: Number })
+    @ApiProperty({ description: 'Record update timestamp (Unix epoch in seconds)' })
     updatedAt: number;
 }
