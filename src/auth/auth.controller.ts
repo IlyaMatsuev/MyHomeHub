@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Put } from '@nestjs/common';
-import { ApiForbiddenResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ApiInternalError, ApiUnauthorized, ApiValidationError } from 'common/decorators';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiForbidden, ApiInternalError, ApiUnauthorized, ApiValidationError } from 'common/decorators';
 import { Public } from 'auth/decorators';
 import { WithCookies } from 'auth/cookies/decorators';
 import { LoginDto, RegisterDto, LoginResponseDto, RegisterResponseDto, LoginRefreshDto } from 'auth/dto';
@@ -37,7 +37,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Register a new user' })
     @ApiOkResponse({ type: RegisterResponseDto })
     @ApiValidationError()
-    @ApiForbiddenResponse()
+    @ApiForbidden()
     register(@Body() registerDto: RegisterDto): Promise<RegisterResponseDto> {
         return this.authService.register(registerDto.email, registerDto.password, registerDto.totp);
     }

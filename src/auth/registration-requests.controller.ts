@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiForbiddenResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import {
     ApiOkPaginationResponse,
     ApiInternalError,
@@ -7,6 +7,7 @@ import {
     ApiUnauthorized,
     ApiValidationError,
     ExternalIdParam,
+    ApiForbidden,
 } from 'common/decorators';
 import { PaginationResponseDto } from 'common/dto';
 import { Public } from 'auth/decorators';
@@ -58,7 +59,7 @@ export class RegistrationRequestsController {
     @ApiOperation({ summary: 'Submit a new registration request' })
     @ApiOkResponse({ type: RegistrationRequestResponseDto })
     @ApiValidationError()
-    @ApiForbiddenResponse()
+    @ApiForbidden()
     createRequest(@Body() dto: CreateRegistrationRequestDto): Promise<RegistrationRequestResponseDto> {
         return this.registrationRequestsService.createRequest(dto);
     }
