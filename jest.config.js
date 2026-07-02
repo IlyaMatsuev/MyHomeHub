@@ -23,6 +23,7 @@ module.exports = {
         '^db/(.*)$': '<rootDir>/db/$1',
         '^devices/(.*)$': '<rootDir>/devices/$1',
         '^devices-control/(.*)$': '<rootDir>/devices-control/$1',
+        '^device-configs/(.*)$': '<rootDir>/device-configs/$1',
         '^mqtt/(.*)$': '<rootDir>/mqtt/$1',
         '^scenarios/(.*)$': '<rootDir>/scenarios/$1',
         '^scheduler/(.*)$': '<rootDir>/scheduler/$1',

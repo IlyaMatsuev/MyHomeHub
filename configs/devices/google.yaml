@@ -1,0 +1,7 @@
+speaker:
+  http:
+    commands:
+      - label: "Text-to-speech"
+        name: "text"
+        type: string
+        description: "The text to be repeated by the Google assistant text-to-speech"

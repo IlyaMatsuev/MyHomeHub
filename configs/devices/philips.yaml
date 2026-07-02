@@ -1,0 +1,36 @@
+remote:
+  zigbee:
+    commands:
+      - label: "On"
+        name: "on"
+        path: "action"
+        description: "Switch on/off state"
+        type: boolean
+        values:
+          - label: "On"
+            name: "true"
+            path: "on_press"
+          - label: "Off"
+            name: "false"
+            path: "off_press"
+      - label: "Brightness Up/Down"
+        name: "brightness"
+        path: "action"
+        description: "Change brightness one step up (true) or down (false)"
+        type: boolean
+        values:
+          - label: "Up"
+            name: "true"
+            path: "up_press"
+          - label: "Down"
+            name: "false"
+            path: "down_press"
+    measurements:
+      - label: "Battery level"
+        name: "battery"
+        type: number
+        description: "The battery level 0-100"
+      - label: "Connection quality"
+        name: "linkquality"
+        type: number
+        description: "The quality of this device connection with the hub"

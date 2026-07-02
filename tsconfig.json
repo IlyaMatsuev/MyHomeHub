@@ -3,6 +3,7 @@
     "paths": {
       "devices/*": ["src/devices/*"],
       "devices-control/*": ["src/devices-control/*"],
+      "device-configs/*": ["src/device-configs/*"],
       "scenarios/*": ["src/scenarios/*"],
       "users/*": ["src/users/*"],
       "auth/*": ["src/auth/*"],

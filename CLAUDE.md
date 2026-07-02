@@ -68,6 +68,7 @@ AppModule
 ├── UsersModule           # User management with Argon2 password hashing
 ├── DevicesModule         # Device CRUD, state management
 │   └── DevicesControlModule  # Device communication providers
+├── DeviceConfigsModule   # YAML-defined commands/controls/measurements metadata synced to MongoDB
 ├── ScenariosModule       # Automation scenarios with triggers and actions
 │   └── SchedulerModule   # Cron-based scenario scheduling
 ├── MqttModule            # MQTT broker communication
@@ -117,6 +118,7 @@ Restrict endpoints with `@Roles(...)` from `auth/decorators`. Endpoints without 
 ```
 devices/*       → src/devices/*
 devices-control/* → src/devices-control/*
+device-configs/* → src/device-configs/*
 scenarios/*     → src/scenarios/*
 users/*         → src/users/*
 auth/*          → src/auth/*
@@ -146,6 +148,11 @@ Key variables:
 - `REDIS_*` - Redis connection (for rate limiting)
 - `THROTTLE_*` - Rate limiting configuration (enabled, TTL/limit for short/medium/long tiers)
 - `TRUST_PROXY` - Enable proxy support to rate limit by real client IP
+- `DEVICE_CONFIGS_DIR` - Directory with YAML device config files (default `configs/devices`)
+
+### Device Configs
+
+Per-brand YAML files under `configs/devices/<brand>.yaml` declare the metadata (label, type, description, value mappings) for the commands/controls/measurements that the UI can display per device. `DeviceConfigsService` reads the directory on startup and on file changes, then upserts one MongoDB document per `(brand, type, transportProtocol)` combination — stale documents not present in YAML are removed.
 
 ## Code Style
 
