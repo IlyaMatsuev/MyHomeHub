@@ -1,0 +1,15 @@
+led:
+  tuya:
+    controls:
+      - label: "On"
+        name: "on"
+        type: boolean
+        description: "Switch on/off state"
+      - label: "Brightness"
+        name: "brightness"
+        type: number
+        description: "Brightness level 0-100"
+      - label: "Light color"
+        name: "color"
+        type: string
+        description: "Light color HEX number"

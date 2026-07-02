@@ -1,0 +1,17 @@
+fans:
+  mqtt:
+    # TODO: Add support for complex controls like "speedLevels"
+    controls:
+      - label: "On"
+        name: "on"
+        type: boolean
+        description: "Switch on/off state"
+    measurements:
+      - label: "Temperature (C)"
+        name: "temperature"
+        type: number
+        description: "Air temperature around the device in Celsius"
+      - label: "Fan Speed (%)"
+        name: "speedPercentage"
+        type: number
+        description: "How fast the fans spin based on the temperature level"
