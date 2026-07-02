@@ -1,4 +1,10 @@
-import { ApiBadRequestResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import {
+    ApiBadRequestResponse,
+    ApiForbiddenResponse,
+    ApiInternalServerErrorResponse,
+    ApiNotFoundResponse,
+    ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { ErrorResponseDto } from 'common/dto/error-response.dto';
 import { HttpStatus } from '@nestjs/common';
 
@@ -11,6 +17,18 @@ export const ApiUnauthorized = () =>
                 errors: [{ message: 'Unauthorized' }],
             },
             statusCode: HttpStatus.UNAUTHORIZED,
+        },
+    });
+
+export const ApiForbidden = () =>
+    ApiForbiddenResponse({
+        type: ErrorResponseDto,
+        example: {
+            messages: ['Forbidden'],
+            details: {
+                errors: [{ message: 'Forbidden' }],
+            },
+            statusCode: HttpStatus.FORBIDDEN,
         },
     });
 

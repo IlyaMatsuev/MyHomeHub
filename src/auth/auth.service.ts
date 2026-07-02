@@ -1,13 +1,15 @@
 import { ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import * as speakeasy from 'speakeasy';
 import { UsersService } from 'users/users.service';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
-import { RegistrationRequestStatus } from 'users/interfaces';
+import { RegistrationRequestStatus, User, UserRole } from 'users/interfaces';
+import { TOTP_REGISTERED_USER_ROLE } from 'users/users.constants';
 import { LoginResponseDto, RegisterResponseDto } from 'auth/dto';
+import { JwtPayload } from 'auth/interfaces';
 import { FieldValidationException } from 'common/exceptions';
+import { AuthConfigService } from 'auth/auth-config.service';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +18,7 @@ export class AuthService {
     constructor(
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
-        private readonly configService: ConfigService,
+        private readonly authConfig: AuthConfigService,
         private readonly registrationRequestsService: RegistrationRequestsService,
     ) {}
 
@@ -25,10 +27,25 @@ export class AuthService {
         if (!user || !(await this.verifyUserPasswordHash(user.password, password))) {
             throw new UnauthorizedException();
         }
+        return this.generateTokens(user);
+    }
 
-        const jwtSecret = this.configService.get<string>('JWT_SECRET');
-        const accessToken = await this.jwtService.signAsync({ sub: user.id, email }, { secret: jwtSecret });
-        return { accessToken };
+    async refreshToken(refreshToken: string): Promise<LoginResponseDto> {
+        let payload: JwtPayload;
+        try {
+            payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
+                secret: this.authConfig.getJwtRefreshSecret(),
+            });
+        } catch {
+            throw new UnauthorizedException();
+        }
+
+        const user = await this.usersService.getUserByExternalId(payload.sub, { strict: false });
+        if (!user) {
+            throw new UnauthorizedException();
+        }
+
+        return this.generateTokens(user);
     }
 
     async register(email: string, password: string, totp?: string): Promise<RegisterResponseDto> {
@@ -37,9 +54,10 @@ export class AuthService {
                 this.logger.debug(`Registration one-time password is not valid`);
                 throw new ForbiddenException();
             }
-            const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password));
+            const passwordHash = await this.generateUserPasswordHash(password);
+            const newUser = await this.usersService.create(email, passwordHash, TOTP_REGISTERED_USER_ROLE);
             await this.registrationRequestsService.createAutoApprovedRequest(email);
-            return { email: newUser.email };
+            return { externalId: newUser.externalId, email: newUser.email, role: UserRole[newUser.role] };
         }
 
         const registrationRequest = await this.registrationRequestsService.getRequestByEmail(email);
@@ -61,22 +79,34 @@ export class AuthService {
             throw new FieldValidationException('Your registration request has been rejected.', 'status');
         }
 
-        const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password));
-        return { email: newUser.email };
+        const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password), registrationRequest.role);
+        return { externalId: newUser.externalId, email: newUser.email, role: UserRole[newUser.role] };
     }
 
     verifyTotp(token: string): boolean {
-        return speakeasy.totp.verify({ secret: this.configService.get('REGISTRATION_TOTP_SECRET'), encoding: 'base32', token });
+        return speakeasy.totp.verify({ secret: this.authConfig.getTotpSecret(), encoding: 'base32', token });
     }
 
     generateUserPasswordHash(password: string): Promise<string> {
-        const passwordHashSecret = this.configService.get<string>('USER_PASSWORD_SECRET');
-        const passwordHashSalt = this.configService.get<string>('USER_PASSWORD_SALT');
+        const passwordHashSecret = this.authConfig.getUserPasswordSecret();
+        const passwordHashSalt = this.authConfig.getUserPasswordSalt();
         return argon2.hash(password, { secret: Buffer.from(passwordHashSecret), salt: Buffer.from(passwordHashSalt) });
     }
 
     verifyUserPasswordHash(hash: string, password: string): Promise<boolean> {
-        const passwordHashSecret = this.configService.get<string>('USER_PASSWORD_SECRET');
-        return argon2.verify(hash, password, { secret: Buffer.from(passwordHashSecret) });
+        return argon2.verify(hash, password, { secret: Buffer.from(this.authConfig.getUserPasswordSecret()) });
+    }
+
+    private async generateTokens(user: User): Promise<LoginResponseDto> {
+        const payload: JwtPayload = { sub: user.externalId };
+        const accessToken = await this.jwtService.signAsync(payload, {
+            secret: this.authConfig.getJwtSecret(),
+            expiresIn: this.authConfig.getJwtExpTimeout(),
+        });
+        const refreshToken = await this.jwtService.signAsync(payload, {
+            secret: this.authConfig.getJwtRefreshSecret(),
+            expiresIn: this.authConfig.getJwtRefreshExpTimeout(),
+        });
+        return { externalId: user.externalId, accessToken, refreshToken };
     }
 }

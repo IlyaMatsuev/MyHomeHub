@@ -1,13 +1,27 @@
 # MongoDB Migrations
 
-This is step by step guide on how migrate new/old fields for mongodb instances.
+Each schema change that needs backfilling or restructuring lives as a numbered `mongosh` script in this folder. Scripts run against an already-connected `mongosh` session and are expected to be idempotent — running one twice should be a no-op.
 
-## Log In the docker container
+## File convention
 
-First, you need to log in the mongodb docker container and open `mongosh`:
+```
+migrations/
+├── 001-users-add-external-id.js
+├── 002-<schema>-<short-kebab-case-description>.js
+└── ...
+```
+
+- **Three-digit prefix** keeps them in execution order.
+- **`.js` extension** lets editors syntax-highlight and lets `mongosh` consume the file directly.
+- **Header comment** at the top of each file explains _why_ the migration exists (the constraint, ticket, or schema change that made it necessary).
+- **Idempotent operations only** — filter with `$exists: false`, rely on `createIndex` being a no-op when the index already exists, etc.
+
+## Running a migration
+
+Pipe the script into a `mongosh` session running inside the docker container:
 
 ```bash
-docker exec -it mongodb mongosh "connection_string"
+docker exec -i mongodb mongosh "connection_string" < migrations/001-users-add-external-id.js
 ```
 
 Where `mongodb` is the name of the docker container, and `connection_string` is the connection url that consists of the following fields:
@@ -16,12 +30,8 @@ Where `mongodb` is the name of the docker container, and `connection_string` is 
 mongodb://{username}:{password}@{host}:{port}/{dbName}?authSource=admin
 ```
 
-## Deleting an existing field
-
-To delete an existing field (after the data has been moved somewhere else), you can use the following command:
+For interactive exploration, drop the redirect and use `-it`:
 
 ```bash
-db.devices.updateMany({ field_to_delete: { $exists: true } }, { $unset: { field_to_delete: "" } });
+docker exec -it mongodb mongosh "connection_string"
 ```
-
-Where `field_to_delete` is the field that needs replacing (deleting).

@@ -1,25 +1,27 @@
-import { Controller, Body, Query, Get, Delete, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
 import {
-    ApiOkPaginationResponse,
     ApiInternalError,
     ApiNotFound,
+    ApiOkPaginationResponse,
     ApiUnauthorized,
     ApiValidationError,
     ExternalIdParam,
 } from 'common/decorators';
 import { PaginationResponseDto } from 'common/dto';
+import { ForRoles } from 'auth/decorators';
+import { UserRole } from 'users/interfaces';
 import { DevicesService } from 'devices/devices.service';
 import {
     CreateDeviceDto,
     DevicePayloadDto,
     DeviceResponseDto,
+    GetDevicesDto,
     GetPairableDevicesDto,
     PairableDeviceResponseDto,
-    UpdateDeviceDto,
-    GetDevicesDto,
-    ToggleDevicesPairingModeDto,
     PairingModeStatusResponseDto,
+    ToggleDevicesPairingModeDto,
+    UpdateDeviceDto,
 } from 'devices/dto';
 import { PairableDevice } from 'zigbee/interfaces';
 
@@ -32,6 +34,7 @@ export class DevicesController {
     constructor(private readonly deviceService: DevicesService) {}
 
     @Get('/discover')
+    @ForRoles(UserRole.Resident)
     @ApiOperation({ summary: 'Return the list of discoverable devices that can be paired' })
     @ApiOkPaginationResponse(PairableDeviceResponseDto, 'Paginated list of discoverable devices')
     getPairableDevices(@Query() options: GetPairableDevicesDto): Promise<PaginationResponseDto<PairableDevice>> {
@@ -39,6 +42,7 @@ export class DevicesController {
     }
 
     @Post('/discover/pair')
+    @ForRoles(UserRole.Resident)
     @ApiOperation({ summary: 'Enable/disable devices pairing mode' })
     @ApiOkResponse({ type: PairingModeStatusResponseDto })
     @ApiValidationError()
@@ -47,6 +51,7 @@ export class DevicesController {
     }
 
     @Get()
+    @ForRoles(UserRole.Resident, UserRole.Guest)
     @ApiOperation({ summary: 'Get all added devices' })
     @ApiOkPaginationResponse(DeviceResponseDto, 'Paginated list of devices')
     async getDevices(@Query() query: GetDevicesDto): Promise<PaginationResponseDto<DeviceResponseDto>> {
@@ -54,6 +59,7 @@ export class DevicesController {
     }
 
     @Get('/:externalId')
+    @ForRoles(UserRole.Resident, UserRole.Guest)
     @ApiParam({ name: 'externalId', description: 'External ID of the device to find', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Get a specific device by the provided external ID' })
     @ApiOkResponse({ type: DeviceResponseDto })
@@ -62,6 +68,7 @@ export class DevicesController {
     }
 
     @Post()
+    @ForRoles(UserRole.Resident)
     @ApiOperation({ summary: 'Add a new device' })
     @ApiCreatedResponse({ type: DeviceResponseDto })
     @ApiValidationError()
@@ -70,6 +77,7 @@ export class DevicesController {
     }
 
     @Put('/:externalId')
+    @ForRoles(UserRole.Resident)
     @ApiParam({ name: 'externalId', description: 'External ID of the device to update', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Update an existing device by the provided external ID' })
     @ApiOkResponse({ type: DeviceResponseDto })
@@ -79,6 +87,7 @@ export class DevicesController {
     }
 
     @Post('/:externalId/command')
+    @ForRoles(UserRole.Resident, UserRole.Guest)
     @ApiParam({
         name: 'externalId',
         description: 'External ID of the device to send the command to',
@@ -94,6 +103,7 @@ export class DevicesController {
     }
 
     @Delete('/:externalId')
+    @ForRoles(UserRole.Resident)
     @ApiParam({ name: 'externalId', description: 'External ID of the device to delete', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Delete an existing device by the provided external ID' })
     @ApiOkResponse({ type: DeviceResponseDto })

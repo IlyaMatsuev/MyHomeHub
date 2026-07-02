@@ -1,9 +1,11 @@
-# SmartHome Hub
+# My Home Hub
 
 [![Validation](https://github.com/IlyaMatsuev/MySmartHome/actions/workflows/validation.yaml/badge.svg)](https://github.com/IlyaMatsuev/MySmartHome/actions/workflows/validation.yaml)
 [![Publish Package](https://github.com/IlyaMatsuev/MySmartHome/actions/workflows/publish.yaml/badge.svg)](https://github.com/IlyaMatsuev/MySmartHome/actions/workflows/publish.yaml)
 
-A NestJS-based SmartHome Hub that controls, stores, and provides information about IoT devices. The hub communicates with devices via multiple protocols (MQTT, Tuya API, HTTP) and provides a REST API for control and monitoring.
+A home-running server that controls, stores, and provides information about IoT devices and other home services. The hub communicates with devices via multiple protocols (MQTT, Tuya API, HTTP) and provides a REST API for control and monitoring.
+
+![My Home Banner](./public/banner.png)
 
 ## Overview
 

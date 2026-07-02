@@ -57,14 +57,14 @@ npm run build:image
 
 ## Architecture Overview
 
-This is a **NestJS-based SmartHome Hub** that controls IoT devices via multiple protocols (MQTT, Tuya API, HTTP). The hub stores device states in MongoDB and provides a REST API for control.
+This is a **NestJS-based server** that controls IoT devices via multiple protocols (MQTT, Tuya API, HTTP). The hub stores device states in MongoDB and provides a REST API for control.
 
 ### Module Structure
 
 ```
 AppModule
 ├── CommonModule          # Global filters, interceptors, ConditionsEvaluatorService
-├── AuthModule            # JWT authentication (login/register with TOTP)
+├── AuthModule            # Passport.js JWT auth (login/refresh/register with TOTP), role-based access
 ├── UsersModule           # User management with Argon2 password hashing
 ├── DevicesModule         # Device CRUD, state management
 │   └── DevicesControlModule  # Device communication providers
@@ -98,6 +98,21 @@ Scenarios define automation rules with:
 - **Logic**: Conditions evaluated by `ConditionsEvaluatorService`
 - **Actions**: Set device controls/measurements
 
+### Authentication & Authorization
+
+Authentication uses **Passport.js** with a `passport-jwt` strategy (`src/auth/strategies/jwt.strategy.ts`):
+
+- `POST /auth/login` accepts either email/password **or** a `refreshToken` (providing both returns 400). It responds with a short-lived `accessToken` and a longer-lived `refreshToken`, allowing token renewal without re-entering credentials.
+- Two global guards run in order: `JwtAuthGuard` (validates the access token, honoring `@Public()` and the local-auth bypass) then `RolesGuard` (enforces `@Roles(...)`).
+
+Users and registration requests carry a `role` (`UserRole`: `Admin`, `Resident`, `Guest`):
+
+- **Admin** - full access (bypasses all `@Roles` checks). Assigned automatically on TOTP registration.
+- **Resident** - manages devices and scenarios (`@Roles(UserRole.Resident)` on those controllers).
+- **Guest** - default role for new registration requests; limited access.
+
+Restrict endpoints with `@Roles(...)` from `auth/decorators`. Endpoints without `@Roles` are open to any authenticated user. Admins can assign the role granted on approval via the `role` field of `PUT /auth/register/requests/{externalId}`; the new user inherits the registration request's role.
+
 ### Path Aliases (tsconfig.json)
 
 ```
@@ -124,7 +139,8 @@ Key variables:
 - `SERVER_LABEL` - Human-readable server name (used in Swagger and discovery)
 - `PORT`, `TZ_LATITUDE`, `TZ_LONGITUDE` - Server config
 - `UDP_PORT`, `DISCOVERY_MESSAGE` - UDP broadcast discovery settings
-- `JWT_SECRET`, `JWT_EXPIRATION_TIMEOUT` - Auth tokens
+- `JWT_SECRET`, `JWT_EXPIRATION_TIMEOUT` - Access token signing secret and lifetime
+- `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRATION_TIMEOUT` - Refresh token signing secret and lifetime
 - `REGISTRATION_TOTP_SECRET` - Admin TOTP for user registration
 - `USER_PASSWORD_SECRET`, `USER_PASSWORD_SALT` - Argon2 hashing
 - `MONGO_*` - MongoDB connection

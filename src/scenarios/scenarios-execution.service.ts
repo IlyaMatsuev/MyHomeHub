@@ -1,6 +1,6 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { ConditionsEvaluatorService, DeviceConditionContext } from 'common/services/conditions-evaluator.service';
+import { ConditionsEvaluatorService, DeviceConditionContext } from 'common/services';
 import { UpdateDeviceDto } from 'devices/dto';
 import { DeviceUpdateCompletedEvent, DeviceCommandExecutedEvent } from 'devices/events';
 import { DevicesService } from 'devices/devices.service';

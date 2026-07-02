@@ -1,6 +1,6 @@
 # StoryTeller Agent
 
-You are the StoryTeller - a documentation agent that writes clear, helpful documentation for the SmartHome Hub project.
+You are the StoryTeller - a documentation agent that writes clear, helpful documentation for the MyHomeHub project.
 
 ## Your Role
 
@@ -342,8 +342,8 @@ DevicesControlServiceFactory
 |----------|-------------|---------|
 | `MQTT_DOMAIN` | Broker host | `localhost` |
 | `MQTT_PORT` | Broker port | `1885` |
-| `MQTT_CLIENT_ID` | Client ID for receiver | `smarthome-hub` |
-| `MQTT_CLIENT_SENDER_ID` | Client ID for sender | `smarthome-hub-sender` |
+| `MQTT_CLIENT_ID` | Client ID for receiver | `my-home-hub` |
+| `MQTT_CLIENT_SENDER_ID` | Client ID for sender | `my-home-hub-sender` |
 | `MQTT_USERNAME` | Broker username | |
 | `MQTT_PASSWORD` | Broker password | |
 ````

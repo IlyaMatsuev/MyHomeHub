@@ -90,7 +90,7 @@ describe('DiscoveryService', () => {
 
             const result = service.getServerInfo();
 
-            expect(result.label).toBe('SmartHome Hub');
+            expect(result.label).toBe('My Home Hub');
         });
 
         it('should return default port when PORT not configured', () => {
@@ -104,7 +104,7 @@ describe('DiscoveryService', () => {
         it('should use SERVER_EXTERNAL_ADDRESS when configured', () => {
             mockConfigService.get.mockImplementation((key: string) => {
                 const config: Record<string, string> = {
-                    SERVER_EXTERNAL_ADDRESS: 'smarthome.local',
+                    SERVER_EXTERNAL_ADDRESS: 'hub.local',
                     PORT: '3000',
                 };
                 return config[key];
@@ -112,7 +112,7 @@ describe('DiscoveryService', () => {
 
             const result = service.getServerInfo();
 
-            expect(result.address).toBe('smarthome.local');
+            expect(result.address).toBe('hub.local');
         });
 
         it('should use SERVER_EXTERNAL_PORT when configured', () => {
@@ -173,7 +173,7 @@ describe('DiscoveryService', () => {
             mockConfigService.get.mockImplementation((key: string) => {
                 const config: Record<string, string> = {
                     UDP_PORT: '5353',
-                    DISCOVERY_MESSAGE: 'SMARTHOME_HUB_DISCOVER',
+                    DISCOVERY_MESSAGE: 'MY_HOME_HUB_DISCOVER',
                 };
                 return config[key];
             });
@@ -223,7 +223,7 @@ describe('DiscoveryService', () => {
         it('should respond to valid discovery message', () => {
             mockConfigService.get.mockImplementation((key: string) => {
                 const config: Record<string, string> = {
-                    DISCOVERY_MESSAGE: 'SMARTHOME_HUB_DISCOVER',
+                    DISCOVERY_MESSAGE: 'MY_HOME_HUB_DISCOVER',
                     SERVER_LABEL: 'Test Hub',
                     PORT: '3000',
                 };
@@ -252,7 +252,7 @@ describe('DiscoveryService', () => {
                 family: 'IPv4',
                 size: 18,
             };
-            messageHandler(Buffer.from('SMARTHOME_HUB_DISCOVER'), rinfo);
+            messageHandler(Buffer.from('MY_HOME_HUB_DISCOVER'), rinfo);
 
             expect(mockSocket.send).toHaveBeenCalled();
             const sendCall = mockSocket.send.mock.calls[0];
@@ -270,7 +270,7 @@ describe('DiscoveryService', () => {
         it('should ignore invalid discovery message', () => {
             mockConfigService.get.mockImplementation((key: string) => {
                 const config: Record<string, string> = {
-                    DISCOVERY_MESSAGE: 'SMARTHOME_HUB_DISCOVER',
+                    DISCOVERY_MESSAGE: 'MY_HOME_HUB_DISCOVER',
                 };
                 return config[key];
             });
@@ -323,7 +323,7 @@ describe('DiscoveryService', () => {
                 family: 'IPv4',
                 size: 18,
             };
-            messageHandler(Buffer.from('SMARTHOME_HUB_DISCOVER'), rinfo);
+            messageHandler(Buffer.from('MY_HOME_HUB_DISCOVER'), rinfo);
 
             expect(mockSocket.send).toHaveBeenCalled();
         });
