@@ -9,6 +9,8 @@ describe('AuthController', () => {
         login: jest.Mock;
         refreshToken: jest.Mock;
         register: jest.Mock;
+        restore: jest.Mock;
+        confirmRestore: jest.Mock;
     };
 
     beforeEach(async () => {
@@ -16,6 +18,8 @@ describe('AuthController', () => {
             login: jest.fn(),
             refreshToken: jest.fn(),
             register: jest.fn(),
+            restore: jest.fn(),
+            confirmRestore: jest.fn(),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -75,6 +79,31 @@ describe('AuthController', () => {
 
             expect(result).toEqual(registerResponse);
             expect(mockAuthService.register).toHaveBeenCalledWith('new@example.com', 'password123', '123456');
+        });
+    });
+
+    describe('restore', () => {
+        it('should call authService.restore with email and TOTP and return the restore token', async () => {
+            const restoreDto = { email: 'test@example.com', totp: '123456' };
+            const restoreResponse = { restoreToken: 'restore-token' };
+            mockAuthService.restore.mockResolvedValue(restoreResponse);
+
+            const result = await controller.restore(restoreDto);
+
+            expect(result).toEqual(restoreResponse);
+            expect(mockAuthService.restore).toHaveBeenCalledWith('test@example.com', '123456');
+        });
+    });
+
+    describe('confirmRestore', () => {
+        it('should call authService.confirmRestore with token and new password', async () => {
+            const confirmDto = { restoreToken: 'restore-token', password: 'new-password' };
+            mockAuthService.confirmRestore.mockResolvedValue(undefined);
+
+            const result = await controller.confirmRestore(confirmDto);
+
+            expect(result).toBeUndefined();
+            expect(mockAuthService.confirmRestore).toHaveBeenCalledWith('restore-token', 'new-password');
         });
     });
 });

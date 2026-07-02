@@ -39,6 +39,14 @@ export class AuthConfigService {
         return this.getNumberConfig('JWT_REFRESH_EXPIRATION_TIMEOUT');
     }
 
+    getJwtRestoreSecret(): string {
+        return this.configService.get<string>('JWT_RESTORE_SECRET');
+    }
+
+    getJwtRestoreExpTimeout(): number {
+        return this.getNumberConfig('JWT_RESTORE_EXPIRATION_TIMEOUT');
+    }
+
     getTotpSecret(): string {
         return this.configService.get<string>('REGISTRATION_TOTP_SECRET');
     }
