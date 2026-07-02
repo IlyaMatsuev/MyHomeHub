@@ -18,6 +18,7 @@ describe('DeviceConfigsService', () => {
     let service: DeviceConfigsService;
     let warnSpy: jest.SpyInstance;
     let logSpy: jest.SpyInstance;
+    let errorSpy: jest.SpyInstance;
 
     const buildModelMock = () => ({
         updateOne: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({ matchedCount: 1, upsertedCount: 0 }) }),
@@ -34,12 +35,14 @@ describe('DeviceConfigsService', () => {
         service = new DeviceConfigsService(model, configService, parser);
         warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
         logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+        errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
     });
 
     afterEach(() => {
         rmSync(tempDir, { recursive: true, force: true });
         warnSpy.mockRestore();
         logSpy.mockRestore();
+        errorSpy.mockRestore();
         service.onModuleDestroy();
     });
 
@@ -168,6 +171,60 @@ describe('DeviceConfigsService', () => {
 
             expect(result).toHaveLength(1);
             expect(model.updateOne).toHaveBeenCalledTimes(1);
+        });
+
+        it('should load only the specified file when a filename is given', async () => {
+            writeFileSync(
+                join(tempDir, 'shelly.yaml'),
+                ['plug:', '  http:', '    controls:', '      - label: "On"', '        name: "on"', '        type: boolean'].join('\n'),
+            );
+            writeFileSync(
+                join(tempDir, 'google.yaml'),
+                ['speaker:', '  http:', '    commands:', '      - label: "TTS"', '        name: "text"', '        type: string'].join('\n'),
+            );
+
+            const result = await service.syncFromDisk('google.yaml');
+
+            expect(result).toHaveLength(1);
+            expect(model.updateOne).toHaveBeenCalledTimes(1);
+            const [filter] = model.updateOne.mock.calls[0] as unknown as [Record<string, unknown>];
+            expect(filter).toEqual({
+                brand: DeviceBrand.Google,
+                type: DeviceType.Speaker,
+                transportProtocol: TransportProtocol.Http,
+            });
+        });
+
+        it('should treat every doc outside the specified file as stale when a filename is given', async () => {
+            writeFileSync(
+                join(tempDir, 'shelly.yaml'),
+                ['plug:', '  http:', '    controls:', '      - label: "On"', '        name: "on"', '        type: boolean'].join('\n'),
+            );
+            writeFileSync(
+                join(tempDir, 'google.yaml'),
+                ['speaker:', '  http:', '    commands:', '      - label: "TTS"', '        name: "text"', '        type: string'].join('\n'),
+            );
+
+            await service.syncFromDisk('google.yaml');
+
+            expect(model.deleteMany).toHaveBeenCalledWith({
+                $nor: [
+                    {
+                        brand: DeviceBrand.Google,
+                        type: DeviceType.Speaker,
+                        transportProtocol: TransportProtocol.Http,
+                    },
+                ],
+            });
+        });
+
+        it('should log and wipe the collection when the specified filename cannot be read', async () => {
+            const result = await service.syncFromDisk('missing.yaml');
+
+            expect(result).toEqual([]);
+            expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to read device config file'));
+            expect(model.updateOne).not.toHaveBeenCalled();
+            expect(model.deleteMany).toHaveBeenCalledWith({});
         });
     });
 

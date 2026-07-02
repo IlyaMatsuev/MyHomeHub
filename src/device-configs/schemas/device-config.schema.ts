@@ -45,9 +45,9 @@ export const DeviceConfigSchema = new Schema(
             required: true,
             enum: Object.values(TransportProtocol) as Array<string>,
         },
-        commands: { type: [DeviceConfigItemSchema], required: false, default: undefined },
-        controls: { type: [DeviceConfigItemSchema], required: false, default: undefined },
-        measurements: { type: [DeviceConfigItemSchema], required: false, default: undefined },
+        commands: { type: [DeviceConfigItemSchema], required: false, default: [] },
+        controls: { type: [DeviceConfigItemSchema], required: false, default: [] },
+        measurements: { type: [DeviceConfigItemSchema], required: false, default: [] },
     },
     { timestamps: true },
 );

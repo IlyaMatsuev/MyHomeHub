@@ -1,6 +1,6 @@
 import { existsSync, FSWatcher, watch } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
-import { extname, isAbsolute, join, resolve } from 'node:path';
+import path, { extname, isAbsolute, join, resolve } from 'node:path';
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
@@ -44,14 +44,20 @@ export class DeviceConfigsService implements OnModuleInit, OnModuleDestroy {
         return isAbsolute(configured) ? configured : resolve(process.cwd(), configured);
     }
 
-    async syncFromDisk(): Promise<Array<ParsedDeviceConfig>> {
+    async syncFromDisk(filename?: string): Promise<Array<ParsedDeviceConfig>> {
         const configsDir = this.getConfigsDir();
         if (!existsSync(configsDir)) {
             this.logger.warn(`Device configs directory "${configsDir}" does not exist - skipping sync`);
             return [];
         }
 
-        const parsedConfigs = await this.loadAllConfigs(configsDir);
+        let parsedConfigs: Array<ParsedDeviceConfig>;
+        if (filename) {
+            parsedConfigs = await this.loadConfig(path.join(configsDir, filename));
+        } else {
+            parsedConfigs = await this.loadAllConfigs(configsDir);
+        }
+
         await this.syncToDatabase(parsedConfigs);
         return parsedConfigs;
     }
@@ -62,18 +68,18 @@ export class DeviceConfigsService implements OnModuleInit, OnModuleDestroy {
             .filter(entry => entry.isFile() && DEVICE_CONFIGS_FILE_EXTENSIONS.includes(extname(entry.name).toLowerCase()))
             .map(entry => join(configsDir, entry.name));
 
-        const fileParseResults = await Promise.all(
-            yamlFiles.map(async filePath => {
-                try {
-                    const content = await readFile(filePath, 'utf8');
-                    return this.parser.parseFile(filePath, content);
-                } catch (error) {
-                    this.logger.error(`Failed to read device config file "${filePath}": ${(error as Error).message}`);
-                    return [];
-                }
-            }),
-        );
+        const fileParseResults = await Promise.all(yamlFiles.map(filePath => this.loadConfig(filePath)));
         return fileParseResults.flat();
+    }
+
+    private async loadConfig(filepath: string): Promise<Array<ParsedDeviceConfig>> {
+        try {
+            const content = await readFile(filepath, 'utf8');
+            return this.parser.parseFile(filepath, content);
+        } catch (error) {
+            this.logger.error(`Failed to read device config file "${filepath}": ${error.message}`);
+            return [];
+        }
     }
 
     private async syncToDatabase(parsedConfigs: Array<ParsedDeviceConfig>): Promise<void> {
@@ -107,6 +113,7 @@ export class DeviceConfigsService implements OnModuleInit, OnModuleDestroy {
 
     private async removeStaleConfigs(activeKeys: Array<DeviceConfigKey>): Promise<number> {
         if (activeKeys.length === 0) {
+            // When no records uploaded from the files
             const result = await this.deviceConfigModel.deleteMany({}).exec();
             return result.deletedCount ?? 0;
         }

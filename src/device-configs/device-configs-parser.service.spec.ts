@@ -61,7 +61,7 @@ plug:
                     { label: 'Power', name: 'power', type: DeviceConfigItemType.Number, path: 'apower' },
                 ],
             });
-            expect(configs[0].commands).toBeUndefined();
+            expect(configs[0].commands).toEqual([]);
         });
 
         it('should parse commands with nested value mappings', () => {
@@ -209,7 +209,7 @@ plug:
 
             const [config] = parser.parseFile('/configs/shelly.yaml', yaml);
 
-            expect(config.controls).toBeUndefined();
+            expect(config.controls).toEqual([]);
             expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Skipping config item "on" with unknown type'));
         });
 

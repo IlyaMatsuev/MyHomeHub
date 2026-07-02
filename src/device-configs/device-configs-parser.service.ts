@@ -69,11 +69,10 @@ export class DeviceConfigsParserService {
     }
 
     private normalizeItems(items?: Array<RawDeviceConfigItem>): Array<DeviceConfigItem> | undefined {
-        if (!Array.isArray(items) || items.length === 0) {
-            return undefined;
+        if (!Array.isArray(items) || !items.length) {
+            return [];
         }
-        const normalized = items.map(item => this.normalizeItem(item)).filter((item): item is DeviceConfigItem => item !== null);
-        return normalized.length > 0 ? normalized : undefined;
+        return items.map(item => this.normalizeItem(item)).filter((item): item is DeviceConfigItem => item !== null);
     }
 
     private normalizeItem(item: RawDeviceConfigItem): DeviceConfigItem | null {
@@ -93,7 +92,7 @@ export class DeviceConfigsParserService {
             description: item.description,
             path: item.path,
         };
-        if (Array.isArray(item.values) && item.values.length > 0) {
+        if (Array.isArray(item.values) && item.values.length) {
             normalized.values = item.values
                 .filter(v => v && v.name !== undefined && v.label !== undefined)
                 .map(v => ({ label: v.label, name: String(v.name), path: v.path }));
