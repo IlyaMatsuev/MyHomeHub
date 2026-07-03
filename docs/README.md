@@ -45,28 +45,28 @@ See the [MQTT configuration guide](../configs/mqtt/README.md) for MQTT broker se
 
 ### Environment Variables
 
-| Category     | Variable                         | Description                              |
-| ------------ | -------------------------------- | ---------------------------------------- |
-| **Server**   | `PORT`                           | HTTP server port                         |
-| **Server**   | `NODE_ENV`                       | Environment (`local`, `prod`)            |
-| **Server**   | `TZ_LATITUDE`, `TZ_LONGITUDE`    | Location for sunrise/sunset calculations |
-| **Auth**     | `JWT_SECRET`                     | Secret key for JWT signing               |
-| **Auth**     | `JWT_EXPIRATION_TIMEOUT`         | Token lifetime in seconds                |
-| **Auth**     | `JWT_RESTORE_SECRET`             | Secret key for password restore tokens   |
-| **Auth**     | `JWT_RESTORE_EXPIRATION_TIMEOUT` | Restore token lifetime in seconds        |
-| **Auth**     | `REGISTRATION_TOTP_SECRET`       | Admin TOTP secret for registration       |
-| **Auth**     | `USER_PASSWORD_SECRET`           | Argon2 hashing secret                    |
-| **Auth**     | `USER_PASSWORD_SALT`             | Argon2 hashing salt                      |
-| **Database** | `MONGO_DOMAIN`                   | MongoDB hostname                         |
-| **Database** | `MONGO_PORT`                     | MongoDB port                             |
-| **Database** | `MONGO_INITDB_DATABASE`          | Database name                            |
-| **Database** | `MONGO_INITDB_ROOT_USERNAME`     | MongoDB username                         |
-| **Database** | `MONGO_INITDB_ROOT_PASSWORD`     | MongoDB password                         |
-| **MQTT**     | `MQTT_CLIENT_ID`                 | MQTT client identifier                   |
-| **MQTT**     | `MQTT_DOMAIN`                    | MQTT broker hostname                     |
-| **MQTT**     | `MQTT_PORT`                      | MQTT broker port                         |
-| **MQTT**     | `MQTT_USERNAME`                  | MQTT username                            |
-| **MQTT**     | `MQTT_PASSWORD`                  | MQTT password                            |
+| Category     | Variable                                | Description                              |
+| ------------ | --------------------------------------- | ---------------------------------------- |
+| **Server**   | `PORT`                                  | HTTP server port                         |
+| **Server**   | `NODE_ENV`                              | Environment (`local`, `prod`)            |
+| **Server**   | `TZ_LATITUDE`, `TZ_LONGITUDE`           | Location for sunrise/sunset calculations |
+| **Auth**     | `JWT_SECRET`                            | Secret key for JWT signing               |
+| **Auth**     | `JWT_EXPIRATION_TIMEOUT`                | Token lifetime in seconds                |
+| **Auth**     | `JWT_PASSWORD_RESET_SECRET`             | Secret key for password reset tokens     |
+| **Auth**     | `JWT_PASSWORD_RESET_EXPIRATION_TIMEOUT` | Password reset token lifetime in seconds |
+| **Auth**     | `REGISTRATION_TOTP_SECRET`              | Admin TOTP secret for registration       |
+| **Auth**     | `USER_PASSWORD_SECRET`                  | Argon2 hashing secret                    |
+| **Auth**     | `USER_PASSWORD_SALT`                    | Argon2 hashing salt                      |
+| **Database** | `MONGO_DOMAIN`                          | MongoDB hostname                         |
+| **Database** | `MONGO_PORT`                            | MongoDB port                             |
+| **Database** | `MONGO_INITDB_DATABASE`                 | Database name                            |
+| **Database** | `MONGO_INITDB_ROOT_USERNAME`            | MongoDB username                         |
+| **Database** | `MONGO_INITDB_ROOT_PASSWORD`            | MongoDB password                         |
+| **MQTT**     | `MQTT_CLIENT_ID`                        | MQTT client identifier                   |
+| **MQTT**     | `MQTT_DOMAIN`                           | MQTT broker hostname                     |
+| **MQTT**     | `MQTT_PORT`                             | MQTT broker port                         |
+| **MQTT**     | `MQTT_USERNAME`                         | MQTT username                            |
+| **MQTT**     | `MQTT_PASSWORD`                         | MQTT password                            |
 
 ## Supported Device Brands
 

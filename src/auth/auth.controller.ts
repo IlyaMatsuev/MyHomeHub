@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Put } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiForbidden, ApiInternalError, ApiUnauthorized, ApiValidationError } from 'common/decorators';
 import { Public } from 'auth/decorators';
@@ -9,9 +9,9 @@ import {
     LoginResponseDto,
     RegisterResponseDto,
     LoginRefreshDto,
-    RestoreDto,
-    RestoreResponseDto,
-    RestoreConfirmDto,
+    PasswordResetDto,
+    PasswordResetResponseDto,
+    PasswordResetConfirmDto,
 } from 'auth/dto';
 import { AuthService } from 'auth/auth.service';
 
@@ -51,21 +51,21 @@ export class AuthController {
         return this.authService.register(registerDto.email, registerDto.password, registerDto.totp);
     }
 
-    @Get('restore')
-    @ApiOperation({ summary: 'Request a password restore token by confirming identity with admin TOTP' })
-    @ApiOkResponse({ type: RestoreResponseDto })
+    @Post('password/reset')
+    @ApiOperation({ summary: 'Request a password reset token by confirming identity with admin TOTP' })
+    @ApiOkResponse({ type: PasswordResetResponseDto })
     @ApiValidationError()
     @ApiForbidden()
-    restore(@Query() restoreDto: RestoreDto): Promise<RestoreResponseDto> {
-        return this.authService.restore(restoreDto.email, restoreDto.totp);
+    resetPassword(@Body() resetDto: PasswordResetDto): Promise<PasswordResetResponseDto> {
+        return this.authService.requestPasswordReset(resetDto.email, resetDto.totp);
     }
 
-    @Post('restore/confirm')
+    @Put('password/change')
     @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Confirm a password restore request and set a new password' })
+    @ApiOperation({ summary: 'Confirm a password change request and set a new password' })
     @ApiOkResponse({ description: 'Password successfully updated' })
     @ApiValidationError()
-    async confirmRestore(@Body() confirmDto: RestoreConfirmDto): Promise<void> {
-        await this.authService.confirmRestore(confirmDto.restoreToken, confirmDto.password);
+    async changePassword(@Body() changeDto: PasswordResetConfirmDto): Promise<void> {
+        await this.authService.changePassword(changeDto.resetToken, changeDto.newPassword);
     }
 }

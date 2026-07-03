@@ -33,8 +33,8 @@ describe('AuthService', () => {
         getJwtExpTimeout: jest.fn().mockReturnValue(900),
         getJwtRefreshSecret: jest.fn().mockReturnValue('test-jwt-refresh-secret'),
         getJwtRefreshExpTimeout: jest.fn().mockReturnValue(604800),
-        getJwtRestoreSecret: jest.fn().mockReturnValue('test-jwt-restore-secret'),
-        getJwtRestoreExpTimeout: jest.fn().mockReturnValue(300),
+        getJwtPasswordResetSecret: jest.fn().mockReturnValue('test-jwt-password-reset-secret'),
+        getJwtPasswordResetExpTimeout: jest.fn().mockReturnValue(300),
         getTotpSecret: jest.fn().mockReturnValue('test-totp-secret'),
         getUserPasswordSecret: jest.fn().mockReturnValue('test-password-secret'),
         getUserPasswordSalt: jest.fn().mockReturnValue('test-salt'),
@@ -247,15 +247,15 @@ describe('AuthService', () => {
         });
     });
 
-    describe('restore', () => {
-        it('should return a restore token when TOTP and email are valid', async () => {
+    describe('requestPasswordReset', () => {
+        it('should return a reset token when TOTP and email are valid', async () => {
             (speakeasy.totp.verify as jest.Mock).mockReturnValue(true);
             usersService.findByEmail.mockResolvedValue(mockUser as never);
-            jwtService.signAsync.mockResolvedValue('restore-token');
+            jwtService.signAsync.mockResolvedValue('reset-token');
 
-            const result = await service.restore('test@example.com', '123456');
+            const result = await service.requestPasswordReset('test@example.com', '123456');
 
-            expect(result).toEqual({ restoreToken: 'restore-token' });
+            expect(result).toEqual({ resetToken: 'reset-token' });
             expect(speakeasy.totp.verify).toHaveBeenCalledWith({
                 secret: 'test-totp-secret',
                 encoding: 'base32',
@@ -264,14 +264,14 @@ describe('AuthService', () => {
             expect(usersService.findByEmail).toHaveBeenCalledWith('test@example.com');
             expect(jwtService.signAsync).toHaveBeenCalledWith(
                 { sub: 'user-external-id' },
-                { secret: 'test-jwt-restore-secret', expiresIn: 300 },
+                { secret: 'test-jwt-password-reset-secret', expiresIn: 300 },
             );
         });
 
         it('should throw ForbiddenException when TOTP is invalid', async () => {
             (speakeasy.totp.verify as jest.Mock).mockReturnValue(false);
 
-            await expect(service.restore('test@example.com', 'invalid-totp')).rejects.toThrow(ForbiddenException);
+            await expect(service.requestPasswordReset('test@example.com', 'invalid-totp')).rejects.toThrow(ForbiddenException);
             expect(usersService.findByEmail).not.toHaveBeenCalled();
             expect(jwtService.signAsync).not.toHaveBeenCalled();
         });
@@ -280,21 +280,23 @@ describe('AuthService', () => {
             (speakeasy.totp.verify as jest.Mock).mockReturnValue(true);
             usersService.findByEmail.mockResolvedValue(undefined as never);
 
-            await expect(service.restore('missing@example.com', '123456')).rejects.toThrow(UnauthorizedException);
+            await expect(service.requestPasswordReset('missing@example.com', '123456')).rejects.toThrow(UnauthorizedException);
             expect(jwtService.signAsync).not.toHaveBeenCalled();
         });
     });
 
-    describe('confirmRestore', () => {
+    describe('changePassword', () => {
         it('should hash the new password and update it for the user', async () => {
             jwtService.verifyAsync.mockResolvedValue({ sub: 'user-external-id' } as never);
             usersService.getUserByExternalId.mockResolvedValue(mockUser as never);
             (argon2.hash as jest.Mock).mockResolvedValue('new-hashed-password');
             (usersService.updatePassword as jest.Mock).mockResolvedValue(mockUser as never);
 
-            await service.confirmRestore('valid-restore-token', 'new-password');
+            await service.changePassword('valid-reset-token', 'new-password');
 
-            expect(jwtService.verifyAsync).toHaveBeenCalledWith('valid-restore-token', { secret: 'test-jwt-restore-secret' });
+            expect(jwtService.verifyAsync).toHaveBeenCalledWith('valid-reset-token', {
+                secret: 'test-jwt-password-reset-secret',
+            });
             expect(usersService.getUserByExternalId).toHaveBeenCalledWith('user-external-id', { strict: false });
             expect(argon2.hash).toHaveBeenCalledWith('new-password', {
                 secret: Buffer.from('test-password-secret'),
@@ -303,10 +305,10 @@ describe('AuthService', () => {
             expect(usersService.updatePassword).toHaveBeenCalledWith('user-external-id', 'new-hashed-password');
         });
 
-        it('should throw UnauthorizedException when the restore token is invalid', async () => {
+        it('should throw UnauthorizedException when the reset token is invalid', async () => {
             jwtService.verifyAsync.mockRejectedValue(new Error('invalid token'));
 
-            await expect(service.confirmRestore('invalid-token', 'new-password')).rejects.toThrow(UnauthorizedException);
+            await expect(service.changePassword('invalid-token', 'new-password')).rejects.toThrow(UnauthorizedException);
             expect(usersService.updatePassword).not.toHaveBeenCalled();
         });
 
@@ -314,7 +316,7 @@ describe('AuthService', () => {
             jwtService.verifyAsync.mockResolvedValue({ sub: 'user-external-id' } as never);
             usersService.getUserByExternalId.mockResolvedValue(null as never);
 
-            await expect(service.confirmRestore('valid-restore-token', 'new-password')).rejects.toThrow(UnauthorizedException);
+            await expect(service.changePassword('valid-reset-token', 'new-password')).rejects.toThrow(UnauthorizedException);
             expect(usersService.updatePassword).not.toHaveBeenCalled();
         });
     });

@@ -6,7 +6,7 @@ import { UsersService } from 'users/users.service';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
 import { RegistrationRequestStatus, User, UserRole } from 'users/interfaces';
 import { TOTP_REGISTERED_USER_ROLE } from 'users/users.constants';
-import { LoginResponseDto, RegisterResponseDto, RestoreResponseDto } from 'auth/dto';
+import { LoginResponseDto, RegisterResponseDto, PasswordResetResponseDto } from 'auth/dto';
 import { JwtPayload } from 'auth/interfaces';
 import { FieldValidationException } from 'common/exceptions';
 import { AuthConfigService } from 'auth/auth-config.service';
@@ -83,28 +83,27 @@ export class AuthService {
         return { externalId: newUser.externalId, email: newUser.email, role: UserRole[newUser.role] };
     }
 
-    async restore(email: string, totp: string): Promise<RestoreResponseDto> {
+    async requestPasswordReset(email: string, totp: string): Promise<PasswordResetResponseDto> {
         if (!this.verifyTotp(totp)) {
-            this.logger.debug(`Password restore one-time password is not valid`);
-            throw new ForbiddenException();
+            throw new ForbiddenException('Password reset one-time password is not valid');
         }
         const user = await this.usersService.findByEmail(email);
         if (!user) {
             throw new UnauthorizedException();
         }
         const payload: JwtPayload = { sub: user.externalId };
-        const restoreToken = await this.jwtService.signAsync(payload, {
-            secret: this.authConfig.getJwtRestoreSecret(),
-            expiresIn: this.authConfig.getJwtRestoreExpTimeout(),
+        const resetToken = await this.jwtService.signAsync(payload, {
+            secret: this.authConfig.getJwtPasswordResetSecret(),
+            expiresIn: this.authConfig.getJwtPasswordResetExpTimeout(),
         });
-        return { restoreToken };
+        return { resetToken: resetToken };
     }
 
-    async confirmRestore(restoreToken: string, password: string): Promise<void> {
+    async changePassword(resetToken: string, newPassword: string): Promise<void> {
         let payload: JwtPayload;
         try {
-            payload = await this.jwtService.verifyAsync<JwtPayload>(restoreToken, {
-                secret: this.authConfig.getJwtRestoreSecret(),
+            payload = await this.jwtService.verifyAsync<JwtPayload>(resetToken, {
+                secret: this.authConfig.getJwtPasswordResetSecret(),
             });
         } catch {
             throw new UnauthorizedException();
@@ -115,7 +114,7 @@ export class AuthService {
             throw new UnauthorizedException();
         }
 
-        const passwordHash = await this.generateUserPasswordHash(password);
+        const passwordHash = await this.generateUserPasswordHash(newPassword);
         await this.usersService.updatePassword(user.externalId, passwordHash);
     }
 

@@ -3,14 +3,14 @@ import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
 import { USER_PASSWORD_MAX_LENGTH, USER_PASSWORD_MIN_LENGTH } from 'users/users.constants';
 
 @ApiSchema({
-    name: 'Auth.RestoreConfirm',
-    description: 'Payload used to confirm a password restore request and set a new password',
+    name: 'Auth.PasswordResetConfirm',
+    description: 'Payload used to confirm a password reset request and set a new password',
 })
-export class RestoreConfirmDto {
+export class PasswordResetConfirmDto {
     @IsString()
     @IsNotEmpty()
-    @ApiProperty({ description: 'The restore token received from the GET /auth/restore endpoint' })
-    restoreToken: string;
+    @ApiProperty({ description: 'The token used to confirm the reset request' })
+    resetToken: string;
 
     @MinLength(USER_PASSWORD_MIN_LENGTH)
     @MaxLength(USER_PASSWORD_MAX_LENGTH)
@@ -20,5 +20,5 @@ export class RestoreConfirmDto {
         minLength: USER_PASSWORD_MIN_LENGTH,
         maxLength: USER_PASSWORD_MAX_LENGTH,
     })
-    password: string;
+    newPassword: string;
 }
