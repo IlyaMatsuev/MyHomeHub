@@ -3,3 +3,6 @@ export * from './login-refresh.dto';
 export * from './login-response.dto';
 export * from './register.dto';
 export * from './register-response.dto';
+export * from './password-reset.dto';
+export * from './password-reset-response.dto';
+export * from './password-reset-confirm.dto';

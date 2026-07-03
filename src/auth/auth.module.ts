@@ -11,6 +11,8 @@ import { RegistrationRequestsController } from 'auth/registration-requests.contr
 import { UsersModule } from 'users/users.module';
 import { AuthConfigService } from 'auth/auth-config.service';
 import { CookiesConfigService } from 'auth/cookies/cookies-config.service';
+import { PasswordResetTokensService } from 'auth/password-reset-tokens.service';
+import { authProviders } from 'auth/auth.providers';
 
 @Module({
     imports: [
@@ -30,6 +32,7 @@ import { CookiesConfigService } from 'auth/cookies/cookies-config.service';
         AuthConfigService,
         CookiesConfigService,
         AuthService,
+        PasswordResetTokensService,
         JwtStrategy,
         {
             provide: APP_GUARD,
@@ -39,6 +42,7 @@ import { CookiesConfigService } from 'auth/cookies/cookies-config.service';
             provide: APP_GUARD,
             useClass: RolesGuard,
         },
+        ...authProviders,
     ],
 })
 export class AuthModule {}

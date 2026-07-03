@@ -30,4 +30,10 @@ export class UsersService {
         }
         return new this.userModel({ email, password: passwordHash, role }).save({ validateBeforeSave: true });
     }
+
+    async updatePassword(externalId: string, passwordHash: string): Promise<User> {
+        const user = await this.getUserByExternalId(externalId);
+        user.password = passwordHash;
+        return user.save({ validateBeforeSave: true });
+    }
 }

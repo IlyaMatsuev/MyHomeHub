@@ -6,10 +6,11 @@ import { UsersService } from 'users/users.service';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
 import { RegistrationRequestStatus, User, UserRole } from 'users/interfaces';
 import { TOTP_REGISTERED_USER_ROLE } from 'users/users.constants';
-import { LoginResponseDto, RegisterResponseDto } from 'auth/dto';
+import { LoginResponseDto, RegisterResponseDto, PasswordResetResponseDto } from 'auth/dto';
 import { JwtPayload } from 'auth/interfaces';
 import { FieldValidationException } from 'common/exceptions';
 import { AuthConfigService } from 'auth/auth-config.service';
+import { PasswordResetTokensService } from 'auth/password-reset-tokens.service';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +21,7 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly authConfig: AuthConfigService,
         private readonly registrationRequestsService: RegistrationRequestsService,
+        private readonly passwordResetTokensService: PasswordResetTokensService,
     ) {}
 
     async login(email: string, password: string): Promise<LoginResponseDto> {
@@ -81,6 +83,29 @@ export class AuthService {
 
         const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password), registrationRequest.role);
         return { externalId: newUser.externalId, email: newUser.email, role: UserRole[newUser.role] };
+    }
+
+    async requestPasswordReset(email: string, totp: string): Promise<PasswordResetResponseDto> {
+        if (!this.verifyTotp(totp)) {
+            throw new ForbiddenException('Password reset one-time password is not valid');
+        }
+        const user = await this.usersService.findByEmail(email);
+        if (!user) {
+            throw new UnauthorizedException();
+        }
+        const resetToken = await this.passwordResetTokensService.issue(user.externalId);
+        return { resetToken };
+    }
+
+    async changePassword(resetToken: string, newPassword: string): Promise<void> {
+        const userExternalId = await this.passwordResetTokensService.consume(resetToken);
+        const user = await this.usersService.getUserByExternalId(userExternalId, { strict: false });
+        if (!user) {
+            throw new UnauthorizedException();
+        }
+
+        const passwordHash = await this.generateUserPasswordHash(newPassword);
+        await this.usersService.updatePassword(user.externalId, passwordHash);
     }
 
     verifyTotp(token: string): boolean {

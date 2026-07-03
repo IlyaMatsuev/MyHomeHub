@@ -39,6 +39,22 @@ export class AuthConfigService {
         return this.getNumberConfig('JWT_REFRESH_EXPIRATION_TIMEOUT');
     }
 
+    getPasswordResetTokenTtlSec(): number {
+        return this.getNumberConfig('PASSWORD_RESET_TOKEN_TTL_SEC');
+    }
+
+    getRedisKeyPrefix(): string {
+        return this.configService.get<string>('REDIS_KEY_PREFIX');
+    }
+
+    getRedisHost(): string {
+        return this.configService.get<string>('REDIS_DOMAIN');
+    }
+
+    getRedisPort(): number {
+        return this.getNumberConfig('REDIS_PORT');
+    }
+
     getTotpSecret(): string {
         return this.configService.get<string>('REGISTRATION_TOTP_SECRET');
     }

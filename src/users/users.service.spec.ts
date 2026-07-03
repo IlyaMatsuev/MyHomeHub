@@ -132,4 +132,27 @@ describe('UsersService', () => {
             });
         });
     });
+
+    describe('updatePassword', () => {
+        it('should update password hash of an existing user', async () => {
+            const existingUser = { ...mockUser, save: jest.fn().mockResolvedValue({ ...mockUser, password: 'new-hashed-password' }) };
+            mockUserModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(existingUser),
+            });
+
+            const result = await service.updatePassword('user-external-id', 'new-hashed-password');
+
+            expect(existingUser.password).toBe('new-hashed-password');
+            expect(existingUser.save).toHaveBeenCalledWith({ validateBeforeSave: true });
+            expect(result.password).toBe('new-hashed-password');
+        });
+
+        it('should throw NotFoundException when user does not exist', async () => {
+            mockUserModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            await expect(service.updatePassword('missing-external-id', 'new-hashed-password')).rejects.toThrow(NotFoundException);
+        });
+    });
 });

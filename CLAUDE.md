@@ -103,6 +103,8 @@ Scenarios define automation rules with:
 Authentication uses **Passport.js** with a `passport-jwt` strategy (`src/auth/strategies/jwt.strategy.ts`):
 
 - `POST /auth/login` accepts either email/password **or** a `refreshToken` (providing both returns 400). It responds with a short-lived `accessToken` and a longer-lived `refreshToken`, allowing token renewal without re-entering credentials.
+- `POST /auth/password/reset` accepts `email` and `totp` (admin's authenticator TOTP — same secret used for TOTP registration) and returns a short-lived `resetToken`
+- `PUT /auth/password/change` accepts the `resetToken` and `newPassword`, rehashes it, and updates the user record. The password reset token is an opaque single-use random value (issued by `PasswordResetTokensService`), stored in Redis as a SHA-256-hashed key with `PASSWORD_RESET_TOKEN_TTL_SEC` TTL, and atomically consumed via `GETDEL` on use — it is not a JWT and shares no signing material with access/refresh tokens.
 - Two global guards run in order: `JwtAuthGuard` (validates the access token, honoring `@Public()` and the local-auth bypass) then `RolesGuard` (enforces `@Roles(...)`).
 
 Users and registration requests carry a `role` (`UserRole`: `Admin`, `Resident`, `Guest`):
@@ -141,7 +143,8 @@ Key variables:
 - `UDP_PORT`, `DISCOVERY_MESSAGE` - UDP broadcast discovery settings
 - `JWT_SECRET`, `JWT_EXPIRATION_TIMEOUT` - Access token signing secret and lifetime
 - `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRATION_TIMEOUT` - Refresh token signing secret and lifetime
-- `REGISTRATION_TOTP_SECRET` - Admin TOTP for user registration
+- `PASSWORD_RESET_TOKEN_TTL_SEC` - Password reset token lifetime in seconds (opaque Redis-backed token)
+- `REGISTRATION_TOTP_SECRET` - Admin TOTP for user registration and password restore
 - `USER_PASSWORD_SECRET`, `USER_PASSWORD_SALT` - Argon2 hashing
 - `MONGO_*` - MongoDB connection
 - `MQTT_*` - MQTT broker connection
