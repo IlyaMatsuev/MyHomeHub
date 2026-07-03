@@ -10,6 +10,7 @@ import { LoginResponseDto, RegisterResponseDto, PasswordResetResponseDto } from 
 import { JwtPayload } from 'auth/interfaces';
 import { FieldValidationException } from 'common/exceptions';
 import { AuthConfigService } from 'auth/auth-config.service';
+import { PasswordResetTokensService } from 'auth/password-reset-tokens.service';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +21,7 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly authConfig: AuthConfigService,
         private readonly registrationRequestsService: RegistrationRequestsService,
+        private readonly passwordResetTokensService: PasswordResetTokensService,
     ) {}
 
     async login(email: string, password: string): Promise<LoginResponseDto> {
@@ -91,25 +93,13 @@ export class AuthService {
         if (!user) {
             throw new UnauthorizedException();
         }
-        const payload: JwtPayload = { sub: user.externalId };
-        const resetToken = await this.jwtService.signAsync(payload, {
-            secret: this.authConfig.getJwtPasswordResetSecret(),
-            expiresIn: this.authConfig.getJwtPasswordResetExpTimeout(),
-        });
-        return { resetToken: resetToken };
+        const resetToken = await this.passwordResetTokensService.issue(user.externalId);
+        return { resetToken };
     }
 
     async changePassword(resetToken: string, newPassword: string): Promise<void> {
-        let payload: JwtPayload;
-        try {
-            payload = await this.jwtService.verifyAsync<JwtPayload>(resetToken, {
-                secret: this.authConfig.getJwtPasswordResetSecret(),
-            });
-        } catch {
-            throw new UnauthorizedException();
-        }
-
-        const user = await this.usersService.getUserByExternalId(payload.sub, { strict: false });
+        const userExternalId = await this.passwordResetTokensService.consume(resetToken);
+        const user = await this.usersService.getUserByExternalId(userExternalId, { strict: false });
         if (!user) {
             throw new UnauthorizedException();
         }

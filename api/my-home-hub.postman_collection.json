@@ -513,6 +513,112 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Reset Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{username}}\",\n    \"totp\": \"912006\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/password/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "password", "reset"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"resetToken\": \"QDrgqvkJzNdeS_Ns5Tjq8DNf_6KQ2yz2QZP2hDnviSg\",\n    \"newPassword\": \"newpass\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/password/change",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "password", "change"]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -1093,7 +1199,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"controls\": {\n        \"$override\": true\n    }\n}",
+              "raw": "{\n    \"controls\": {\n        \"on\": false\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1168,6 +1274,86 @@
                 {
                   "key": "deviceId",
                   "value": "{{lastQueriedDeviceId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Devices Copy",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const allDevices = pm.response.json().items;",
+                  "    if (allDevices.length) {",
+                  "        const lastQueriedDevice = allDevices.pop();",
+                  "        pm.environment.set('lastQueriedDeviceId', lastQueriedDevice.externalId);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-host",
+                "value": "{{proxyHubHostname}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Proxy-Authorization",
+                "value": "{{proxyAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://192.168.0.100:3020/devices?pageSize=20",
+              "protocol": "http",
+              "host": ["192", "168", "0", "100"],
+              "port": "3020",
+              "path": ["devices"],
+              "query": [
+                {
+                  "key": "pageSize",
+                  "value": "10",
+                  "disabled": true
+                },
+                {
+                  "key": "room",
+                  "value": "office",
+                  "disabled": true
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
                 }
               ]
             }
