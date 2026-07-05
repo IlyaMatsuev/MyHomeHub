@@ -5,6 +5,7 @@ import { DeviceControlServiceFactory } from 'devices-control/interfaces';
 import { GoogleSpeakerControlService } from 'devices-control/providers';
 import { DEVICE_TRANSPORT_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { DeviceTransportServiceResolver } from 'devices-control/transport';
+import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
 
 @Injectable()
 export class GoogleSpeakerControlServiceFactory implements DeviceControlServiceFactory {
@@ -12,6 +13,7 @@ export class GoogleSpeakerControlServiceFactory implements DeviceControlServiceF
         @Inject(DEVICE_TRANSPORT_FACTORY_PROVIDER)
         protected readonly transportServiceResolver: DeviceTransportServiceResolver,
         private readonly configService: ConfigService,
+        private readonly deviceConfigsMapper: DeviceConfigsMapperService,
     ) {}
 
     eligible(device: Device): boolean {
@@ -19,6 +21,6 @@ export class GoogleSpeakerControlServiceFactory implements DeviceControlServiceF
     }
 
     createService(device: Device): GoogleSpeakerControlService {
-        return new GoogleSpeakerControlService(device, this.transportServiceResolver, this.configService);
+        return new GoogleSpeakerControlService(device, this.transportServiceResolver, this.configService, this.deviceConfigsMapper);
     }
 }

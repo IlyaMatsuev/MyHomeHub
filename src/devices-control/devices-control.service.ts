@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { Device, DeviceControls } from 'devices/interfaces';
+import { Device, DeviceControls, DevicePayload } from 'devices/interfaces';
 import { ConfigService } from '@nestjs/config';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { plainToInstance } from 'class-transformer';
@@ -7,6 +7,7 @@ import { validate } from 'class-validator';
 import { CustomValidationException } from 'common/exceptions';
 import { DeviceTransportServiceResolver } from 'devices-control/transport';
 import { TransportMessage } from 'devices-control/interfaces';
+import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
 
 export abstract class DevicesControlService {
     protected readonly logger: Logger;
@@ -15,6 +16,7 @@ export abstract class DevicesControlService {
         protected readonly device: Device,
         protected readonly transportServiceResolver: DeviceTransportServiceResolver,
         protected readonly configService: ConfigService,
+        protected readonly deviceConfigsMapper: DeviceConfigsMapperService,
     ) {
         this.logger = new Logger(this.getServiceName());
     }
@@ -42,7 +44,7 @@ export abstract class DevicesControlService {
         try {
             const payload = await this.getControlsPayload(this.getControlsDto<T>(controls));
             if (payload) {
-                await this.transportServiceResolver.send(this.device.transportProtocol, payload);
+                await this.transportServiceResolver.send(this.device.transportProtocol, await this.mapMessagePayload(payload));
             } else {
                 this.logger.log(`No payload for setting controls/measurements for the device "${this.device.externalId}"`);
             }
@@ -56,6 +58,18 @@ export abstract class DevicesControlService {
             throw new Error(`The device with id "${this.device.externalId}" does not have an IP address, not possible to set the controls`);
         }
         return this.device.ip;
+    }
+
+    /**
+     * Maps internal command/control names within the transport message payload
+     * to the device-side names declared in the device config (see the "path" fields)
+     */
+    private async mapMessagePayload(message: TransportMessage): Promise<TransportMessage> {
+        if (!('payload' in message) || !message.payload || typeof message.payload !== 'object') {
+            return message;
+        }
+        const mappedPayload = await this.deviceConfigsMapper.mapPayloadToDevice(this.device, message.payload as DevicePayload);
+        return { ...message, payload: mappedPayload } as TransportMessage;
     }
 
     private getControlsDto<T extends object>(controls: DeviceControls): T {

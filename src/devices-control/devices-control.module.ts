@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MqttModule } from 'mqtt/mqtt.module';
+import { DeviceConfigsModule } from 'device-configs/device-configs.module';
 import {
     GoogleSpeakerControlServiceFactory,
     ShellyControlServiceFactory,
@@ -12,7 +13,7 @@ import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-contro
 import { HttpTransportService, MqttTransportService, TuyaTransportService, ZigbeeTransportService } from 'devices-control/transport';
 
 @Module({
-    imports: [MqttModule],
+    imports: [MqttModule, DeviceConfigsModule],
     providers: [
         TuyaControlServiceFactory,
         GoogleSpeakerControlServiceFactory,

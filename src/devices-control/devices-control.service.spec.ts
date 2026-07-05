@@ -4,6 +4,7 @@ import { DevicesControlService } from './devices-control.service';
 import { DeviceTransportServiceResolver } from 'devices-control/transport';
 import { TransportMessage, TransportProtocol } from 'devices-control/interfaces';
 import { Device, DeviceControls } from 'devices/interfaces';
+import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
 
 class TestControlsDto {
     on?: boolean;
@@ -32,6 +33,7 @@ class TestControlService extends DevicesControlService {
 describe('DevicesControlService', () => {
     let service: TestControlService;
     let mockResolver: { send: jest.Mock };
+    let mockDeviceConfigsMapper: { mapPayloadToDevice: jest.Mock };
     let logErrorSpy: jest.SpyInstance;
 
     const mockDevice: Partial<Device> = {
@@ -41,10 +43,12 @@ describe('DevicesControlService', () => {
 
     beforeEach(() => {
         mockResolver = { send: jest.fn().mockResolvedValue(undefined) };
+        mockDeviceConfigsMapper = { mapPayloadToDevice: jest.fn((_key, payload) => Promise.resolve(payload)) };
         service = new TestControlService(
             mockDevice as Device,
             mockResolver as unknown as DeviceTransportServiceResolver,
             {} as ConfigService,
+            mockDeviceConfigsMapper as unknown as DeviceConfigsMapperService,
         );
         logErrorSpy = jest.spyOn(service['logger'], 'error').mockImplementation();
         jest.spyOn(service['logger'], 'log').mockImplementation();
@@ -86,6 +90,29 @@ describe('DevicesControlService', () => {
 
             await expect(service.setControls({ on: true } as DeviceControls)).resolves.toBeUndefined();
             expect(logErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to set controls'));
+        });
+
+        it('should map the message payload names using the device config before sending', async () => {
+            service.payload = { method: 'POST', url: 'http://device/rpc', payload: { on: true } };
+            mockDeviceConfigsMapper.mapPayloadToDevice.mockResolvedValue({ state: 'ON' });
+
+            await service.setControls({ on: true } as DeviceControls);
+
+            expect(mockDeviceConfigsMapper.mapPayloadToDevice).toHaveBeenCalledWith(mockDevice, { on: true });
+            expect(mockResolver.send).toHaveBeenCalledWith(TransportProtocol.Http, {
+                method: 'POST',
+                url: 'http://device/rpc',
+                payload: { state: 'ON' },
+            });
+        });
+
+        it('should not map anything when the message has no payload', async () => {
+            service.payload = { method: 'GET', url: 'http://device' };
+
+            await service.setControls({ on: true } as DeviceControls);
+
+            expect(mockDeviceConfigsMapper.mapPayloadToDevice).not.toHaveBeenCalled();
+            expect(mockResolver.send).toHaveBeenCalledWith(TransportProtocol.Http, { method: 'GET', url: 'http://device' });
         });
     });
 });
