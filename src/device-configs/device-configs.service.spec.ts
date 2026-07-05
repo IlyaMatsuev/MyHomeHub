@@ -23,6 +23,8 @@ describe('DeviceConfigsService', () => {
     const buildModelMock = () => ({
         updateOne: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({ matchedCount: 1, upsertedCount: 0 }) }),
         deleteMany: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({ deletedCount: 0 }) }),
+        findOne: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(null) }) }),
+        find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue([]) }) }),
     });
 
     beforeEach(() => {
@@ -225,6 +227,40 @@ describe('DeviceConfigsService', () => {
             expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to read device config file'));
             expect(model.updateOne).not.toHaveBeenCalled();
             expect(model.deleteMany).toHaveBeenCalledWith({});
+        });
+    });
+
+    describe('getConfig', () => {
+        it('should query the config by brand, type and transport protocol only', async () => {
+            const key = {
+                brand: DeviceBrand.Shelly,
+                type: DeviceType.Plug,
+                transportProtocol: TransportProtocol.Http,
+            };
+
+            await service.getConfig({ ...key, extraField: 'ignored' } as never);
+
+            expect(model.findOne).toHaveBeenCalledWith(key);
+        });
+    });
+
+    describe('getConfigs', () => {
+        it('should return an empty array without querying when no keys are provided', async () => {
+            const result = await service.getConfigs([]);
+
+            expect(result).toEqual([]);
+            expect(model.find).not.toHaveBeenCalled();
+        });
+
+        it('should query all provided keys with an $or filter', async () => {
+            const keys = [
+                { brand: DeviceBrand.Shelly, type: DeviceType.Plug, transportProtocol: TransportProtocol.Http },
+                { brand: DeviceBrand.Philips, type: DeviceType.Remote, transportProtocol: TransportProtocol.Zigbee },
+            ];
+
+            await service.getConfigs(keys);
+
+            expect(model.find).toHaveBeenCalledWith({ $or: keys });
         });
     });
 
