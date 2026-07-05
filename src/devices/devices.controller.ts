@@ -16,6 +16,7 @@ import {
     CreateDeviceDto,
     DevicePayloadDto,
     DeviceResponseDto,
+    GetDeviceDto,
     GetDevicesDto,
     GetPairableDevicesDto,
     PairableDeviceResponseDto,
@@ -63,8 +64,8 @@ export class DevicesController {
     @ApiParam({ name: 'externalId', description: 'External ID of the device to find', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
     @ApiOperation({ summary: 'Get a specific device by the provided external ID' })
     @ApiOkResponse({ type: DeviceResponseDto })
-    async getDevice(@ExternalIdParam() externalId: string): Promise<DeviceResponseDto> {
-        return this.deviceService.getDeviceByExternalId(externalId);
+    async getDevice(@ExternalIdParam() externalId: string, @Query() query: GetDeviceDto): Promise<DeviceResponseDto> {
+        return this.deviceService.getDeviceResponse(externalId, query);
     }
 
     @Post()

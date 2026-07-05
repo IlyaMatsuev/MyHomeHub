@@ -7,6 +7,7 @@ import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-contro
 import { Device, DeviceFilter, GetDeviceOptions } from 'devices/interfaces';
 import {
     GetDevicesDto,
+    GetDeviceDto,
     CreateDeviceDto,
     UpdateDeviceDto,
     GetPairableDevicesDto,
@@ -14,6 +15,9 @@ import {
     PairingModeStatusResponseDto,
     DeviceResponseDto,
 } from 'devices/dto';
+import { DeviceConfigsService } from 'device-configs/device-configs.service';
+import { DeviceConfigKey } from 'device-configs/interfaces';
+import { DeviceConfigResponseDto } from 'device-configs/dto';
 import { DeviceUpdateRequestedEvent, DeviceUpdateCompletedEvent, DeviceCommandExecutedEvent } from 'devices/events';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
 import { ZigbeeService } from 'zigbee/zigbee.service';
@@ -35,6 +39,7 @@ export class DevicesService {
         private readonly eventEmitter: EventEmitter2,
         @Inject(forwardRef(() => ZigbeeService))
         private readonly zigbeeService: ZigbeeService,
+        private readonly deviceConfigsService: DeviceConfigsService,
     ) {}
 
     @OnEvent(DeviceUpdateRequestedEvent.eventName)
@@ -63,8 +68,9 @@ export class DevicesService {
             this.deviceModel.find(conditions).skip(options.skipRecords).limit(options.pageSize).lean(),
             this.deviceModel.countDocuments(conditions),
         ]);
+        const items = options.includeConfig ? await this.attachDeviceConfigs(devices) : devices;
 
-        return new PaginationResponseDto(devices, options.page, options.pageSize, total);
+        return new PaginationResponseDto(items, options.page, options.pageSize, total);
     }
 
     async getAllDevices(filter: DeviceFilter = {}): Promise<PaginationResponseDto<Device>> {
@@ -86,6 +92,15 @@ export class DevicesService {
 
     getDeviceByExternalId(externalId: string, options: GetDeviceOptions = { strict: true }): Promise<Device> {
         return this.getDevice({ externalId }, options);
+    }
+
+    async getDeviceResponse(externalId: string, options: GetDeviceDto = new GetDeviceDto()): Promise<DeviceResponseDto> {
+        const device = await this.getDeviceByExternalId(externalId);
+        if (!options.includeConfig) {
+            return device;
+        }
+        const config = await this.deviceConfigsService.getConfig(this.getDeviceConfigKey(device));
+        return { ...device.toObject(), config: DeviceConfigResponseDto.fromConfig(config) };
     }
 
     getDeviceByIp(ip: string): Promise<Device> {
@@ -189,6 +204,32 @@ export class DevicesService {
         const pairableDevices = cachedZigbeeDevices.filter(d => !existingZigbeeDevicesIds.has(d.zigbeeIeeeAddress));
 
         return new PaginationResponseDto(pairableDevices, options.page, options.pageSize);
+    }
+
+    private async attachDeviceConfigs(devices: Array<Device>): Promise<Array<Device>> {
+        const keysByHash = new Map<string, DeviceConfigKey>();
+        for (const device of devices) {
+            const key = this.getDeviceConfigKey(device);
+            keysByHash.set(this.hashDeviceConfigKey(key), key);
+        }
+
+        const configs = await this.deviceConfigsService.getConfigs([...keysByHash.values()]);
+        const configsByHash = new Map(
+            configs.map(config => [this.hashDeviceConfigKey(config), DeviceConfigResponseDto.fromConfig(config)]),
+        );
+
+        return devices.map(device => {
+            const config = configsByHash.get(this.hashDeviceConfigKey(this.getDeviceConfigKey(device)));
+            return config ? { ...device, config } : device;
+        });
+    }
+
+    private getDeviceConfigKey(device: Device): DeviceConfigKey {
+        return { brand: device.brand, type: device.type, transportProtocol: device.transportProtocol };
+    }
+
+    private hashDeviceConfigKey(key: DeviceConfigKey): string {
+        return `${key.brand}:${key.type}:${key.transportProtocol}`;
     }
 
     private async assignDtoValues(device: Device, updatedDevice: CreateDeviceDto | UpdateDeviceDto): Promise<Device> {

@@ -8,9 +8,10 @@ import { DevicesMqttController } from 'devices/devices-mqtt.controller';
 import { DevicesMqttService } from 'devices/devices-mqtt.service';
 import { ZigbeeModule } from 'zigbee/zigbee.module';
 import { MqttModule } from 'mqtt/mqtt.module';
+import { DeviceConfigsModule } from 'device-configs/device-configs.module';
 
 @Module({
-    imports: [DatabaseModule, DevicesControlModule, MqttModule, forwardRef(() => ZigbeeModule)],
+    imports: [DatabaseModule, DevicesControlModule, MqttModule, DeviceConfigsModule, forwardRef(() => ZigbeeModule)],
     controllers: [DevicesController, DevicesMqttController],
     providers: [DevicesService, DevicesMqttService, ...devicesProviders],
     exports: [DevicesService],

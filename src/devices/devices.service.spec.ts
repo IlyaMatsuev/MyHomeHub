@@ -6,9 +6,11 @@ import { DevicesService } from './devices.service';
 import { DEVICE_MODEL_PROVIDER_NAME } from './devices.constants';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { Device, DeviceBrand, DeviceType, Room } from './interfaces';
+import { TransportProtocol } from 'devices-control/interfaces';
 import { DeviceCommandExecutedEvent, DeviceUpdateCompletedEvent, DeviceUpdateRequestedEvent } from './events';
-import { CreateDeviceDto, UpdateDeviceDto, GetDevicesDto, GetPairableDevicesDto } from './dto';
+import { CreateDeviceDto, UpdateDeviceDto, GetDeviceDto, GetDevicesDto, GetPairableDevicesDto } from './dto';
 import { ZigbeeService } from 'zigbee/zigbee.service';
+import { DeviceConfigsService } from 'device-configs/device-configs.service';
 import { PairableDevice } from 'zigbee/interfaces';
 import { ZigbeePairableDevices } from 'zigbee/store';
 
@@ -28,6 +30,7 @@ describe('DevicesService', () => {
         renameDevice: jest.Mock;
         removeZigbeeDevice: jest.Mock;
     };
+    let mockDeviceConfigsService: { getConfig: jest.Mock; getConfigs: jest.Mock };
     let hasSpy: jest.SpyInstance;
     let getSpy: jest.SpyInstance;
     let getAllSpy: jest.SpyInstance;
@@ -38,6 +41,7 @@ describe('DevicesService', () => {
         name: 'Test Device',
         type: DeviceType.LED,
         brand: DeviceBrand.Tuya,
+        transportProtocol: TransportProtocol.Tuya,
         room: Room.LivingRoom,
         ip: '192.168.1.100',
         controls: { on: false, brightness: 100 },
@@ -77,6 +81,10 @@ describe('DevicesService', () => {
             renameDevice: jest.fn().mockResolvedValue(undefined),
             removeZigbeeDevice: jest.fn().mockResolvedValue(undefined),
         };
+        mockDeviceConfigsService = {
+            getConfig: jest.fn().mockResolvedValue(null),
+            getConfigs: jest.fn().mockResolvedValue([]),
+        };
         hasSpy = jest.spyOn(ZigbeePairableDevices, 'has').mockReturnValue(false);
         getSpy = jest.spyOn(ZigbeePairableDevices, 'get').mockReturnValue(null);
         getAllSpy = jest.spyOn(ZigbeePairableDevices, 'getAll').mockReturnValue([]);
@@ -99,6 +107,10 @@ describe('DevicesService', () => {
                 {
                     provide: ZigbeeService,
                     useValue: mockZigbeeService,
+                },
+                {
+                    provide: DeviceConfigsService,
+                    useValue: mockDeviceConfigsService,
                 },
             ],
         }).compile();
@@ -239,6 +251,53 @@ describe('DevicesService', () => {
             expect(result.items).toEqual(devices);
             expect(mockDeviceModel.find).toHaveBeenCalledWith({ room: Room.LivingRoom });
         });
+
+        it('should attach device configs when includeConfig is true', async () => {
+            const devices = [mockDevice, { ...mockDevice, externalId: 'device-2', brand: DeviceBrand.Shelly }];
+            mockDeviceModel.find.mockReturnValue({
+                skip: jest.fn().mockReturnValue({
+                    limit: jest.fn().mockReturnValue({
+                        lean: jest.fn().mockResolvedValue(devices),
+                    }),
+                }),
+            });
+            mockDeviceModel.countDocuments.mockResolvedValue(2);
+            mockDeviceConfigsService.getConfigs.mockResolvedValue([
+                {
+                    brand: mockDevice.brand,
+                    type: mockDevice.type,
+                    transportProtocol: mockDevice.transportProtocol,
+                    controls: [{ label: 'On', name: 'on', type: 'boolean' }],
+                },
+            ]);
+
+            const options = new GetDevicesDto();
+            options.includeConfig = true;
+
+            const result = await service.getDevices({}, options);
+
+            expect(mockDeviceConfigsService.getConfigs).toHaveBeenCalledWith([
+                { brand: mockDevice.brand, type: mockDevice.type, transportProtocol: mockDevice.transportProtocol },
+                { brand: DeviceBrand.Shelly, type: mockDevice.type, transportProtocol: mockDevice.transportProtocol },
+            ]);
+            expect(result.items[0].config).toEqual({ controls: [{ label: 'On', name: 'on', type: 'boolean' }] });
+            expect(result.items[1].config).toBeUndefined();
+        });
+
+        it('should not fetch device configs when includeConfig is not set', async () => {
+            mockDeviceModel.find.mockReturnValue({
+                skip: jest.fn().mockReturnValue({
+                    limit: jest.fn().mockReturnValue({
+                        lean: jest.fn().mockResolvedValue([mockDevice]),
+                    }),
+                }),
+            });
+            mockDeviceModel.countDocuments.mockResolvedValue(1);
+
+            await service.getDevices({}, new GetDevicesDto());
+
+            expect(mockDeviceConfigsService.getConfigs).not.toHaveBeenCalled();
+        });
     });
 
     describe('getAllDevices', () => {
@@ -331,6 +390,59 @@ describe('DevicesService', () => {
             const result = await service.getDeviceByExternalId('nonexistent', { strict: false });
 
             expect(result).toBeNull();
+        });
+    });
+
+    describe('getDeviceResponse', () => {
+        it('should return the device without config when includeConfig is not set', async () => {
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockDevice),
+            });
+
+            const result = await service.getDeviceResponse('device-uuid-123', new GetDeviceDto());
+
+            expect(result).toEqual(mockDevice);
+            expect(mockDeviceConfigsService.getConfig).not.toHaveBeenCalled();
+        });
+
+        it('should include the device config when includeConfig is true', async () => {
+            const deviceWithToObject = { ...mockDevice, toObject: jest.fn().mockReturnValue(mockDevice) };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithToObject),
+            });
+            mockDeviceConfigsService.getConfig.mockResolvedValue({
+                brand: mockDevice.brand,
+                type: mockDevice.type,
+                transportProtocol: mockDevice.transportProtocol,
+                commands: [{ label: 'Action', name: 'action', type: 'string' }],
+                controls: [],
+                measurements: [],
+            });
+
+            const query = new GetDeviceDto();
+            query.includeConfig = true;
+            const result = await service.getDeviceResponse('device-uuid-123', query);
+
+            expect(mockDeviceConfigsService.getConfig).toHaveBeenCalledWith({
+                brand: mockDevice.brand,
+                type: mockDevice.type,
+                transportProtocol: mockDevice.transportProtocol,
+            });
+            expect(result.config).toEqual({ commands: [{ label: 'Action', name: 'action', type: 'string' }] });
+        });
+
+        it('should omit the config field when no config matches the device', async () => {
+            const deviceWithToObject = { ...mockDevice, toObject: jest.fn().mockReturnValue(mockDevice) };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithToObject),
+            });
+            mockDeviceConfigsService.getConfig.mockResolvedValue(null);
+
+            const query = new GetDeviceDto();
+            query.includeConfig = true;
+            const result = await service.getDeviceResponse('device-uuid-123', query);
+
+            expect(result.config).toBeUndefined();
         });
     });
 
