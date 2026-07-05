@@ -4,6 +4,7 @@ import { DevicesService } from 'devices/devices.service';
 import { Device } from 'devices/interfaces';
 import { MqttService } from 'mqtt/mqtt.service';
 import { ESP32_DEVICE_PAIR_REQUEST_REPLY_TOPIC } from 'devices/devices.constants';
+import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
 
 @Injectable()
 export class DevicesMqttService {
@@ -12,6 +13,7 @@ export class DevicesMqttService {
     constructor(
         private readonly mqttService: MqttService,
         private readonly devicesService: DevicesService,
+        private readonly deviceConfigsMapper: DeviceConfigsMapperService,
     ) {}
 
     async handleEsp32DevicePairRequest(pairRequest: PairRequestDto): Promise<void> {
@@ -55,7 +57,8 @@ export class DevicesMqttService {
         try {
             // TODO: Need to verify the secret before updating
             this.logger.debug(`Syncing controls for a device with id "${deviceId}"`);
-            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ controls }));
+            const mappedControls = await this.deviceConfigsMapper.mapPayloadFromDevice(device, 'controls', controls);
+            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ controls: mappedControls }));
         } catch (error) {
             this.logger.error(`Error while syncing controls for a device with id "${deviceId}"`);
             this.logger.error(error);
@@ -72,7 +75,8 @@ export class DevicesMqttService {
         try {
             // TODO: Need to verify the secret before updating
             this.logger.debug(`Updating measurements for a device with id "${deviceId}": ${JSON.stringify(measurements)}`);
-            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ measurements }));
+            const mappedMeasurements = await this.deviceConfigsMapper.mapPayloadFromDevice(device, 'measurements', measurements);
+            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ measurements: mappedMeasurements }));
         } catch (error) {
             this.logger.error(`Error while retrieving measurements for a device with id "${deviceId}"`);
             this.logger.error(error);

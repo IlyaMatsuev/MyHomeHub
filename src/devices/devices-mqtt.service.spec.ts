@@ -5,6 +5,7 @@ import { MqttService } from 'mqtt/mqtt.service';
 import { PairAcceptDto, PairRequestDto, UpdateDeviceDto } from './dto';
 import { Device, DeviceBrand, DeviceType, Room } from './interfaces';
 import { ESP32_DEVICE_PAIR_REQUEST_REPLY_TOPIC } from './devices.constants';
+import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
 
 describe('DevicesMqttService', () => {
     let service: DevicesMqttService;
@@ -15,6 +16,7 @@ describe('DevicesMqttService', () => {
         addDevice: jest.Mock;
         updateDevice: jest.Mock;
     };
+    let mockDeviceConfigsMapper: { mapPayloadFromDevice: jest.Mock };
 
     const mockDevice: Partial<Device> = {
         _id: 'mongo-id-123',
@@ -37,12 +39,16 @@ describe('DevicesMqttService', () => {
             addDevice: jest.fn(),
             updateDevice: jest.fn(),
         };
+        mockDeviceConfigsMapper = {
+            mapPayloadFromDevice: jest.fn((_device, _section, payload) => Promise.resolve(payload)),
+        };
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 DevicesMqttService,
                 { provide: MqttService, useValue: mockMqttService },
                 { provide: DevicesService, useValue: mockDevicesService },
+                { provide: DeviceConfigsMapperService, useValue: mockDeviceConfigsMapper },
             ],
         }).compile();
 
@@ -154,12 +160,25 @@ describe('DevicesMqttService', () => {
             expect(dto.controls).toEqual({ on: true, brightness: 50 });
         });
 
+        it('should map the incoming controls using the device config', async () => {
+            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
+            mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
+            mockDeviceConfigsMapper.mapPayloadFromDevice.mockResolvedValue({ on: true });
+
+            await service.handleEsp32DeviceControlsSync('device-uuid-123', { state: 'ON' });
+
+            expect(mockDeviceConfigsMapper.mapPayloadFromDevice).toHaveBeenCalledWith(mockDevice, 'controls', { state: 'ON' });
+            const dto = mockDevicesService.updateDevice.mock.calls[0][1];
+            expect(dto.controls).toEqual({ on: true });
+        });
+
         it('should skip the update when no device matches the id', async () => {
             mockDevicesService.getDeviceByExternalId.mockResolvedValue(null);
 
             await service.handleEsp32DeviceControlsSync('unknown', { on: true });
 
             expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
+            expect(mockDeviceConfigsMapper.mapPayloadFromDevice).not.toHaveBeenCalled();
         });
 
         it('should swallow errors thrown while updating controls', async () => {
@@ -183,12 +202,25 @@ describe('DevicesMqttService', () => {
             expect(dto.measurements).toEqual({ temperature: 25, humidity: 60 });
         });
 
+        it('should map the incoming measurements using the device config', async () => {
+            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
+            mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
+            mockDeviceConfigsMapper.mapPayloadFromDevice.mockResolvedValue({ temperature: 25 });
+
+            await service.handleEsp32DeviceMeasurementsUpdate('device-uuid-123', { temp: 25 });
+
+            expect(mockDeviceConfigsMapper.mapPayloadFromDevice).toHaveBeenCalledWith(mockDevice, 'measurements', { temp: 25 });
+            const dto = mockDevicesService.updateDevice.mock.calls[0][1];
+            expect(dto.measurements).toEqual({ temperature: 25 });
+        });
+
         it('should skip the update when no device matches the id', async () => {
             mockDevicesService.getDeviceByExternalId.mockResolvedValue(null);
 
             await service.handleEsp32DeviceMeasurementsUpdate('unknown', { temperature: 25 });
 
             expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
+            expect(mockDeviceConfigsMapper.mapPayloadFromDevice).not.toHaveBeenCalled();
         });
 
         it('should swallow errors thrown while updating measurements', async () => {
