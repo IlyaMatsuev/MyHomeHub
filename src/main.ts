@@ -1,4 +1,5 @@
 import path from 'node:path';
+import helmet from 'helmet';
 import { NestFactory } from '@nestjs/core';
 import { ConsoleLogger, INestApplication, LogLevel, LoggerService, ValidationPipe, LOG_LEVELS } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -36,7 +37,8 @@ async function bootstrap() {
             password: config.get<string>('MQTT_PASSWORD'),
         },
     });
-    app.enableCors();
+    app.use(helmet());
+    setupCors(app, config);
     app.useGlobalPipes(
         new ValidationPipe({
             transform: true,
@@ -46,10 +48,33 @@ async function bootstrap() {
         }),
     );
 
-    setupSwagger(app, config);
+    if (!isProd(config)) {
+        setupSwagger(app, config);
+    }
 
     await app.startAllMicroservices();
     await app.listen(config.get<string>('PORT') ?? DEFAULT_PORT, '0.0.0.0');
+}
+
+function isProd(config: ConfigService): boolean {
+    return config.get<string>('NODE_ENV') === 'prod';
+}
+
+function setupCors(app: NestExpressApplication, config: ConfigService): void {
+    const raw = config.get<string>('CORS_ORIGINS')?.trim();
+    if (!raw) {
+        // Prod must whitelist explicitly — refuse to fall back to allow-all when NODE_ENV=prod
+        if (isProd(config)) {
+            throw new Error('CORS_ORIGINS must be set when NODE_ENV=prod');
+        }
+        app.enableCors();
+        return;
+    }
+    const origins = raw
+        .split(',')
+        .map(o => o.trim())
+        .filter(Boolean);
+    app.enableCors({ origin: origins, credentials: true });
 }
 
 function setupLogger(config: ConfigService): LoggerService {

@@ -3,6 +3,7 @@ import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiForbidden, ApiInternalError, ApiUnauthorized, ApiValidationError } from 'common/decorators';
 import { Public } from 'auth/decorators';
 import { WithCookies } from 'auth/cookies/decorators';
+import { StrictThrottle } from 'throttler/decorators';
 import {
     LoginDto,
     RegisterDto,
@@ -24,6 +25,7 @@ export class AuthController {
     constructor(private authService: AuthService) {}
 
     @Put('login')
+    @StrictThrottle(5, 15 * 60)
     @WithCookies(LoginResponseDto, 'accessToken', 'refreshToken')
     @ApiOperation({ summary: 'Get an access token using registered user credentials' })
     @ApiOkResponse({ type: LoginResponseDto })
@@ -33,6 +35,7 @@ export class AuthController {
     }
 
     @Put('login/refresh')
+    @StrictThrottle(30, 5 * 60)
     @WithCookies(LoginResponseDto, 'accessToken', 'refreshToken')
     @ApiOperation({ summary: 'Get an access token using a refresh token' })
     @ApiOkResponse({ type: LoginResponseDto })
@@ -42,6 +45,7 @@ export class AuthController {
     }
 
     @Post('register')
+    @StrictThrottle(5, 60 * 60)
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Register a new user' })
     @ApiOkResponse({ type: RegisterResponseDto })
@@ -52,6 +56,7 @@ export class AuthController {
     }
 
     @Post('password/reset')
+    @StrictThrottle(3, 60 * 60)
     @ApiOperation({ summary: 'Request a password reset token by confirming identity with admin TOTP' })
     @ApiOkResponse({ type: PasswordResetResponseDto })
     @ApiValidationError()
@@ -61,6 +66,7 @@ export class AuthController {
     }
 
     @Put('password/change')
+    @StrictThrottle(5, 15 * 60)
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: 'Confirm a password change request and set a new password' })
     @ApiOkResponse({ description: 'Password successfully updated' })
