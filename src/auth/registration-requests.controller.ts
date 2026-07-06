@@ -56,7 +56,7 @@ export class RegistrationRequestsController {
 
     @Public()
     @Post()
-    @StrictThrottle(3, 60 * 60)
+    @StrictThrottle('registrationRequest')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Submit a new registration request' })
     @ApiOkResponse({ type: RegistrationRequestResponseDto })

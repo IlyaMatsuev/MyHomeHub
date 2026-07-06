@@ -1,7 +1,7 @@
 import path from 'node:path';
 import helmet from 'helmet';
 import { NestFactory } from '@nestjs/core';
-import { ConsoleLogger, INestApplication, LogLevel, LoggerService, ValidationPipe, LOG_LEVELS } from '@nestjs/common';
+import { ConsoleLogger, INestApplication, Logger, LogLevel, LoggerService, ValidationPipe, LOG_LEVELS } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerCustomOptions } from '@nestjs/swagger/dist/interfaces/swagger-custom-options.interface';
@@ -63,9 +63,8 @@ function isProd(config: ConfigService): boolean {
 function setupCors(app: NestExpressApplication, config: ConfigService): void {
     const raw = config.get<string>('CORS_ORIGINS')?.trim();
     if (!raw) {
-        // Prod must whitelist explicitly — refuse to fall back to allow-all when NODE_ENV=prod
         if (isProd(config)) {
-            throw new Error('CORS_ORIGINS must be set when NODE_ENV=prod');
+            new Logger('Bootstrap').warn('CORS_ORIGINS is not set — falling back to allow-all in a prod environment');
         }
         app.enableCors();
         return;

@@ -25,7 +25,7 @@ export class AuthController {
     constructor(private authService: AuthService) {}
 
     @Put('login')
-    @StrictThrottle(5, 15 * 60)
+    @StrictThrottle('login')
     @WithCookies(LoginResponseDto, 'accessToken', 'refreshToken')
     @ApiOperation({ summary: 'Get an access token using registered user credentials' })
     @ApiOkResponse({ type: LoginResponseDto })
@@ -35,7 +35,7 @@ export class AuthController {
     }
 
     @Put('login/refresh')
-    @StrictThrottle(30, 5 * 60)
+    @StrictThrottle('loginRefresh')
     @WithCookies(LoginResponseDto, 'accessToken', 'refreshToken')
     @ApiOperation({ summary: 'Get an access token using a refresh token' })
     @ApiOkResponse({ type: LoginResponseDto })
@@ -45,7 +45,7 @@ export class AuthController {
     }
 
     @Post('register')
-    @StrictThrottle(5, 60 * 60)
+    @StrictThrottle('register')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Register a new user' })
     @ApiOkResponse({ type: RegisterResponseDto })
@@ -56,7 +56,7 @@ export class AuthController {
     }
 
     @Post('password/reset')
-    @StrictThrottle(3, 60 * 60)
+    @StrictThrottle('passwordReset')
     @ApiOperation({ summary: 'Request a password reset token by confirming identity with admin TOTP' })
     @ApiOkResponse({ type: PasswordResetResponseDto })
     @ApiValidationError()
@@ -66,7 +66,7 @@ export class AuthController {
     }
 
     @Put('password/change')
-    @StrictThrottle(5, 15 * 60)
+    @StrictThrottle('passwordChange')
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: 'Confirm a password change request and set a new password' })
     @ApiOkResponse({ description: 'Password successfully updated' })
