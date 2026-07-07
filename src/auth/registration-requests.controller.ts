@@ -11,6 +11,7 @@ import {
 } from 'common/decorators';
 import { PaginationResponseDto } from 'common/dto';
 import { Public } from 'auth/decorators';
+import { StrictThrottle } from 'throttler/decorators';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
 import {
     CreateRegistrationRequestDto,
@@ -55,6 +56,7 @@ export class RegistrationRequestsController {
 
     @Public()
     @Post()
+    @StrictThrottle('registrationRequest')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Submit a new registration request' })
     @ApiOkResponse({ type: RegistrationRequestResponseDto })
