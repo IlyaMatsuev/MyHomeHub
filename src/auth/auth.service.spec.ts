@@ -254,6 +254,27 @@ describe('AuthService', () => {
             });
             expect(usersService.create).not.toHaveBeenCalled();
         });
+
+        it('should throw FieldValidationException when registration request is cancelled', async () => {
+            const cancelledRequest = { status: RegistrationRequestStatus.Cancelled };
+            registrationRequestsService.getRequestByEmail.mockResolvedValue(cancelledRequest as never);
+
+            await expect(service.register('cancelled@example.com', 'password')).rejects.toThrow(FieldValidationException);
+            await expect(service.register('cancelled@example.com', 'password')).rejects.toMatchObject({
+                response: {
+                    messages: ['Your registration request has been cancelled. Please submit a new registration request.'],
+                    details: {
+                        errors: [
+                            {
+                                message: 'Your registration request has been cancelled. Please submit a new registration request.',
+                                path: 'status',
+                            },
+                        ],
+                    },
+                },
+            });
+            expect(usersService.create).not.toHaveBeenCalled();
+        });
     });
 
     describe('requestPasswordReset', () => {

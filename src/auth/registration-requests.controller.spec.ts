@@ -12,6 +12,7 @@ describe('RegistrationRequestsController', () => {
         getRequestByExternalId: jest.Mock;
         createRequest: jest.Mock;
         updateRequest: jest.Mock;
+        cancelRequest: jest.Mock;
     };
 
     const mockRequestResponse: RegistrationRequestResponseDto = {
@@ -31,6 +32,7 @@ describe('RegistrationRequestsController', () => {
             getRequestByExternalId: jest.fn(),
             createRequest: jest.fn(),
             updateRequest: jest.fn(),
+            cancelRequest: jest.fn(),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -120,6 +122,18 @@ describe('RegistrationRequestsController', () => {
                 approve: false,
                 blackListed: true,
             });
+        });
+    });
+
+    describe('cancelRequest', () => {
+        it('should cancel a registration request', async () => {
+            const cancelledResponse = { ...mockRequestResponse, status: RegistrationRequestStatus.Cancelled };
+            mockRegistrationRequestsService.cancelRequest.mockResolvedValue(cancelledResponse);
+
+            const result = await controller.cancelRequest('test-uuid');
+
+            expect(result.status).toBe(RegistrationRequestStatus.Cancelled);
+            expect(mockRegistrationRequestsService.cancelRequest).toHaveBeenCalledWith('test-uuid');
         });
     });
 

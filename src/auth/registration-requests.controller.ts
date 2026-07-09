@@ -1,7 +1,8 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import {
     ApiOkPaginationResponse,
+    ApiConflict,
     ApiInternalError,
     ApiNotFound,
     ApiUnauthorized,
@@ -62,6 +63,7 @@ export class RegistrationRequestsController {
     @ApiOkResponse({ type: RegistrationRequestResponseDto })
     @ApiValidationError()
     @ApiForbidden()
+    @ApiConflict('A pending registration request for this email already exists', 'email')
     createRequest(@Body() dto: CreateRegistrationRequestDto): Promise<RegistrationRequestResponseDto> {
         return this.registrationRequestsService.createRequest(dto);
     }
@@ -83,5 +85,21 @@ export class RegistrationRequestsController {
         @Body() dto: UpdateRegistrationRequestDto,
     ): Promise<RegistrationRequestResponseDto> {
         return this.registrationRequestsService.updateRequest(externalId, dto);
+    }
+
+    @Public()
+    @Delete('/:externalId')
+    @StrictThrottle('registrationRequest')
+    @ApiParam({
+        name: 'externalId',
+        description: 'The external ID of the registration request, provided after creating the request',
+        example: 'f3cec07c-9834-4a02-990d-28b0d99534ab',
+    })
+    @ApiOperation({ summary: 'Cancel a pending registration request' })
+    @ApiOkResponse({ type: RegistrationRequestResponseDto })
+    @ApiNotFound('registration request')
+    @ApiValidationError()
+    cancelRequest(@ExternalIdParam() externalId: string): Promise<RegistrationRequestResponseDto> {
+        return this.registrationRequestsService.cancelRequest(externalId);
     }
 }

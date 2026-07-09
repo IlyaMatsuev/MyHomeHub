@@ -107,6 +107,8 @@ Authentication uses **Passport.js** with a `passport-jwt` strategy (`src/auth/st
 - `PUT /auth/password/change` accepts the `resetToken` and `newPassword`, rehashes it, and updates the user record. The password reset token is an opaque single-use random value (issued by `PasswordResetTokensService`), stored in Redis as a SHA-256-hashed key with `PASSWORD_RESET_TOKEN_TTL_SEC` TTL, and atomically consumed via `GETDEL` on use — it is not a JWT and shares no signing material with access/refresh tokens.
 - Two global guards run in order: `JwtAuthGuard` (validates the access token, honoring `@Public()` and the local-auth bypass) then `RolesGuard` (enforces `@Roles(...)`).
 
+Registration requests (`/auth/register/requests`) have a status lifecycle: `pending` → `approved`/`rejected` (admin via `PUT`) or `cancelled` (requester via the public `DELETE /auth/register/requests/{externalId}`; only `pending` requests can be cancelled). `POST` returns **409 Conflict** (`FieldConflictException` — the 409 twin of `FieldValidationException`) when a `pending`/`approved` request for the email already exists; `rejected` (unless blacklisted) and `cancelled` requests are reset to `pending` by re-submitting via `POST`. Cancelled requests cannot be approved and block `POST /auth/register` until re-requested.
+
 Users and registration requests carry a `role` (`UserRole`: `Admin`, `Resident`, `Guest`):
 
 - **Admin** - full access (bypasses all `@Roles` checks). Assigned automatically on TOTP registration.

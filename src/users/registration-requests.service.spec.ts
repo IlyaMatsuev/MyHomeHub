@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { FieldValidationException } from 'common/exceptions';
+import { FieldConflictException, FieldValidationException } from 'common/exceptions';
 import { RegistrationRequestsService } from './registration-requests.service';
 import { RegistrationRequestStatus, RegistrationRequest, UserRole } from 'users/interfaces';
 import {
@@ -167,13 +167,13 @@ describe('RegistrationRequestsService', () => {
             expect(DEFAULT_USER_ROLE).toBe(UserRole.Guest);
         });
 
-        it('should throw FieldValidationException when pending request exists', async () => {
+        it('should throw FieldConflictException when pending request exists', async () => {
             const pendingRequest = createMockRequest({ status: RegistrationRequestStatus.Pending });
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(pendingRequest),
             });
 
-            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(FieldValidationException);
+            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(FieldConflictException);
             await expect(service.createRequest({ email: 'test@example.com' })).rejects.toMatchObject({
                 response: {
                     messages: ['A pending registration request for this email already exists'],
@@ -182,13 +182,13 @@ describe('RegistrationRequestsService', () => {
             });
         });
 
-        it('should throw FieldValidationException when approved request exists', async () => {
+        it('should throw FieldConflictException when approved request exists', async () => {
             const approvedRequest = createMockRequest({ status: RegistrationRequestStatus.Approved });
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(approvedRequest),
             });
 
-            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(FieldValidationException);
+            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(FieldConflictException);
             await expect(service.createRequest({ email: 'test@example.com' })).rejects.toMatchObject({
                 response: {
                     messages: ['A registration request for this email has already been approved'],
@@ -211,6 +211,23 @@ describe('RegistrationRequestsService', () => {
             const result = await service.createRequest({ email: 'test@example.com', comment: 'Retry please' });
 
             expect(result.status).toBe(RegistrationRequestStatus.Pending);
+        });
+
+        it('should update cancelled request to pending', async () => {
+            const cancelledRequest = createMockRequest({
+                status: RegistrationRequestStatus.Cancelled,
+                blackListed: false,
+            });
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(cancelledRequest),
+            });
+            const updatedRequest = { ...cancelledRequest, status: RegistrationRequestStatus.Pending, requesterComment: 'Retry please' };
+            mockSaveFn.mockResolvedValue(updatedRequest);
+
+            const result = await service.createRequest({ email: 'test@example.com', comment: 'Retry please' });
+
+            expect(result.status).toBe(RegistrationRequestStatus.Pending);
+            expect(result.requesterComment).toBe('Retry please');
         });
 
         it('should throw ForbiddenException when rejected and blacklisted', async () => {
@@ -303,6 +320,80 @@ describe('RegistrationRequestsService', () => {
             });
 
             await expect(service.updateRequest('non-existent', { approve: true })).rejects.toThrow(NotFoundException);
+        });
+
+        it('should throw FieldValidationException when trying to approve a cancelled request', async () => {
+            const cancelledRequest = createMockRequest({ status: RegistrationRequestStatus.Cancelled });
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(cancelledRequest),
+            });
+
+            await expect(service.updateRequest('test-uuid', { approve: true })).rejects.toThrow(FieldValidationException);
+            await expect(service.updateRequest('test-uuid', { approve: true })).rejects.toMatchObject({
+                response: {
+                    messages: ['Cannot approve a cancelled registration request'],
+                    details: { errors: [{ message: 'Cannot approve a cancelled registration request', path: 'approve' }] },
+                },
+            });
+        });
+
+        it('should allow rejecting a cancelled request', async () => {
+            const cancelledRequest = createMockRequest({ status: RegistrationRequestStatus.Cancelled });
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(cancelledRequest),
+            });
+            const rejectedRequest = { ...cancelledRequest, status: RegistrationRequestStatus.Rejected, blackListed: true };
+            mockSaveFn.mockResolvedValue(rejectedRequest);
+
+            const result = await service.updateRequest('test-uuid', { approve: false, blackListed: true });
+
+            expect(result.status).toBe(RegistrationRequestStatus.Rejected);
+            expect(result.blackListed).toBe(true);
+        });
+    });
+
+    describe('cancelRequest', () => {
+        it('should cancel a pending request', async () => {
+            const pendingRequest = createMockRequest();
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(pendingRequest),
+            });
+            mockSaveFn.mockImplementation(function (this: Record<string, unknown>) {
+                return Promise.resolve(createMockRequest({ status: this.status }));
+            });
+
+            const result = await service.cancelRequest('test-uuid');
+
+            expect(result.status).toBe(RegistrationRequestStatus.Cancelled);
+            expect(mockSaveFn).toHaveBeenCalled();
+        });
+
+        it.each([RegistrationRequestStatus.Approved, RegistrationRequestStatus.Rejected, RegistrationRequestStatus.Cancelled])(
+            'should throw FieldValidationException when the request status is "%s"',
+            async status => {
+                const request = createMockRequest({ status });
+                mockRegistrationRequestModel.findOne.mockReturnValue({
+                    exec: jest.fn().mockResolvedValue(request),
+                });
+
+                await expect(service.cancelRequest('test-uuid')).rejects.toThrow(FieldValidationException);
+                await expect(service.cancelRequest('test-uuid')).rejects.toMatchObject({
+                    response: {
+                        messages: [`Cannot cancel a registration request with the "${status}" status`],
+                        details: {
+                            errors: [{ message: `Cannot cancel a registration request with the "${status}" status`, path: 'status' }],
+                        },
+                    },
+                });
+            },
+        );
+
+        it('should throw NotFoundException when request not found', async () => {
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            await expect(service.cancelRequest('non-existent')).rejects.toThrow(NotFoundException);
         });
     });
 

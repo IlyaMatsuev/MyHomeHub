@@ -81,6 +81,13 @@ export class AuthService {
             throw new FieldValidationException('Your registration request has been rejected.', 'status');
         }
 
+        if (registrationRequest.status === RegistrationRequestStatus.Cancelled) {
+            throw new FieldValidationException(
+                'Your registration request has been cancelled. Please submit a new registration request.',
+                'status',
+            );
+        }
+
         const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password), registrationRequest.role);
         return { externalId: newUser.externalId, email: newUser.email, role: UserRole[newUser.role] };
     }
