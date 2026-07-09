@@ -213,6 +213,23 @@ describe('RegistrationRequestsService', () => {
             expect(result.status).toBe(RegistrationRequestStatus.Pending);
         });
 
+        it('should update cancelled request to pending', async () => {
+            const cancelledRequest = createMockRequest({
+                status: RegistrationRequestStatus.Cancelled,
+                blackListed: false,
+            });
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(cancelledRequest),
+            });
+            const updatedRequest = { ...cancelledRequest, status: RegistrationRequestStatus.Pending, requesterComment: 'Retry please' };
+            mockSaveFn.mockResolvedValue(updatedRequest);
+
+            const result = await service.createRequest({ email: 'test@example.com', comment: 'Retry please' });
+
+            expect(result.status).toBe(RegistrationRequestStatus.Pending);
+            expect(result.requesterComment).toBe('Retry please');
+        });
+
         it('should throw ForbiddenException when rejected and blacklisted', async () => {
             const blacklistedRequest = createMockRequest({
                 status: RegistrationRequestStatus.Rejected,
@@ -303,6 +320,80 @@ describe('RegistrationRequestsService', () => {
             });
 
             await expect(service.updateRequest('non-existent', { approve: true })).rejects.toThrow(NotFoundException);
+        });
+
+        it('should throw FieldValidationException when trying to approve a cancelled request', async () => {
+            const cancelledRequest = createMockRequest({ status: RegistrationRequestStatus.Cancelled });
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(cancelledRequest),
+            });
+
+            await expect(service.updateRequest('test-uuid', { approve: true })).rejects.toThrow(FieldValidationException);
+            await expect(service.updateRequest('test-uuid', { approve: true })).rejects.toMatchObject({
+                response: {
+                    messages: ['Cannot approve a cancelled registration request'],
+                    details: { errors: [{ message: 'Cannot approve a cancelled registration request', path: 'approve' }] },
+                },
+            });
+        });
+
+        it('should allow rejecting a cancelled request', async () => {
+            const cancelledRequest = createMockRequest({ status: RegistrationRequestStatus.Cancelled });
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(cancelledRequest),
+            });
+            const rejectedRequest = { ...cancelledRequest, status: RegistrationRequestStatus.Rejected, blackListed: true };
+            mockSaveFn.mockResolvedValue(rejectedRequest);
+
+            const result = await service.updateRequest('test-uuid', { approve: false, blackListed: true });
+
+            expect(result.status).toBe(RegistrationRequestStatus.Rejected);
+            expect(result.blackListed).toBe(true);
+        });
+    });
+
+    describe('cancelRequest', () => {
+        it('should cancel a pending request', async () => {
+            const pendingRequest = createMockRequest();
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(pendingRequest),
+            });
+            mockSaveFn.mockImplementation(function (this: Record<string, unknown>) {
+                return Promise.resolve(createMockRequest({ status: this.status }));
+            });
+
+            const result = await service.cancelRequest('test-uuid');
+
+            expect(result.status).toBe(RegistrationRequestStatus.Cancelled);
+            expect(mockSaveFn).toHaveBeenCalled();
+        });
+
+        it.each([RegistrationRequestStatus.Approved, RegistrationRequestStatus.Rejected, RegistrationRequestStatus.Cancelled])(
+            'should throw FieldValidationException when the request status is "%s"',
+            async status => {
+                const request = createMockRequest({ status });
+                mockRegistrationRequestModel.findOne.mockReturnValue({
+                    exec: jest.fn().mockResolvedValue(request),
+                });
+
+                await expect(service.cancelRequest('test-uuid')).rejects.toThrow(FieldValidationException);
+                await expect(service.cancelRequest('test-uuid')).rejects.toMatchObject({
+                    response: {
+                        messages: [`Cannot cancel a registration request with the "${status}" status`],
+                        details: {
+                            errors: [{ message: `Cannot cancel a registration request with the "${status}" status`, path: 'status' }],
+                        },
+                    },
+                });
+            },
+        );
+
+        it('should throw NotFoundException when request not found', async () => {
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            await expect(service.cancelRequest('non-existent')).rejects.toThrow(NotFoundException);
         });
     });
 

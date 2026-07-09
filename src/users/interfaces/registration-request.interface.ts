@@ -5,6 +5,7 @@ export enum RegistrationRequestStatus {
     Pending = 'pending',
     Approved = 'approved',
     Rejected = 'rejected',
+    Cancelled = 'cancelled',
 }
 
 export interface RegistrationRequest extends Document<string> {

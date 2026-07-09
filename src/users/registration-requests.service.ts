@@ -70,7 +70,10 @@ export class RegistrationRequestsService {
             if (existingRequest.status === RegistrationRequestStatus.Approved) {
                 throw new FieldConflictException('A registration request for this email has already been approved', 'email');
             }
-            if (existingRequest.status === RegistrationRequestStatus.Rejected) {
+            if (
+                existingRequest.status === RegistrationRequestStatus.Rejected ||
+                existingRequest.status === RegistrationRequestStatus.Cancelled
+            ) {
                 if (existingRequest.blackListed) {
                     throw new ForbiddenException('Registration requests from this email are not allowed');
                 }
@@ -109,6 +112,9 @@ export class RegistrationRequestsService {
         }
 
         const request = await this.getRequestByExternalId(externalId, { strict: true });
+        if (request.status === RegistrationRequestStatus.Cancelled && dto.approve) {
+            throw new FieldValidationException('Cannot approve a cancelled registration request', 'approve');
+        }
         request.status = dto.approve ? RegistrationRequestStatus.Approved : RegistrationRequestStatus.Rejected;
         if (dto.blackListed !== undefined) {
             request.blackListed = dto.blackListed;
@@ -117,6 +123,15 @@ export class RegistrationRequestsService {
             request.role = dto.role;
         }
 
+        return new RegistrationRequestResponseDto(await request.save());
+    }
+
+    async cancelRequest(externalId: string): Promise<RegistrationRequestResponseDto> {
+        const request = await this.getRequestByExternalId(externalId, { strict: true });
+        if (request.status !== RegistrationRequestStatus.Pending) {
+            throw new FieldValidationException(`Cannot cancel a registration request with the "${request.status}" status`, 'status');
+        }
+        request.status = RegistrationRequestStatus.Cancelled;
         return new RegistrationRequestResponseDto(await request.save());
     }
 
