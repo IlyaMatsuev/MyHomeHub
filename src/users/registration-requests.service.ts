@@ -1,7 +1,7 @@
 import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Model, FilterQuery } from 'mongoose';
 import { PaginationResponseDto } from 'common/dto';
-import { FieldValidationException } from 'common/exceptions';
+import { FieldConflictException, FieldValidationException } from 'common/exceptions';
 import { RegistrationRequest, RegistrationRequestStatus, UserRole } from 'users/interfaces';
 import {
     DEFAULT_USER_ROLE,
@@ -65,10 +65,10 @@ export class RegistrationRequestsService {
         const existingRequest = await this.getRequestByEmail(dto.email);
         if (existingRequest) {
             if (existingRequest.status === RegistrationRequestStatus.Pending) {
-                throw new FieldValidationException('A pending registration request for this email already exists', 'email');
+                throw new FieldConflictException('A pending registration request for this email already exists', 'email');
             }
             if (existingRequest.status === RegistrationRequestStatus.Approved) {
-                throw new FieldValidationException('A registration request for this email has already been approved', 'email');
+                throw new FieldConflictException('A registration request for this email has already been approved', 'email');
             }
             if (existingRequest.status === RegistrationRequestStatus.Rejected) {
                 if (existingRequest.blackListed) {

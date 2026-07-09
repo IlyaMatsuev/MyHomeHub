@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { FieldValidationException } from 'common/exceptions';
+import { FieldConflictException, FieldValidationException } from 'common/exceptions';
 import { RegistrationRequestsService } from './registration-requests.service';
 import { RegistrationRequestStatus, RegistrationRequest, UserRole } from 'users/interfaces';
 import {
@@ -167,13 +167,13 @@ describe('RegistrationRequestsService', () => {
             expect(DEFAULT_USER_ROLE).toBe(UserRole.Guest);
         });
 
-        it('should throw FieldValidationException when pending request exists', async () => {
+        it('should throw FieldConflictException when pending request exists', async () => {
             const pendingRequest = createMockRequest({ status: RegistrationRequestStatus.Pending });
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(pendingRequest),
             });
 
-            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(FieldValidationException);
+            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(FieldConflictException);
             await expect(service.createRequest({ email: 'test@example.com' })).rejects.toMatchObject({
                 response: {
                     messages: ['A pending registration request for this email already exists'],
@@ -182,13 +182,13 @@ describe('RegistrationRequestsService', () => {
             });
         });
 
-        it('should throw FieldValidationException when approved request exists', async () => {
+        it('should throw FieldConflictException when approved request exists', async () => {
             const approvedRequest = createMockRequest({ status: RegistrationRequestStatus.Approved });
             mockRegistrationRequestModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(approvedRequest),
             });
 
-            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(FieldValidationException);
+            await expect(service.createRequest({ email: 'test@example.com' })).rejects.toThrow(FieldConflictException);
             await expect(service.createRequest({ email: 'test@example.com' })).rejects.toMatchObject({
                 response: {
                     messages: ['A registration request for this email has already been approved'],

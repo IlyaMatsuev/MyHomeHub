@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put, Query } from '@
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import {
     ApiOkPaginationResponse,
+    ApiConflict,
     ApiInternalError,
     ApiNotFound,
     ApiUnauthorized,
@@ -62,6 +63,7 @@ export class RegistrationRequestsController {
     @ApiOkResponse({ type: RegistrationRequestResponseDto })
     @ApiValidationError()
     @ApiForbidden()
+    @ApiConflict('A pending registration request for this email already exists', 'email')
     createRequest(@Body() dto: CreateRegistrationRequestDto): Promise<RegistrationRequestResponseDto> {
         return this.registrationRequestsService.createRequest(dto);
     }

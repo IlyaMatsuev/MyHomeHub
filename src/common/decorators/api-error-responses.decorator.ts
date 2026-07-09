@@ -1,5 +1,6 @@
 import {
     ApiBadRequestResponse,
+    ApiConflictResponse,
     ApiForbiddenResponse,
     ApiInternalServerErrorResponse,
     ApiNotFoundResponse,
@@ -41,6 +42,18 @@ export const ApiNotFound = (resource: string) =>
                 errors: [{ message: `There is no ${resource} matching these criteria` }],
             },
             statusCode: HttpStatus.NOT_FOUND,
+        },
+    });
+
+export const ApiConflict = (message: string, path?: string) =>
+    ApiConflictResponse({
+        type: ErrorResponseDto,
+        example: {
+            messages: [message],
+            details: {
+                errors: [path ? { message, path } : { message }],
+            },
+            statusCode: HttpStatus.CONFLICT,
         },
     });
 
