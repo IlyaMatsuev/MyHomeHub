@@ -286,6 +286,60 @@
                 }
               },
               "response": []
+            },
+            {
+              "name": "Cancel Request",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200) {",
+                      "    pm.environment.set('lastQueriedRegistrationRequestId', pm.response.json().externalId);",
+                      "}"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [""],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "x-host",
+                    "value": "{{proxyHubHostname}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Proxy-Authorization",
+                    "value": "{{proxyAccessToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register/requests/:externalId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "register", "requests", ":externalId"],
+                  "variable": [
+                    {
+                      "key": "externalId",
+                      "value": "{{lastQueriedRegistrationRequestId}}"
+                    }
+                  ]
+                }
+              },
+              "response": []
             }
           ]
         },
