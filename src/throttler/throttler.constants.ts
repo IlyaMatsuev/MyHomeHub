@@ -12,7 +12,7 @@ export const STRICT_THROTTLE_PROFILES = {
     register: { limit: 5, ttl: seconds(60 * 60) },
     passwordReset: { limit: 3, ttl: seconds(60 * 60) },
     passwordChange: { limit: 5, ttl: seconds(15 * 60) },
-    registrationRequest: { limit: 3, ttl: seconds(60 * 60) },
+    registrationRequest: { limit: 10, ttl: seconds(10 * 60) },
 } as const;
 
 export type StrictThrottleProfile = keyof typeof STRICT_THROTTLE_PROFILES;
