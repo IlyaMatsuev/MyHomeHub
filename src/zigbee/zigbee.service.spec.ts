@@ -17,7 +17,7 @@ describe('ZigbeeService', () => {
         updateDevice: jest.Mock;
         sendCommand: jest.Mock;
     };
-    let mockDeviceConfigsMapper: { splitPayloadFromDevice: jest.Mock };
+    let mockDeviceConfigsMapper: { categorizeAndMapPayloadFromDevice: jest.Mock };
     let connectedSpy: jest.SpyInstance;
 
     const mockDevice: Partial<Device> = {
@@ -42,7 +42,7 @@ describe('ZigbeeService', () => {
             sendCommand: jest.fn(),
         };
         mockDeviceConfigsMapper = {
-            splitPayloadFromDevice: jest.fn().mockResolvedValue({ commands: {}, controls: {}, measurements: {} }),
+            categorizeAndMapPayloadFromDevice: jest.fn().mockResolvedValue({ commands: {}, controls: {}, measurements: {} }),
         };
         // The bridge is treated as connected by default; individual tests override this.
         connectedSpy = jest.spyOn(ZigbeeBridge, 'connected').mockReturnValue(true);
@@ -135,7 +135,7 @@ describe('ZigbeeService', () => {
     describe('updateDeviceState', () => {
         it('should send a command for fields categorized as commands by the device config', async () => {
             mockDevicesService.getDeviceByZigbeeFriendlyName.mockResolvedValue(mockDevice);
-            mockDeviceConfigsMapper.splitPayloadFromDevice.mockResolvedValue({
+            mockDeviceConfigsMapper.categorizeAndMapPayloadFromDevice.mockResolvedValue({
                 commands: { action: 'on' },
                 controls: {},
                 measurements: {},
@@ -144,14 +144,14 @@ describe('ZigbeeService', () => {
             await service.handleDeviceStateUpdate('living_room_bulb', { action: 'on' });
 
             expect(mockDevicesService.getDeviceByZigbeeFriendlyName).toHaveBeenCalledWith('living_room_bulb');
-            expect(mockDeviceConfigsMapper.splitPayloadFromDevice).toHaveBeenCalledWith(mockDevice, { action: 'on' });
+            expect(mockDeviceConfigsMapper.categorizeAndMapPayloadFromDevice).toHaveBeenCalledWith(mockDevice, { action: 'on' });
             expect(mockDevicesService.sendCommand).toHaveBeenCalledWith('device-uuid-123', { action: 'on' });
             expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
         });
 
         it('should update the device with fields categorized as measurements by the device config', async () => {
             mockDevicesService.getDeviceByZigbeeFriendlyName.mockResolvedValue(mockDevice);
-            mockDeviceConfigsMapper.splitPayloadFromDevice.mockResolvedValue({
+            mockDeviceConfigsMapper.categorizeAndMapPayloadFromDevice.mockResolvedValue({
                 commands: {},
                 controls: {},
                 measurements: { battery: 95, linkquality: 220 },
@@ -170,7 +170,7 @@ describe('ZigbeeService', () => {
 
         it('should partition commands, controls and measurements in the same payload', async () => {
             mockDevicesService.getDeviceByZigbeeFriendlyName.mockResolvedValue(mockDevice);
-            mockDeviceConfigsMapper.splitPayloadFromDevice.mockResolvedValue({
+            mockDeviceConfigsMapper.categorizeAndMapPayloadFromDevice.mockResolvedValue({
                 commands: { action: 'on' },
                 controls: { on: true },
                 measurements: { battery: 90 },
@@ -198,7 +198,7 @@ describe('ZigbeeService', () => {
 
             await service.handleDeviceStateUpdate('unknown', { action: 'on' });
 
-            expect(mockDeviceConfigsMapper.splitPayloadFromDevice).not.toHaveBeenCalled();
+            expect(mockDeviceConfigsMapper.categorizeAndMapPayloadFromDevice).not.toHaveBeenCalled();
             expect(mockDevicesService.sendCommand).not.toHaveBeenCalled();
             expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
         });
@@ -211,7 +211,7 @@ describe('ZigbeeService', () => {
 
         it('should swallow errors thrown by sendCommand', async () => {
             mockDevicesService.getDeviceByZigbeeFriendlyName.mockResolvedValue(mockDevice);
-            mockDeviceConfigsMapper.splitPayloadFromDevice.mockResolvedValue({
+            mockDeviceConfigsMapper.categorizeAndMapPayloadFromDevice.mockResolvedValue({
                 commands: { action: 'on' },
                 controls: {},
                 measurements: {},

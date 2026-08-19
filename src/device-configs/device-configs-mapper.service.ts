@@ -114,18 +114,15 @@ export class DeviceConfigsMapperService {
             const mappedValue =
                 item.values?.find(itemValue => itemValue.path === String(value)) ??
                 item.values?.find(itemValue => itemValue.name === String(value));
-            if (mappedValue) {
-                return this.castConfigItemValue(mappedValue.name, item.type);
+            if (!mappedValue) {
+                return value;
             }
+            if (item.type === DeviceConfigItemType.Boolean) {
+                return `${mappedValue.name}`.toLocaleLowerCase() === 'true';
+            }
+            return mappedValue.name;
         }
-        return value;
-    }
-
-    private castConfigItemValue(value: string, type: DeviceConfigItemType): unknown {
-        if (type === DeviceConfigItemType.Boolean) {
-            return `${value?.toLocaleLowerCase()}` === 'true';
-        }
-        if (type === DeviceConfigItemType.Number) {
+        if (item.type === DeviceConfigItemType.Number) {
             const numericValue = Number(value);
             return Number.isNaN(numericValue) ? value : numericValue;
         }

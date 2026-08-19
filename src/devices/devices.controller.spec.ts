@@ -8,7 +8,7 @@ describe('DevicesController', () => {
     let controller: DevicesController;
     let mockDevicesService: {
         getDevices: jest.Mock;
-        getDeviceResponse: jest.Mock;
+        getDevice: jest.Mock;
         addDevice: jest.Mock;
         updateDevice: jest.Mock;
         sendCommand: jest.Mock;
@@ -30,7 +30,7 @@ describe('DevicesController', () => {
     beforeEach(async () => {
         mockDevicesService = {
             getDevices: jest.fn(),
-            getDeviceResponse: jest.fn(),
+            getDevice: jest.fn(),
             addDevice: jest.fn(),
             updateDevice: jest.fn(),
             sendCommand: jest.fn(),
@@ -76,13 +76,13 @@ describe('DevicesController', () => {
 
     describe('getDevice', () => {
         it('should return device by external ID', async () => {
-            mockDevicesService.getDeviceResponse.mockResolvedValue(mockDevice);
+            mockDevicesService.getDevice.mockResolvedValue(mockDevice);
 
             const query = new GetDeviceDto();
             const result = await controller.getDevice('device-uuid-123', query);
 
             expect(result).toEqual(mockDevice);
-            expect(mockDevicesService.getDeviceResponse).toHaveBeenCalledWith('device-uuid-123', query);
+            expect(mockDevicesService.getDevice).toHaveBeenCalledWith('device-uuid-123', query);
         });
     });
 

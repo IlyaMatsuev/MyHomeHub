@@ -134,18 +134,22 @@ describe('DevicesService', () => {
     describe('onDeviceUpdated', () => {
         it('should update the matched device with the event payload', async () => {
             const matchedDevice = { ...mockDevice } as Device;
-            const getDeviceSpy = jest.spyOn(service, 'findDevice').mockResolvedValue(matchedDevice);
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(matchedDevice),
+            });
             const updateDeviceSpy = jest.spyOn(service, 'updateDevice').mockResolvedValue(matchedDevice);
 
             const event = new DeviceUpdateRequestedEvent({ ip: '192.168.1.100' }, new UpdateDeviceDto({ controls: { on: true } }));
             await service.onDeviceUpdated(event);
 
-            expect(getDeviceSpy).toHaveBeenCalledWith({ ip: '192.168.1.100' }, { strict: false });
+            expect(mockDeviceModel.findOne).toHaveBeenCalledWith({ ip: '192.168.1.100' });
             expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update);
         });
 
         it('should warn and not update when no device matches the selector', async () => {
-            jest.spyOn(service, 'findDevice').mockResolvedValue(null);
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
             const updateDeviceSpy = jest.spyOn(service, 'updateDevice');
             const warnSpy = jest.spyOn(service['logger'], 'warn').mockImplementation();
 
@@ -393,7 +397,7 @@ describe('DevicesService', () => {
         });
     });
 
-    describe('getDeviceResponse', () => {
+    describe('getDevice', () => {
         it('should return the device without config when includeConfig is not set', async () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockDevice),
