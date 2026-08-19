@@ -3,6 +3,7 @@ import { Device, DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import { PhilipsControlService } from './philips-control.service';
 import { DeviceTransportServiceResolver } from 'devices-control/transport';
 import { TransportProtocol } from 'devices-control/interfaces';
+import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
 
 describe('PhilipsControlService', () => {
     let service: PhilipsControlService;
@@ -26,6 +27,7 @@ describe('PhilipsControlService', () => {
             mockDevice as Device,
             mockResolver as unknown as DeviceTransportServiceResolver,
             {} as ConfigService,
+            { mapPayloadToDevice: jest.fn((_key, payload) => Promise.resolve(payload)) } as unknown as DeviceConfigsMapperService,
         );
         jest.spyOn(service['logger'], 'log').mockImplementation();
     });

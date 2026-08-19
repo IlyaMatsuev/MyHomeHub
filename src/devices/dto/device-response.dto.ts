@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional, ApiSchema } from '@nestjs/swagger';
 import { Device, DeviceBrand, DevicePayload, DeviceType, Room } from 'devices/interfaces';
 import { TransportProtocol } from 'devices-control/interfaces';
+import { DeviceConfigResponseDto } from 'device-configs/dto';
 
 @ApiSchema({ name: 'Devices.DeviceResponse', description: 'Device entity returned in API responses' })
 export class DeviceResponseDto implements Device {
@@ -51,6 +52,12 @@ export class DeviceResponseDto implements Device {
 
     @ApiProperty({ description: 'Last measurements update timestamp', required: false })
     measurementsUpdatedAt?: Date;
+
+    @ApiPropertyOptional({
+        description: 'Device config metadata (available commands/controls/measurements). Included only when requested with includeConfig',
+        type: DeviceConfigResponseDto,
+    })
+    config?: DeviceConfigResponseDto;
 
     @ApiProperty({ description: 'Record creation timestamp' })
     createdAt: Date;

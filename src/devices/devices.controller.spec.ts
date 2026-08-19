@@ -2,13 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DevicesController } from './devices.controller';
 import { DevicesService } from './devices.service';
 import { Device, DeviceBrand, DeviceType, Room } from './interfaces';
-import { CreateDeviceDto, GetDevicesDto, GetPairableDevicesDto, ToggleDevicesPairingModeDto, UpdateDeviceDto } from './dto';
+import { CreateDeviceDto, GetDeviceDto, GetDevicesDto, GetPairableDevicesDto, ToggleDevicesPairingModeDto, UpdateDeviceDto } from './dto';
 
 describe('DevicesController', () => {
     let controller: DevicesController;
     let mockDevicesService: {
         getDevices: jest.Mock;
-        getDeviceByExternalId: jest.Mock;
+        getDevice: jest.Mock;
         addDevice: jest.Mock;
         updateDevice: jest.Mock;
         sendCommand: jest.Mock;
@@ -30,7 +30,7 @@ describe('DevicesController', () => {
     beforeEach(async () => {
         mockDevicesService = {
             getDevices: jest.fn(),
-            getDeviceByExternalId: jest.fn(),
+            getDevice: jest.fn(),
             addDevice: jest.fn(),
             updateDevice: jest.fn(),
             sendCommand: jest.fn(),
@@ -76,12 +76,13 @@ describe('DevicesController', () => {
 
     describe('getDevice', () => {
         it('should return device by external ID', async () => {
-            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
+            mockDevicesService.getDevice.mockResolvedValue(mockDevice);
 
-            const result = await controller.getDevice('device-uuid-123');
+            const query = new GetDeviceDto();
+            const result = await controller.getDevice('device-uuid-123', query);
 
             expect(result).toEqual(mockDevice);
-            expect(mockDevicesService.getDeviceByExternalId).toHaveBeenCalledWith('device-uuid-123');
+            expect(mockDevicesService.getDevice).toHaveBeenCalledWith('device-uuid-123', query);
         });
     });
 

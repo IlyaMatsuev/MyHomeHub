@@ -44,6 +44,20 @@ export class DeviceConfigsService implements OnModuleInit, OnModuleDestroy {
         return isAbsolute(configured) ? configured : resolve(process.cwd(), configured);
     }
 
+    getConfig(key: DeviceConfigKey): Promise<DeviceConfig | null> {
+        return this.deviceConfigModel.findOne(this.toConfigFilter(key)).lean<DeviceConfig>().exec();
+    }
+
+    async getConfigs(keys: Array<DeviceConfigKey>): Promise<Array<DeviceConfig>> {
+        if (!keys.length) {
+            return [];
+        }
+        return this.deviceConfigModel
+            .find({ $or: keys.map(key => this.toConfigFilter(key)) })
+            .lean<Array<DeviceConfig>>()
+            .exec();
+    }
+
     async syncFromDisk(filename?: string): Promise<Array<ParsedDeviceConfig>> {
         const configsDir = this.getConfigsDir();
         if (!existsSync(configsDir)) {
@@ -80,6 +94,10 @@ export class DeviceConfigsService implements OnModuleInit, OnModuleDestroy {
             this.logger.error(`Failed to read device config file "${filepath}": ${error.message}`);
             return [];
         }
+    }
+
+    private toConfigFilter(key: DeviceConfigKey): DeviceConfigKey {
+        return { brand: key.brand, type: key.type, transportProtocol: key.transportProtocol };
     }
 
     private async syncToDatabase(parsedConfigs: Array<ParsedDeviceConfig>): Promise<void> {

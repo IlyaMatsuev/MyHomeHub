@@ -5,6 +5,7 @@ import { DeviceControlServiceFactory } from 'devices-control/interfaces';
 import { ShellyControlService } from 'devices-control/providers';
 import { DEVICE_TRANSPORT_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { DeviceTransportServiceResolver } from 'devices-control/transport';
+import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
 
 @Injectable()
 export class ShellyControlServiceFactory implements DeviceControlServiceFactory {
@@ -12,6 +13,7 @@ export class ShellyControlServiceFactory implements DeviceControlServiceFactory 
         @Inject(DEVICE_TRANSPORT_FACTORY_PROVIDER)
         protected readonly transportServiceResolver: DeviceTransportServiceResolver,
         private readonly configService: ConfigService,
+        private readonly deviceConfigsMapper: DeviceConfigsMapperService,
     ) {}
 
     eligible(device: Device): boolean {
@@ -19,6 +21,6 @@ export class ShellyControlServiceFactory implements DeviceControlServiceFactory 
     }
 
     createService(device: Device): ShellyControlService {
-        return new ShellyControlService(device, this.transportServiceResolver, this.configService);
+        return new ShellyControlService(device, this.transportServiceResolver, this.configService, this.deviceConfigsMapper);
     }
 }

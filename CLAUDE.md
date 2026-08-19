@@ -159,6 +159,12 @@ Key variables:
 
 Per-brand YAML files under `configs/devices/<brand>.yaml` declare the metadata (label, type, description, value mappings) for the commands/controls/measurements that the UI can display per device. `DeviceConfigsService` reads the directory on startup and on file changes, then upserts one MongoDB document per `(brand, type, transportProtocol)` combination — stale documents not present in YAML are removed.
 
+Device configs are consumed in three places:
+
+- **Device GET endpoints** (`GET /devices`, `GET /devices/{externalId}`) accept an `includeConfig=true` query parameter. When set, each device response includes a `config` field with the matching config's non-empty `commands`/`controls`/`measurements` sections (omitted entirely when nothing matches).
+- **Outgoing payloads**: `DevicesControlService.setControls` passes the transport message payload through `DeviceConfigsMapperService.mapPayloadToDevice`, translating internal command/control names and values to the device-side ones declared via the config `path` fields. Names not present in the config are sent as-is.
+- **Incoming payloads**: ESP32 MQTT controls/measurements updates are translated back to internal names via `DeviceConfigsMapperService.mapPayloadFromDevice` (unknown fields kept), and Zigbee (zigbee2mqtt) state updates are categorized into commands/controls/measurements via `splitPayloadFromDevice` (fields not declared in the config are dropped).
+
 ## Code Style
 
 - 4-space indentation for TypeScript

@@ -29,6 +29,7 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
         };
     }
 
+    // TODO: Move this to mDNS instead. Docker container runs in host mode anyway
     private startUdpListener(): void {
         const udpPort = this.getUdpPort();
         const discoveryMessage = this.getDiscoveryMessage();

@@ -6,6 +6,7 @@ import { UpdateDeviceDto } from 'devices/dto';
 import { DeviceBrand, DeviceType, Room, Device } from 'devices/interfaces';
 import { ZIGBEE_BRIDGE_DEVICE_REMOVE_TOPIC, ZIGBEE_BRIDGE_DEVICE_RENAME_TOPIC, ZIGBEE_BRIDGE_PERMIT_JOIN_TOPIC } from './zigbee.constants';
 import { ZigbeeBridge } from './store/zigbee-bridge';
+import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
 
 describe('ZigbeeService', () => {
     let service: ZigbeeService;
@@ -16,6 +17,7 @@ describe('ZigbeeService', () => {
         updateDevice: jest.Mock;
         sendCommand: jest.Mock;
     };
+    let mockDeviceConfigsMapper: { categorizeAndMapPayloadFromDevice: jest.Mock };
     let connectedSpy: jest.SpyInstance;
 
     const mockDevice: Partial<Device> = {
@@ -39,6 +41,9 @@ describe('ZigbeeService', () => {
             updateDevice: jest.fn(),
             sendCommand: jest.fn(),
         };
+        mockDeviceConfigsMapper = {
+            categorizeAndMapPayloadFromDevice: jest.fn().mockResolvedValue({ commands: {}, controls: {}, measurements: {} }),
+        };
         // The bridge is treated as connected by default; individual tests override this.
         connectedSpy = jest.spyOn(ZigbeeBridge, 'connected').mockReturnValue(true);
 
@@ -47,6 +52,7 @@ describe('ZigbeeService', () => {
                 ZigbeeService,
                 { provide: MqttService, useValue: mockMqttService },
                 { provide: DevicesService, useValue: mockDevicesService },
+                { provide: DeviceConfigsMapperService, useValue: mockDeviceConfigsMapper },
             ],
         }).compile();
 
@@ -127,18 +133,29 @@ describe('ZigbeeService', () => {
     });
 
     describe('updateDeviceState', () => {
-        it('should send a command for supported command fields', async () => {
+        it('should send a command for fields categorized as commands by the device config', async () => {
             mockDevicesService.getDeviceByZigbeeFriendlyName.mockResolvedValue(mockDevice);
+            mockDeviceConfigsMapper.categorizeAndMapPayloadFromDevice.mockResolvedValue({
+                commands: { action: 'on' },
+                controls: {},
+                measurements: {},
+            });
 
             await service.handleDeviceStateUpdate('living_room_bulb', { action: 'on' });
 
             expect(mockDevicesService.getDeviceByZigbeeFriendlyName).toHaveBeenCalledWith('living_room_bulb');
+            expect(mockDeviceConfigsMapper.categorizeAndMapPayloadFromDevice).toHaveBeenCalledWith(mockDevice, { action: 'on' });
             expect(mockDevicesService.sendCommand).toHaveBeenCalledWith('device-uuid-123', { action: 'on' });
             expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
         });
 
-        it('should update the device with supported measurements', async () => {
+        it('should update the device with fields categorized as measurements by the device config', async () => {
             mockDevicesService.getDeviceByZigbeeFriendlyName.mockResolvedValue(mockDevice);
+            mockDeviceConfigsMapper.categorizeAndMapPayloadFromDevice.mockResolvedValue({
+                commands: {},
+                controls: {},
+                measurements: { battery: 95, linkquality: 220 },
+            });
 
             await service.handleDeviceStateUpdate('living_room_bulb', { battery: 95, linkquality: 220 });
 
@@ -151,18 +168,23 @@ describe('ZigbeeService', () => {
             expect(mockDevicesService.sendCommand).not.toHaveBeenCalled();
         });
 
-        it('should partition commands and measurements in the same payload', async () => {
+        it('should partition commands, controls and measurements in the same payload', async () => {
             mockDevicesService.getDeviceByZigbeeFriendlyName.mockResolvedValue(mockDevice);
+            mockDeviceConfigsMapper.categorizeAndMapPayloadFromDevice.mockResolvedValue({
+                commands: { action: 'on' },
+                controls: { on: true },
+                measurements: { battery: 90 },
+            });
 
-            await service.handleDeviceStateUpdate('living_room_bulb', { action: 'on', battery: 90, unknown_field: 'ignored' });
+            await service.handleDeviceStateUpdate('living_room_bulb', { action: 'on', state: 'ON', battery: 90, unknown_field: 1 });
 
             expect(mockDevicesService.sendCommand).toHaveBeenCalledWith('device-uuid-123', { action: 'on' });
             const dto = mockDevicesService.updateDevice.mock.calls[0][1];
             expect(dto.measurements).toEqual({ battery: 90 });
-            expect(dto.controls).toBeUndefined();
+            expect(dto.controls).toEqual({ on: true });
         });
 
-        it('should skip both sendCommand and updateDevice when no supported fields are present', async () => {
+        it('should skip both sendCommand and updateDevice when the config maps no fields', async () => {
             mockDevicesService.getDeviceByZigbeeFriendlyName.mockResolvedValue(mockDevice);
 
             await service.handleDeviceStateUpdate('living_room_bulb', { unknown_field: 1 });
@@ -176,6 +198,7 @@ describe('ZigbeeService', () => {
 
             await service.handleDeviceStateUpdate('unknown', { action: 'on' });
 
+            expect(mockDeviceConfigsMapper.categorizeAndMapPayloadFromDevice).not.toHaveBeenCalled();
             expect(mockDevicesService.sendCommand).not.toHaveBeenCalled();
             expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
         });
@@ -188,6 +211,11 @@ describe('ZigbeeService', () => {
 
         it('should swallow errors thrown by sendCommand', async () => {
             mockDevicesService.getDeviceByZigbeeFriendlyName.mockResolvedValue(mockDevice);
+            mockDeviceConfigsMapper.categorizeAndMapPayloadFromDevice.mockResolvedValue({
+                commands: { action: 'on' },
+                controls: {},
+                measurements: {},
+            });
             mockDevicesService.sendCommand.mockRejectedValue(new Error('Control service failure'));
 
             await expect(service.handleDeviceStateUpdate('living_room_bulb', { action: 'on' })).resolves.toBeUndefined();

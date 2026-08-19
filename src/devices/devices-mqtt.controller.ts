@@ -11,6 +11,11 @@ import { DevicesMqttService } from 'devices/devices-mqtt.service';
 import { DeviceControlsDto, DevicePayloadDto, PairRequestDto } from 'devices/dto';
 import { MqttService } from 'mqtt/mqtt.service';
 
+/*
+ * Controller that handles messages from MQTT devices.
+ * Would be nice to implement some kind of credentials check, but
+ * I dropped the idea of passing a "secret" key with the request since anyone with access to MQTT network can still read it.
+ */
 @Controller()
 @ApiExcludeController()
 export class DevicesMqttController {

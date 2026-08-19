@@ -1,5 +1,5 @@
 import { Document } from 'mongodb';
-import { DeviceBrand, DeviceType } from 'devices/interfaces';
+import { DeviceBrand, DevicePayload, DeviceType } from 'devices/interfaces';
 import { TransportProtocol } from 'devices-control/interfaces';
 
 export enum DeviceConfigItemType {
@@ -45,4 +45,16 @@ export interface ParsedDeviceConfig extends DeviceConfigKey {
     commands?: Array<DeviceConfigItem>;
     controls?: Array<DeviceConfigItem>;
     measurements?: Array<DeviceConfigItem>;
+}
+
+export const DEVICE_CONFIG_SECTIONS = ['commands', 'controls', 'measurements'] as const;
+
+export type DeviceConfigSections = typeof DEVICE_CONFIG_SECTIONS;
+
+export type DeviceConfigSection = DeviceConfigSections[number];
+
+export interface ParsedDeviceConfigPayload {
+    commands: DevicePayload;
+    controls: DevicePayload;
+    measurements: DevicePayload;
 }
