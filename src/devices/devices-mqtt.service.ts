@@ -27,7 +27,6 @@ export class DevicesMqttService {
 
             let existingDevice = await this.devicesService.getDeviceByIp(pairRequest.deviceIp);
             if (!existingDevice) {
-                // TODO: Need to pair devices only if the secret token matches
                 existingDevice = await this.devicesService.addDevice(pairRequest.toCreateDevice());
             } else {
                 await this.devicesService.updateDevice(
@@ -55,7 +54,6 @@ export class DevicesMqttService {
         }
 
         try {
-            // TODO: Need to verify the secret before updating
             this.logger.debug(`Syncing controls for a device with id "${deviceId}"`);
             const mappedControls = await this.deviceConfigsMapper.mapPayloadFromDevice(device, 'controls', controls);
             await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ controls: mappedControls }));
@@ -73,7 +71,6 @@ export class DevicesMqttService {
         }
 
         try {
-            // TODO: Need to verify the secret before updating
             this.logger.debug(`Updating measurements for a device with id "${deviceId}": ${JSON.stringify(measurements)}`);
             const mappedMeasurements = await this.deviceConfigsMapper.mapPayloadFromDevice(device, 'measurements', measurements);
             await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ measurements: mappedMeasurements }));
