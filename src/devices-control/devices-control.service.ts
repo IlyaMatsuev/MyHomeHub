@@ -60,10 +60,6 @@ export abstract class DevicesControlService {
         return this.device.ip;
     }
 
-    /**
-     * Maps internal command/control names within the transport message payload
-     * to the device-side names declared in the device config (see the "path" fields)
-     */
     private async mapMessagePayload(message: TransportMessage): Promise<TransportMessage> {
         if (!('payload' in message) || !message.payload || typeof message.payload !== 'object') {
             return message;

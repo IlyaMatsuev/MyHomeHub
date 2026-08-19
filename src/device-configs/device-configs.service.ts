@@ -48,9 +48,9 @@ export class DeviceConfigsService implements OnModuleInit, OnModuleDestroy {
         return this.deviceConfigModel.findOne(this.toConfigFilter(key)).lean<DeviceConfig>().exec();
     }
 
-    getConfigs(keys: Array<DeviceConfigKey>): Promise<Array<DeviceConfig>> {
+    async getConfigs(keys: Array<DeviceConfigKey>): Promise<Array<DeviceConfig>> {
         if (!keys.length) {
-            return Promise.resolve([]);
+            return [];
         }
         return this.deviceConfigModel
             .find({ $or: keys.map(key => this.toConfigFilter(key)) })

@@ -107,7 +107,7 @@ describe('DeviceConfigsMapperService', () => {
 
     describe('splitPayloadFromDevice', () => {
         it('should categorize the payload fields into commands/controls/measurements', async () => {
-            const result = await service.splitPayloadFromDevice(configKey, {
+            const result = await service.categorizeAndMapPayloadFromDevice(configKey, {
                 action: 'on_press',
                 state: 'OFF',
                 battery: 95,
@@ -122,7 +122,7 @@ describe('DeviceConfigsMapperService', () => {
         });
 
         it('should drop fields not present in the config', async () => {
-            const result = await service.splitPayloadFromDevice(configKey, { battery: 95, unknown_field: 1 });
+            const result = await service.categorizeAndMapPayloadFromDevice(configKey, { battery: 95, unknown_field: 1 });
 
             expect(result).toEqual({ commands: {}, controls: {}, measurements: { battery: 95 } });
         });
@@ -130,7 +130,7 @@ describe('DeviceConfigsMapperService', () => {
         it('should return empty sections when there is no config for the device', async () => {
             mockDeviceConfigsService.getConfig.mockResolvedValue(null);
 
-            const result = await service.splitPayloadFromDevice(configKey, { battery: 95 });
+            const result = await service.categorizeAndMapPayloadFromDevice(configKey, { battery: 95 });
 
             expect(result).toEqual({ commands: {}, controls: {}, measurements: {} });
         });

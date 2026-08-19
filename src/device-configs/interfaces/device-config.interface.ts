@@ -47,9 +47,13 @@ export interface ParsedDeviceConfig extends DeviceConfigKey {
     measurements?: Array<DeviceConfigItem>;
 }
 
-export type DeviceConfigSection = 'commands' | 'controls' | 'measurements';
+export const DEVICE_CONFIG_SECTIONS: Array<string> = ['commands', 'controls', 'measurements'] as const;
 
-export interface SplitDevicePayload {
+export type DeviceConfigSections = typeof DEVICE_CONFIG_SECTIONS;
+
+export type DeviceConfigSection = DeviceConfigSections[number];
+
+export interface ParsedDeviceConfigPayload {
     commands: DevicePayload;
     controls: DevicePayload;
     measurements: DevicePayload;

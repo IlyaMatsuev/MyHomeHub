@@ -68,9 +68,9 @@ export class ZigbeeService {
                 return;
             }
 
-            const { commands, controls, measurements } = await this.deviceConfigsMapper.splitPayloadFromDevice(device, state);
+            const { commands, controls, measurements } = await this.deviceConfigsMapper.categorizeAndMapPayloadFromDevice(device, state);
 
-            if (Object.keys(commands).length > 0) {
+            if (Object.keys(commands).length) {
                 await this.devicesService.sendCommand(device.externalId, commands);
             }
 
