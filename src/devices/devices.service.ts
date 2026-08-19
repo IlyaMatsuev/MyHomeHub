@@ -46,7 +46,7 @@ export class DevicesService {
     async onDeviceUpdated(event: DeviceUpdateRequestedEvent): Promise<void> {
         this.logger.debug(`[${DeviceUpdateRequestedEvent.eventName}] Event: ${JSON.stringify(event)}`);
 
-        const device = await this.getDevice(event.selector, { strict: false });
+        const device = await this.findDevice(event.selector, { strict: false });
         if (device) {
             await this.updateDevice(device.externalId, event.update);
         } else {
@@ -91,10 +91,10 @@ export class DevicesService {
     }
 
     getDeviceByExternalId(externalId: string, options: GetDeviceOptions = { strict: true }): Promise<Device> {
-        return this.getDevice({ externalId }, options);
+        return this.findDevice({ externalId }, options);
     }
 
-    async getDeviceResponse(externalId: string, options: GetDeviceDto = new GetDeviceDto()): Promise<DeviceResponseDto> {
+    async getDevice(externalId: string, options: GetDeviceDto = new GetDeviceDto()): Promise<DeviceResponseDto> {
         const device = await this.getDeviceByExternalId(externalId);
         if (!options.includeConfig) {
             return device;
@@ -104,23 +104,15 @@ export class DevicesService {
     }
 
     getDeviceByIp(ip: string): Promise<Device> {
-        return this.getDevice({ ip }, { strict: false });
+        return this.findDevice({ ip }, { strict: false });
     }
 
     getDeviceByZigbeeFriendlyName(friendlyName: string): Promise<Device> {
-        return this.getDevice({ zigbeeFriendlyName: friendlyName }, { strict: false });
-    }
-
-    async getDevice(filter: DeviceFilter, options: GetDeviceOptions = { strict: true }): Promise<DeviceResponseDto> {
-        const device = await this.deviceModel.findOne(filter).exec();
-        if (!device && options.strict) {
-            throw new NotFoundException('There is no device matching these criteria');
-        }
-        return device;
+        return this.findDevice({ zigbeeFriendlyName: friendlyName }, { strict: false });
     }
 
     async addDevice(deviceDto: CreateDeviceDto): Promise<DeviceResponseDto> {
-        const existingDevice = await this.getDevice({ name: deviceDto.name }, { strict: false });
+        const existingDevice = await this.findDevice({ name: deviceDto.name }, { strict: false });
         if (existingDevice) {
             throw new FieldValidationException(`Device with the same name ('${deviceDto.name}') already exists`, 'name');
         }
@@ -204,6 +196,14 @@ export class DevicesService {
         const pairableDevices = cachedZigbeeDevices.filter(d => !existingZigbeeDevicesIds.has(d.zigbeeIeeeAddress));
 
         return new PaginationResponseDto(pairableDevices, options.page, options.pageSize);
+    }
+
+    private async findDevice(filter: DeviceFilter, options: GetDeviceOptions = { strict: true }): Promise<DeviceResponseDto> {
+        const device = await this.deviceModel.findOne(filter).exec();
+        if (!device && options.strict) {
+            throw new NotFoundException('There is no device matching these criteria');
+        }
+        return device;
     }
 
     private async attachDeviceConfigs(devices: Array<Device>): Promise<Array<Device>> {

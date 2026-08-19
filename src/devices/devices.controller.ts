@@ -65,7 +65,7 @@ export class DevicesController {
     @ApiOperation({ summary: 'Get a specific device by the provided external ID' })
     @ApiOkResponse({ type: DeviceResponseDto })
     async getDevice(@ExternalIdParam() externalId: string, @Query() query: GetDeviceDto): Promise<DeviceResponseDto> {
-        return this.deviceService.getDeviceResponse(externalId, query);
+        return this.deviceService.getDevice(externalId, query);
     }
 
     @Post()

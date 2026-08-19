@@ -134,7 +134,7 @@ describe('DevicesService', () => {
     describe('onDeviceUpdated', () => {
         it('should update the matched device with the event payload', async () => {
             const matchedDevice = { ...mockDevice } as Device;
-            const getDeviceSpy = jest.spyOn(service, 'getDevice').mockResolvedValue(matchedDevice);
+            const getDeviceSpy = jest.spyOn(service, 'findDevice').mockResolvedValue(matchedDevice);
             const updateDeviceSpy = jest.spyOn(service, 'updateDevice').mockResolvedValue(matchedDevice);
 
             const event = new DeviceUpdateRequestedEvent({ ip: '192.168.1.100' }, new UpdateDeviceDto({ controls: { on: true } }));
@@ -145,7 +145,7 @@ describe('DevicesService', () => {
         });
 
         it('should warn and not update when no device matches the selector', async () => {
-            jest.spyOn(service, 'getDevice').mockResolvedValue(null);
+            jest.spyOn(service, 'findDevice').mockResolvedValue(null);
             const updateDeviceSpy = jest.spyOn(service, 'updateDevice');
             const warnSpy = jest.spyOn(service['logger'], 'warn').mockImplementation();
 
@@ -399,7 +399,7 @@ describe('DevicesService', () => {
                 exec: jest.fn().mockResolvedValue(mockDevice),
             });
 
-            const result = await service.getDeviceResponse('device-uuid-123', new GetDeviceDto());
+            const result = await service.getDevice('device-uuid-123', new GetDeviceDto());
 
             expect(result).toEqual(mockDevice);
             expect(mockDeviceConfigsService.getConfig).not.toHaveBeenCalled();
@@ -421,7 +421,7 @@ describe('DevicesService', () => {
 
             const query = new GetDeviceDto();
             query.includeConfig = true;
-            const result = await service.getDeviceResponse('device-uuid-123', query);
+            const result = await service.getDevice('device-uuid-123', query);
 
             expect(mockDeviceConfigsService.getConfig).toHaveBeenCalledWith({
                 brand: mockDevice.brand,
@@ -440,7 +440,7 @@ describe('DevicesService', () => {
 
             const query = new GetDeviceDto();
             query.includeConfig = true;
-            const result = await service.getDeviceResponse('device-uuid-123', query);
+            const result = await service.getDevice('device-uuid-123', query);
 
             expect(result.config).toBeUndefined();
         });
