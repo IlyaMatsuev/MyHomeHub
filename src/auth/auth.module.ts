@@ -5,7 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { JwtAuthGuard, RolesGuard } from 'auth/guards';
+import { JwtAuthGuard, LocalNetworkGuard, RolesGuard } from 'auth/guards';
 import { JwtStrategy } from 'auth/strategies';
 import { RegistrationRequestsController } from 'auth/registration-requests.controller';
 import { UsersModule } from 'users/users.module';
@@ -34,6 +34,10 @@ import { authProviders } from 'auth/auth.providers';
         AuthService,
         PasswordResetTokensService,
         JwtStrategy,
+        {
+            provide: APP_GUARD,
+            useClass: LocalNetworkGuard,
+        },
         {
             provide: APP_GUARD,
             useClass: JwtAuthGuard,
