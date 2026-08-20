@@ -5,7 +5,7 @@ import { CurrentUser, ForRoles, Public } from 'auth/decorators';
 import { WithCookies } from 'auth/cookies/decorators';
 import { AuthenticatedUser } from 'auth/interfaces';
 import { StrictThrottle } from 'throttler/decorators';
-import { GoogleIdTokenDto, LoginResponseDto } from 'auth/dto';
+import { GoogleLoginDto, LoginResponseDto } from 'auth/dto';
 import { GoogleAuthService } from 'auth/google-auth.service';
 import { UserResponseDto } from 'users/dto';
 import { UserRole } from 'users/interfaces';
@@ -31,7 +31,7 @@ export class GoogleAuthController {
     @ApiOkResponse({ type: LoginResponseDto })
     @ApiValidationError()
     @ApiConflict('This user is already linked to another Google account', 'idToken')
-    loginWithGoogle(@Body() googleDto: GoogleIdTokenDto): Promise<LoginResponseDto> {
+    loginWithGoogle(@Body() googleDto: GoogleLoginDto): Promise<LoginResponseDto> {
         return this.googleAuthService.login(googleDto.idToken);
     }
 
@@ -45,7 +45,7 @@ export class GoogleAuthController {
     @ApiValidationError()
     @ApiNotFound('user')
     @ApiConflict('This Google account is already linked to another user', 'idToken')
-    async linkGoogleAccount(@CurrentUser() user: AuthenticatedUser, @Body() googleDto: GoogleIdTokenDto): Promise<UserResponseDto> {
+    async linkGoogleAccount(@CurrentUser() user: AuthenticatedUser, @Body() googleDto: GoogleLoginDto): Promise<UserResponseDto> {
         return new UserResponseDto(await this.googleAuthService.linkAccount(user.userId, googleDto.idToken));
     }
 

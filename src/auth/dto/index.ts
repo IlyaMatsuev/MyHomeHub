@@ -6,4 +6,4 @@ export * from './register-response.dto';
 export * from './password-reset.dto';
 export * from './password-reset-response.dto';
 export * from './password-reset-confirm.dto';
-export * from './google-id-token.dto';
+export * from './google-login.dto';
