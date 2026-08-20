@@ -21,9 +21,9 @@ async function bootstrap() {
 
     const config = app.get<ConfigService>(ConfigService);
 
+    app.useLogger(setupLogger(config));
     setupTrustProxy(app, config);
 
-    app.useLogger(setupLogger(config));
     app.connectMicroservice<MicroserviceOptions>({
         transport: Transport.MQTT,
         options: {
@@ -63,6 +63,9 @@ function setupTrustProxy(app: NestExpressApplication, config: ConfigService): vo
         return;
     }
     if (trustProxy === 'true') {
+        new Logger('Bootstrap').warn(
+            'TRUST_PROXY=true trusts the X-Forwarded-For header of any client, which makes it possible to spoof the client IP and bypass the local network restriction. Set TRUST_PROXY to the number of proxies in front of the server or to a comma-separated list of trusted proxy addresses instead',
+        );
         app.set('trust proxy', true);
         return;
     }
