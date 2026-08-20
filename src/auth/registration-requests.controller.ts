@@ -59,6 +59,7 @@ export class RegistrationRequestsController {
         return this.registrationRequestsService.getRequests(query);
     }
 
+    // TODO: For each created request, ask for a captcha from the phone of some sort
     @Public({ localOnly: true })
     @Post()
     @StrictThrottle('registrationRequest')
