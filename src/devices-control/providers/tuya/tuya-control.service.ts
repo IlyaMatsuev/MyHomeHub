@@ -46,7 +46,8 @@ export class TuyaControlService extends DevicesControlService {
         };
     }
 
-    // TODO: Think how to map it more generically in some kind of config like yaml files
+    // Cannot move to the mappings from yaml config file because brightness and color should transform into one property,
+    // Where color needs to be calculated in a special way
     private mapTuyaControls(controls: TuyaControlsDto): TuyaDeviceControls {
         const tuyaControls: TuyaDeviceControls = {
             [TuyaControlsDps.Mode]: DEFAULT_MODE,

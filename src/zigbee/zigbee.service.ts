@@ -1,4 +1,5 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MqttService } from 'mqtt/mqtt.service';
 import { UpdateDeviceDto } from 'devices/dto';
 import { DevicesService } from 'devices/devices.service';
@@ -9,6 +10,7 @@ import {
 } from 'zigbee/zigbee.constants';
 import { ZigbeeBridge } from 'zigbee/store/zigbee-bridge';
 import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
+import { DeviceUpdateRequestedEvent } from 'devices/events';
 
 @Injectable()
 export class ZigbeeService {
@@ -19,6 +21,7 @@ export class ZigbeeService {
         @Inject(forwardRef(() => DevicesService))
         private readonly devicesService: DevicesService,
         private readonly deviceConfigsMapper: DeviceConfigsMapperService,
+        private readonly eventEmitter: EventEmitter2,
     ) {}
 
     setPermitJoin(enable: boolean, seconds: number): void {
@@ -46,16 +49,13 @@ export class ZigbeeService {
     }
 
     async handleDeviceExternalRename(oldFriendlyName: string, newFriendlyName: string): Promise<void> {
-        const device = await this.devicesService.getDeviceByZigbeeFriendlyName(oldFriendlyName);
-        if (!device) {
-            this.logger.warn(`No device found to rename with Zigbee friendly name "${oldFriendlyName}". Updated to "${newFriendlyName}"`);
-            return;
-        }
-
         if (oldFriendlyName !== newFriendlyName) {
-            await this.devicesService.updateDevice(
-                device.externalId,
-                new UpdateDeviceDto({ zigbeeFriendlyName: newFriendlyName ?? device.zigbeeIeeeAddress }),
+            this.eventEmitter.emit(
+                DeviceUpdateRequestedEvent.eventName,
+                new DeviceUpdateRequestedEvent(
+                    { zigbeeFriendlyName: oldFriendlyName },
+                    new UpdateDeviceDto({ zigbeeFriendlyName: newFriendlyName }),
+                ),
             );
         }
     }
@@ -71,6 +71,8 @@ export class ZigbeeService {
             const { commands, controls, measurements } = await this.deviceConfigsMapper.categorizeAndMapPayloadFromDevice(device, state);
 
             if (Object.keys(commands).length) {
+                // TODO: Decouple by emitting DeviceCommandRequestedEvent.
+                //  The command payload will be handled and validated in DevicesService and DeviceCommandExecutedEvent fired after
                 await this.devicesService.sendCommand(device.externalId, commands);
             }
 
@@ -78,12 +80,15 @@ export class ZigbeeService {
             const hasMeasurements = Object.keys(measurements).length > 0;
 
             if (hasControls || hasMeasurements) {
-                await this.devicesService.updateDevice(
-                    device.externalId,
-                    new UpdateDeviceDto({
-                        ...(hasControls && { controls }),
-                        ...(hasMeasurements && { measurements }),
-                    }),
+                this.eventEmitter.emit(
+                    DeviceUpdateRequestedEvent.eventName,
+                    new DeviceUpdateRequestedEvent(
+                        { externalId: device.externalId },
+                        new UpdateDeviceDto({
+                            ...(hasControls && { controls }),
+                            ...(hasMeasurements && { measurements }),
+                        }),
+                    ),
                 );
                 this.logger.debug(`Updated Zigbee device "${zigbeeFriendlyName}" state`);
             }

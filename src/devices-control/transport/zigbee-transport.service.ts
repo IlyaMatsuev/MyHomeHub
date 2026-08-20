@@ -6,6 +6,6 @@ export class ZigbeeTransportService implements DeviceTransportService {
     readonly protocol = TransportProtocol.Zigbee;
 
     async send(): Promise<void> {
-        // TODO: No zigbee devices with a state yet
+        // No zigbee devices with a state yet
     }
 }

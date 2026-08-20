@@ -4,6 +4,7 @@ led:
       - label: "On"
         name: "on"
         type: boolean
+        path: "20"
         description: "Switch on/off state"
       - label: "Brightness"
         name: "brightness"

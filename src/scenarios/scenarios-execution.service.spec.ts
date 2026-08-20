@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ScenariosExecutionService } from './scenarios-execution.service';
 import { ScenariosService } from './scenarios.service';
 import { DevicesService } from 'devices/devices.service';
 import { ConditionsEvaluatorService } from 'common/services';
 import { Scenario, ScenarioCronTriggerSource, ScenarioTriggerSourceType } from './interfaces';
 import { Device, DeviceBrand, DeviceType, Room } from 'devices/interfaces';
-import { DeviceCommandExecutedEvent, DeviceUpdateCompletedEvent } from 'devices/events';
+import { DeviceCommandExecutedEvent, DeviceUpdateCompletedEvent, DeviceUpdateRequestedEvent } from 'devices/events';
+import { UpdateDeviceDto } from 'devices/dto';
 
 describe('ScenariosExecutionService', () => {
     let service: ScenariosExecutionService;
@@ -16,13 +18,12 @@ describe('ScenariosExecutionService', () => {
     };
     let mockDevicesService: {
         getDeviceByExternalId: jest.Mock;
-        updateDevice: jest.Mock;
-        getControlService: jest.Mock;
     };
     let mockConditionsEvaluatorService: {
         evaluateTriggerExpression: jest.Mock;
         deviceConditionIsMet: jest.Mock;
     };
+    let mockEventEmitter: { emit: jest.Mock };
 
     const mockDevice: Partial<Device> = {
         _id: 'device-mongo-id',
@@ -48,8 +49,11 @@ describe('ScenariosExecutionService', () => {
         devices: [{ externalId: 'device-1', set: { controls: { on: true } as unknown as Record<string, object> } }],
     };
 
-    const mockControlService = {
-        setControls: jest.fn(),
+    // The update requests emitted for device actions, in emission order.
+    const emittedDeviceUpdates = (): Array<DeviceUpdateRequestedEvent> => {
+        return mockEventEmitter.emit.mock.calls
+            .filter(([eventName]) => eventName === DeviceUpdateRequestedEvent.eventName)
+            .map(([, event]) => event as DeviceUpdateRequestedEvent);
     };
 
     beforeEach(async () => {
@@ -60,13 +64,12 @@ describe('ScenariosExecutionService', () => {
         };
         mockDevicesService = {
             getDeviceByExternalId: jest.fn(),
-            updateDevice: jest.fn(),
-            getControlService: jest.fn().mockReturnValue(mockControlService),
         };
         mockConditionsEvaluatorService = {
             evaluateTriggerExpression: jest.fn(),
             deviceConditionIsMet: jest.fn(),
         };
+        mockEventEmitter = { emit: jest.fn() };
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -83,6 +86,10 @@ describe('ScenariosExecutionService', () => {
                     provide: ConditionsEvaluatorService,
                     useValue: mockConditionsEvaluatorService,
                 },
+                {
+                    provide: EventEmitter2,
+                    useValue: mockEventEmitter,
+                },
             ],
         }).compile();
 
@@ -96,13 +103,31 @@ describe('ScenariosExecutionService', () => {
     describe('execute', () => {
         it('should execute scenario when conditions are met', async () => {
             mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
-            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
-            mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
 
             await service.execute(mockScenario as Scenario, { scheduled: true });
 
             expect(mockConditionsEvaluatorService.evaluateTriggerExpression).toHaveBeenCalledWith('1', [true]);
-            expect(mockDevicesService.updateDevice).toHaveBeenCalled();
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                DeviceUpdateRequestedEvent.eventName,
+                expect.objectContaining({
+                    selector: { externalId: 'device-1' },
+                    update: expect.objectContaining({ controls: { on: true } }),
+                }),
+            );
+        });
+
+        it('should emit a device update request instead of loading and updating the device itself', async () => {
+            mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
+
+            await service.execute(mockScenario as Scenario, { scheduled: true });
+
+            // The device action is resolved by DevicesService through the event, so the scenario
+            // execution never has to look the device up by its external id.
+            expect(mockDevicesService.getDeviceByExternalId).not.toHaveBeenCalled();
+            const [event] = emittedDeviceUpdates();
+            expect(event).toBeInstanceOf(DeviceUpdateRequestedEvent);
+            expect(event.update).toBeInstanceOf(UpdateDeviceDto);
+            expect(event.update.controls).toEqual({ on: true });
         });
 
         it('should use the scenario passed in without re-fetching it', async () => {
@@ -118,7 +143,7 @@ describe('ScenariosExecutionService', () => {
 
             await service.execute(mockScenario as Scenario, { scheduled: true });
 
-            expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
+            expect(mockEventEmitter.emit).not.toHaveBeenCalled();
         });
 
         it('should handle device trigger sources', async () => {
@@ -137,7 +162,6 @@ describe('ScenariosExecutionService', () => {
             mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
             mockConditionsEvaluatorService.deviceConditionIsMet.mockReturnValue(true);
             mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
-            mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
 
             await service.execute(scenarioWithDeviceTrigger, {});
 
@@ -150,8 +174,6 @@ describe('ScenariosExecutionService', () => {
                 repeatTimes: 3,
             } as Scenario;
             mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
-            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
-            mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
             mockScenariosService.updateScenario.mockResolvedValue(scenarioWithRepeatTimes);
 
             await service.execute(scenarioWithRepeatTimes, { scheduled: true });
@@ -165,8 +187,6 @@ describe('ScenariosExecutionService', () => {
                 repeatTimes: 1,
             } as Scenario;
             mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
-            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
-            mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
             mockScenariosService.updateScenario.mockResolvedValue(scenarioWithLastExecution);
 
             await service.execute(scenarioWithLastExecution, { scheduled: true });
@@ -183,7 +203,7 @@ describe('ScenariosExecutionService', () => {
             });
 
             await expect(service.execute(mockScenario as Scenario, { scheduled: true })).resolves.not.toThrow();
-            expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
+            expect(mockEventEmitter.emit).not.toHaveBeenCalled();
         });
 
         it('should execute multiple device actions', async () => {
@@ -195,12 +215,15 @@ describe('ScenariosExecutionService', () => {
                 ],
             } as unknown as Scenario;
             mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
-            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
-            mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
 
             await service.execute(scenarioWithMultipleDevices, { scheduled: true });
 
-            expect(mockDevicesService.updateDevice).toHaveBeenCalledTimes(2);
+            const events = emittedDeviceUpdates();
+            expect(events).toHaveLength(2);
+            expect(events[0].selector).toEqual({ externalId: 'device-1' });
+            expect(events[0].update.controls).toEqual({ on: true });
+            expect(events[1].selector).toEqual({ externalId: 'device-2' });
+            expect(events[1].update.controls).toEqual({ brightness: 50 });
         });
 
         it('should skip device actions without controls', async () => {
@@ -212,7 +235,20 @@ describe('ScenariosExecutionService', () => {
 
             await service.execute(scenarioWithoutControls, { scheduled: true });
 
-            expect(mockDevicesService.updateDevice).not.toHaveBeenCalled();
+            expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+        });
+
+        it('should still update repeatTimes when a device action carries no controls', async () => {
+            const scenarioWithoutControls = {
+                ...mockScenario,
+                repeatTimes: 2,
+                devices: [{ externalId: 'device-1', set: {} }],
+            } as unknown as Scenario;
+            mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
+
+            await service.execute(scenarioWithoutControls, { scheduled: true });
+
+            expect(mockScenariosService.updateScenario).toHaveBeenCalledWith('scenario-1', { repeatTimes: 1 });
         });
     });
 
@@ -255,8 +291,6 @@ describe('ScenariosExecutionService', () => {
             const event = new DeviceUpdateCompletedEvent('device-1', true, false);
             mockScenariosService.getDeviceTriggeredScenarios.mockResolvedValue([mockScenario]);
             mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
-            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
-            mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
 
             await service.onDeviceUpdateCompleted(event);
 
@@ -304,7 +338,6 @@ describe('ScenariosExecutionService', () => {
             mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
             mockConditionsEvaluatorService.deviceConditionIsMet.mockReturnValue(true);
             mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
-            mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
 
             await service.onDeviceCommandExecuted(event);
 
@@ -336,11 +369,13 @@ describe('ScenariosExecutionService', () => {
             mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
             mockConditionsEvaluatorService.deviceConditionIsMet.mockReturnValue(true);
             mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
-            mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
 
             await service.onDeviceCommandExecuted(event);
 
-            expect(mockDevicesService.updateDevice).toHaveBeenCalled();
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                DeviceUpdateRequestedEvent.eventName,
+                expect.objectContaining({ selector: { externalId: 'device-1' } }),
+            );
         });
     });
 });

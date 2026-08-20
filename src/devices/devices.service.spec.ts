@@ -146,6 +146,24 @@ describe('DevicesService', () => {
             expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update);
         });
 
+        it('should resolve the device by its zigbee friendly name selector', async () => {
+            // Zigbee renames arrive with only the previous friendly name to match on.
+            const matchedDevice = { ...mockDevice } as Device;
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(matchedDevice),
+            });
+            const updateDeviceSpy = jest.spyOn(service, 'updateDevice').mockResolvedValue(matchedDevice);
+
+            const event = new DeviceUpdateRequestedEvent(
+                { zigbeeFriendlyName: 'old_name' },
+                new UpdateDeviceDto({ zigbeeFriendlyName: 'new_name' }),
+            );
+            await service.onDeviceUpdated(event);
+
+            expect(mockDeviceModel.findOne).toHaveBeenCalledWith({ zigbeeFriendlyName: 'old_name' });
+            expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update);
+        });
+
         it('should warn and not update when no device matches the selector', async () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(null),

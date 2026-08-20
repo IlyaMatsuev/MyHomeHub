@@ -130,6 +130,15 @@ describe('DeviceConfigsMapperService', () => {
 
             expect(result).toEqual({ mode: 'auto' });
         });
+
+        it('should map the name but keep the raw value of a boolean item that declares no values', async () => {
+            // The shape used by the Tuya LED config, where `on` only carries the device-side DPS path.
+            mockDeviceConfigsService.getConfig.mockResolvedValue(valuelessBooleanConfig);
+
+            const result = await service.mapPayloadToDevice(configKey, { on: true });
+
+            expect(result).toEqual({ state: true });
+        });
     });
 
     describe('mapPayloadFromDevice', () => {

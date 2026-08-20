@@ -1,8 +1,8 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { ConditionsEvaluatorService, DeviceConditionContext } from 'common/services';
 import { UpdateDeviceDto } from 'devices/dto';
-import { DeviceUpdateCompletedEvent, DeviceCommandExecutedEvent } from 'devices/events';
+import { DeviceUpdateCompletedEvent, DeviceCommandExecutedEvent, DeviceUpdateRequestedEvent } from 'devices/events';
 import { DevicesService } from 'devices/devices.service';
 import {
     Scenario,
@@ -23,6 +23,7 @@ export class ScenariosExecutionService {
         private readonly scenariosService: ScenariosService,
         private readonly devicesService: DevicesService,
         private readonly conditionsEvaluatorService: ConditionsEvaluatorService,
+        private readonly eventEmitter: EventEmitter2,
     ) {}
 
     @OnEvent(DeviceUpdateCompletedEvent.eventName)
@@ -87,9 +88,13 @@ export class ScenariosExecutionService {
     private async executeScenario(scenario: Scenario): Promise<void> {
         for (const deviceAction of scenario.devices) {
             if (deviceAction.set.controls) {
-                // TODO: Use DeviceUpdateRequestedEvent
-                const device = await this.devicesService.getDeviceByExternalId(deviceAction.externalId);
-                await this.devicesService.updateDevice(device.externalId, new UpdateDeviceDto({ controls: deviceAction.set.controls }));
+                this.eventEmitter.emit(
+                    DeviceUpdateRequestedEvent.eventName,
+                    new DeviceUpdateRequestedEvent(
+                        { externalId: deviceAction.externalId },
+                        new UpdateDeviceDto({ controls: deviceAction.set.controls }),
+                    ),
+                );
             }
         }
 
