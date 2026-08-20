@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ScenariosExecutionService } from './scenarios-execution.service';
@@ -24,6 +25,7 @@ describe('ScenariosExecutionService', () => {
         deviceConditionIsMet: jest.Mock;
     };
     let mockEventEmitter: { emit: jest.Mock };
+    let debugSpy: jest.SpyInstance;
 
     const mockDevice: Partial<Device> = {
         _id: 'device-mongo-id',
@@ -47,6 +49,16 @@ describe('ScenariosExecutionService', () => {
             logic: '1',
         },
         devices: [{ externalId: 'device-1', set: { controls: { on: true } as unknown as Record<string, object> } }],
+    };
+
+    const deviceTriggeredScenario = (device: Record<string, unknown>): Scenario => {
+        return {
+            ...mockScenario,
+            trigger: {
+                sources: [{ type: ScenarioTriggerSourceType.Device, device }],
+                logic: '1',
+            },
+        } as unknown as Scenario;
     };
 
     // The update requests emitted for device actions, in emission order.
@@ -94,10 +106,12 @@ describe('ScenariosExecutionService', () => {
         }).compile();
 
         service = module.get<ScenariosExecutionService>(ScenariosExecutionService);
+        debugSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined);
     });
 
     afterEach(() => {
         jest.clearAllMocks();
+        debugSpy.mockRestore();
     });
 
     describe('execute', () => {
@@ -166,6 +180,69 @@ describe('ScenariosExecutionService', () => {
             await service.execute(scenarioWithDeviceTrigger, {});
 
             expect(mockConditionsEvaluatorService.deviceConditionIsMet).toHaveBeenCalled();
+        });
+
+        it('should log every declared section of an unmet device trigger source', async () => {
+            const scenarioWithDeviceTrigger = deviceTriggeredScenario({
+                externalId: 'device-1',
+                controls: { are: { on: true } },
+                measurements: { are: { battery: 50 } },
+                commands: { are: { brightness: false } },
+            });
+            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
+            mockConditionsEvaluatorService.deviceConditionIsMet.mockReturnValue(false);
+            mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(false);
+
+            await service.execute(scenarioWithDeviceTrigger, {});
+
+            expect(debugSpy).toHaveBeenCalledWith(
+                'Device trigger source "device-1" is not met - commands: expected {"brightness":false}, got null; ' +
+                    'controls: expected {"on":true}, got {"on":false}; measurements: expected {"battery":50}, got {}',
+            );
+        });
+
+        it('should log the executed command as the actual payload of an unmet commands section', async () => {
+            const scenarioWithDeviceTrigger = deviceTriggeredScenario({
+                externalId: 'device-1',
+                commands: { are: { brightness: true } },
+            });
+            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
+            mockConditionsEvaluatorService.deviceConditionIsMet.mockReturnValue(false);
+            mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(false);
+
+            await service.execute(scenarioWithDeviceTrigger, { commands: { brightness: false } });
+
+            expect(debugSpy).toHaveBeenCalledWith(
+                'Device trigger source "device-1" is not met - commands: expected {"brightness":true}, got {"brightness":false}',
+            );
+        });
+
+        it('should log a null payload for the sections the device does not carry', async () => {
+            const scenarioWithDeviceTrigger = deviceTriggeredScenario({
+                externalId: 'device-1',
+                controls: { are: { on: true } },
+            });
+            mockDevicesService.getDeviceByExternalId.mockResolvedValue(undefined);
+            mockConditionsEvaluatorService.deviceConditionIsMet.mockReturnValue(false);
+            mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(false);
+
+            await service.execute(scenarioWithDeviceTrigger, {});
+
+            expect(debugSpy).toHaveBeenCalledWith('Device trigger source "device-1" is not met - controls: expected {"on":true}, got null');
+        });
+
+        it('should not log the unmet details when the device trigger source is met', async () => {
+            const scenarioWithDeviceTrigger = deviceTriggeredScenario({
+                externalId: 'device-1',
+                controls: { are: { on: false } },
+            });
+            mockDevicesService.getDeviceByExternalId.mockResolvedValue(mockDevice);
+            mockConditionsEvaluatorService.deviceConditionIsMet.mockReturnValue(true);
+            mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
+
+            await service.execute(scenarioWithDeviceTrigger, {});
+
+            expect(debugSpy).not.toHaveBeenCalledWith(expect.stringContaining('is not met'));
         });
 
         it('should decrement repeatTimes when scenario has limited executions', async () => {
