@@ -8,10 +8,13 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard, LocalNetworkGuard, RolesGuard } from 'auth/guards';
 import { JwtStrategy } from 'auth/strategies';
 import { RegistrationRequestsController } from 'auth/registration-requests.controller';
+import { GoogleAuthController } from 'auth/google-auth.controller';
 import { UsersModule } from 'users/users.module';
 import { AuthConfigService } from 'auth/auth-config.service';
 import { CookiesConfigService } from 'auth/cookies/cookies-config.service';
 import { PasswordResetTokensService } from 'auth/password-reset-tokens.service';
+import { GoogleAuthService } from 'auth/google-auth.service';
+import { GoogleTokenVerifierService } from 'auth/google-token-verifier.service';
 import { authProviders } from 'auth/auth.providers';
 
 @Module({
@@ -27,12 +30,14 @@ import { authProviders } from 'auth/auth.providers';
             inject: [ConfigService],
         }),
     ],
-    controllers: [AuthController, RegistrationRequestsController],
+    controllers: [AuthController, RegistrationRequestsController, GoogleAuthController],
     providers: [
         AuthConfigService,
         CookiesConfigService,
         AuthService,
         PasswordResetTokensService,
+        GoogleAuthService,
+        GoogleTokenVerifierService,
         JwtStrategy,
         {
             provide: APP_GUARD,

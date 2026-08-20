@@ -4,11 +4,10 @@ import * as argon2 from 'argon2';
 import * as speakeasy from 'speakeasy';
 import { UsersService } from 'users/users.service';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
-import { RegistrationRequestStatus, User, UserRole } from 'users/interfaces';
+import { User, UserRole } from 'users/interfaces';
 import { TOTP_REGISTERED_USER_ROLE } from 'users/users.constants';
 import { LoginResponseDto, RegisterResponseDto, PasswordResetResponseDto } from 'auth/dto';
 import { JwtPayload } from 'auth/interfaces';
-import { FieldValidationException } from 'common/exceptions';
 import { AuthConfigService } from 'auth/auth-config.service';
 import { PasswordResetTokensService } from 'auth/password-reset-tokens.service';
 
@@ -26,7 +25,7 @@ export class AuthService {
 
     async login(email: string, password: string): Promise<LoginResponseDto> {
         const user = await this.usersService.findByEmail(email);
-        if (!user || !(await this.verifyUserPasswordHash(user.password, password))) {
+        if (!user?.password || !(await this.verifyUserPasswordHash(user.password, password))) {
             throw new UnauthorizedException();
         }
         return this.generateTokens(user);
@@ -57,38 +56,17 @@ export class AuthService {
                 throw new ForbiddenException();
             }
             const passwordHash = await this.generateUserPasswordHash(password);
-            const newUser = await this.usersService.create(email, passwordHash, TOTP_REGISTERED_USER_ROLE);
+            const newUser = await this.usersService.create({ email, password: passwordHash, role: TOTP_REGISTERED_USER_ROLE });
             await this.registrationRequestsService.createAutoApprovedRequest(email);
             return { externalId: newUser.externalId, email: newUser.email, role: UserRole[newUser.role] };
         }
 
-        const registrationRequest = await this.registrationRequestsService.getRequestByEmail(email);
-        if (!registrationRequest) {
-            throw new FieldValidationException(
-                'No registration request found for this email. Please submit a registration request first.',
-                'email',
-            );
-        }
-
-        if (registrationRequest.status === RegistrationRequestStatus.Pending) {
-            throw new FieldValidationException(
-                'Your registration request has not been reviewed yet. Please wait for admin approval.',
-                'status',
-            );
-        }
-
-        if (registrationRequest.status === RegistrationRequestStatus.Rejected) {
-            throw new FieldValidationException('Your registration request has been rejected.', 'status');
-        }
-
-        if (registrationRequest.status === RegistrationRequestStatus.Cancelled) {
-            throw new FieldValidationException(
-                'Your registration request has been cancelled. Please submit a new registration request.',
-                'status',
-            );
-        }
-
-        const newUser = await this.usersService.create(email, await this.generateUserPasswordHash(password), registrationRequest.role);
+        const registrationRequest = await this.registrationRequestsService.getApprovedRequestByEmail(email);
+        const newUser = await this.usersService.create({
+            email,
+            password: await this.generateUserPasswordHash(password),
+            role: registrationRequest.role,
+        });
         return { externalId: newUser.externalId, email: newUser.email, role: UserRole[newUser.role] };
     }
 
@@ -129,7 +107,7 @@ export class AuthService {
         return argon2.verify(hash, password, { secret: Buffer.from(this.authConfig.getUserPasswordSecret()) });
     }
 
-    private async generateTokens(user: User): Promise<LoginResponseDto> {
+    async generateTokens(user: User): Promise<LoginResponseDto> {
         const payload: JwtPayload = { sub: user.externalId };
         const accessToken = await this.jwtService.signAsync(payload, {
             secret: this.authConfig.getJwtSecret(),

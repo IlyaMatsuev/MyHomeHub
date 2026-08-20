@@ -72,6 +72,21 @@ export class AuthConfigService {
         return this.configService.get<string>('USER_PASSWORD_SALT');
     }
 
+    // A separate Google client ID is issued per platform (WEB, IOS, ANDROID), so several of them can be trusted at once
+    getGoogleClientIds(): Array<string> {
+        return (
+            this.configService
+                .get<string>('GOOGLE_CLIENT_ID')
+                ?.split(',')
+                .map(clientId => clientId.trim())
+                .filter(Boolean) ?? []
+        );
+    }
+
+    isGoogleAuthEnabled(): boolean {
+        return this.getGoogleClientIds().length > 0;
+    }
+
     private getPublicOptions(context: ExecutionContext): PublicOptions | undefined {
         return this.reflector.getAllAndOverride<PublicOptions>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
     }

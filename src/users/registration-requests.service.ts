@@ -50,6 +50,36 @@ export class RegistrationRequestsService {
         return request;
     }
 
+    /**
+     * Returns the approved registration request for the email or explains why the registration cannot proceed.
+     * Shared by every registration flow (credentials and Google), so they all follow the same approval policy
+     */
+    async getApprovedRequestByEmail(email: string): Promise<RegistrationRequest> {
+        const request = await this.getRequestByEmail(email);
+        if (!request) {
+            throw new FieldValidationException(
+                'No registration request found for this email. Please submit a registration request first.',
+                'email',
+            );
+        }
+        if (request.status === RegistrationRequestStatus.Pending) {
+            throw new FieldValidationException(
+                'Your registration request has not been reviewed yet. Please wait for admin approval.',
+                'status',
+            );
+        }
+        if (request.status === RegistrationRequestStatus.Rejected) {
+            throw new FieldValidationException('Your registration request has been rejected.', 'status');
+        }
+        if (request.status === RegistrationRequestStatus.Cancelled) {
+            throw new FieldValidationException(
+                'Your registration request has been cancelled. Please submit a new registration request.',
+                'status',
+            );
+        }
+        return request;
+    }
+
     async getRequestByExternalId(
         externalId: string,
         options: { strict: boolean } = { strict: false },

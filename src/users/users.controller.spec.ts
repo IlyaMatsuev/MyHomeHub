@@ -54,6 +54,40 @@ describe('UsersController', () => {
             expect(mockUsersService.getUserByExternalId).toHaveBeenCalledWith('user-external-id');
         });
 
+        it('should expose the linked google account details', async () => {
+            mockUsersService.getUserByExternalId.mockResolvedValue({
+                ...mockUser,
+                password: 'hashed-password',
+                googleId: 'google-sub-123',
+                googleEmail: 'test@example.com',
+            });
+
+            const result = await controller.me(mockAuthenticatedUser);
+
+            expect(result.googleLinked).toBe(true);
+            expect(result.googleEmail).toBe('test@example.com');
+            expect(result.hasPassword).toBe(true);
+        });
+
+        it('should report no linked google account for a user registered with credentials', async () => {
+            mockUsersService.getUserByExternalId.mockResolvedValue({ ...mockUser, password: 'hashed-password' });
+
+            const result = await controller.me(mockAuthenticatedUser);
+
+            expect(result.googleLinked).toBe(false);
+            expect(result.googleEmail).toBeUndefined();
+            expect(result.hasPassword).toBe(true);
+        });
+
+        it('should report no password for a user registered with a google account only', async () => {
+            mockUsersService.getUserByExternalId.mockResolvedValue({ ...mockUser, googleId: 'google-sub-123' });
+
+            const result = await controller.me(mockAuthenticatedUser);
+
+            expect(result.googleLinked).toBe(true);
+            expect(result.hasPassword).toBe(false);
+        });
+
         it('should throw NotFoundException when the user does not exist', async () => {
             mockUsersService.getUserByExternalId.mockRejectedValue(new NotFoundException());
 

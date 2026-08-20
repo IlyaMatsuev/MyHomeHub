@@ -20,10 +20,13 @@ export const UserSchema = new mongoose.Schema(
             lowercase: true,
             index: true,
         },
-        // No "length" constraints because the password is stored as hash
+        // No "length" constraints because the password is stored as hash.
+        // Only required when there is no other way to authenticate the user (i.e. no linked Google account)
         password: {
             type: String,
-            required: true,
+            required: function () {
+                return !this.googleId;
+            },
             trim: true,
         },
         role: {
@@ -31,6 +34,20 @@ export const UserSchema = new mongoose.Schema(
             required: true,
             enum: Object.values(UserRole),
             default: DEFAULT_USER_ROLE,
+        },
+        // The "sub" claim of the linked Google account. Sparse, so the users without a linked account don't collide
+        googleId: {
+            type: String,
+            required: false,
+            trim: true,
+            unique: true,
+            sparse: true,
+        },
+        googleEmail: {
+            type: String,
+            required: false,
+            trim: true,
+            lowercase: true,
         },
     },
     { timestamps: true },

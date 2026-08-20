@@ -68,7 +68,7 @@ describe('AuthService', () => {
                 {
                     provide: RegistrationRequestsService,
                     useValue: {
-                        getRequestByEmail: jest.fn(),
+                        getApprovedRequestByEmail: jest.fn(),
                         createAutoApprovedRequest: jest.fn(),
                     },
                 },
@@ -124,6 +124,13 @@ describe('AuthService', () => {
             await expect(service.login('nonexistent@example.com', 'password')).rejects.toThrow(UnauthorizedException);
         });
 
+        it('should throw UnauthorizedException when the user has no password set', async () => {
+            usersService.findByEmail.mockResolvedValue({ ...mockUser, password: undefined } as never);
+
+            await expect(service.login('test@example.com', 'password')).rejects.toThrow(UnauthorizedException);
+            expect(argon2.verify).not.toHaveBeenCalled();
+        });
+
         it('should throw UnauthorizedException when password is invalid', async () => {
             usersService.findByEmail.mockResolvedValue(mockUser as never);
             (argon2.verify as jest.Mock).mockResolvedValue(false);
@@ -175,7 +182,11 @@ describe('AuthService', () => {
                 encoding: 'base32',
                 token: '123456',
             });
-            expect(usersService.create).toHaveBeenCalledWith('new@example.com', 'new-hashed-password', UserRole.Admin);
+            expect(usersService.create).toHaveBeenCalledWith({
+                email: 'new@example.com',
+                password: 'new-hashed-password',
+                role: UserRole.Admin,
+            });
             expect(registrationRequestsService.createAutoApprovedRequest).toHaveBeenCalledWith('new@example.com');
         });
 
@@ -189,7 +200,7 @@ describe('AuthService', () => {
         it('should create user when registration request is approved and no TOTP provided', async () => {
             const newUser = { ...mockUser, _id: 'new-user-id', email: 'approved@example.com' };
             const approvedRequest = { status: RegistrationRequestStatus.Approved, role: UserRole.Resident };
-            registrationRequestsService.getRequestByEmail.mockResolvedValue(approvedRequest as never);
+            registrationRequestsService.getApprovedRequestByEmail.mockResolvedValue(approvedRequest as never);
             (argon2.hash as jest.Mock).mockResolvedValue('new-hashed-password');
             usersService.create.mockResolvedValue(newUser as never);
 
@@ -197,82 +208,22 @@ describe('AuthService', () => {
 
             // role is undefined because UserRole[newUser.role] has no reverse lookup for string enums
             expect(result).toEqual({ externalId: 'user-external-id', email: 'approved@example.com', role: undefined });
-            expect(usersService.create).toHaveBeenCalledWith('approved@example.com', 'new-hashed-password', UserRole.Resident);
+            expect(usersService.create).toHaveBeenCalledWith({
+                email: 'approved@example.com',
+                password: 'new-hashed-password',
+                role: UserRole.Resident,
+            });
         });
 
-        it('should throw FieldValidationException when no TOTP and no registration request exists', async () => {
-            registrationRequestsService.getRequestByEmail.mockResolvedValue(null);
+        it('should propagate the registration request validation error and not create a user', async () => {
+            const requestError = new FieldValidationException(
+                'No registration request found for this email. Please submit a registration request first.',
+                'email',
+            );
+            registrationRequestsService.getApprovedRequestByEmail.mockRejectedValue(requestError);
 
             await expect(service.register('new@example.com', 'password')).rejects.toThrow(FieldValidationException);
-            await expect(service.register('new@example.com', 'password')).rejects.toMatchObject({
-                response: {
-                    messages: ['No registration request found for this email. Please submit a registration request first.'],
-                    details: {
-                        errors: [
-                            {
-                                message: 'No registration request found for this email. Please submit a registration request first.',
-                                path: 'email',
-                            },
-                        ],
-                    },
-                },
-            });
-            expect(usersService.create).not.toHaveBeenCalled();
-        });
-
-        it('should throw FieldValidationException when registration request is pending', async () => {
-            const pendingRequest = { status: RegistrationRequestStatus.Pending };
-            registrationRequestsService.getRequestByEmail.mockResolvedValue(pendingRequest as never);
-
-            await expect(service.register('pending@example.com', 'password')).rejects.toThrow(FieldValidationException);
-            await expect(service.register('pending@example.com', 'password')).rejects.toMatchObject({
-                response: {
-                    messages: ['Your registration request has not been reviewed yet. Please wait for admin approval.'],
-                    details: {
-                        errors: [
-                            {
-                                message: 'Your registration request has not been reviewed yet. Please wait for admin approval.',
-                                path: 'status',
-                            },
-                        ],
-                    },
-                },
-            });
-            expect(usersService.create).not.toHaveBeenCalled();
-        });
-
-        it('should throw FieldValidationException when registration request is rejected', async () => {
-            const rejectedRequest = { status: RegistrationRequestStatus.Rejected };
-            registrationRequestsService.getRequestByEmail.mockResolvedValue(rejectedRequest as never);
-
-            await expect(service.register('rejected@example.com', 'password')).rejects.toThrow(FieldValidationException);
-            await expect(service.register('rejected@example.com', 'password')).rejects.toMatchObject({
-                response: {
-                    messages: ['Your registration request has been rejected.'],
-                    details: { errors: [{ message: 'Your registration request has been rejected.', path: 'status' }] },
-                },
-            });
-            expect(usersService.create).not.toHaveBeenCalled();
-        });
-
-        it('should throw FieldValidationException when registration request is cancelled', async () => {
-            const cancelledRequest = { status: RegistrationRequestStatus.Cancelled };
-            registrationRequestsService.getRequestByEmail.mockResolvedValue(cancelledRequest as never);
-
-            await expect(service.register('cancelled@example.com', 'password')).rejects.toThrow(FieldValidationException);
-            await expect(service.register('cancelled@example.com', 'password')).rejects.toMatchObject({
-                response: {
-                    messages: ['Your registration request has been cancelled. Please submit a new registration request.'],
-                    details: {
-                        errors: [
-                            {
-                                message: 'Your registration request has been cancelled. Please submit a new registration request.',
-                                path: 'status',
-                            },
-                        ],
-                    },
-                },
-            });
+            expect(registrationRequestsService.getApprovedRequestByEmail).toHaveBeenCalledWith('new@example.com');
             expect(usersService.create).not.toHaveBeenCalled();
         });
     });
