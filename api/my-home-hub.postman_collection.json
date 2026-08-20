@@ -67,7 +67,7 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/auth/register/requests?status=pending",
+                  "raw": "{{baseUrl}}/auth/register/requests",
                   "host": ["{{baseUrl}}"],
                   "path": ["auth", "register", "requests"],
                   "query": [
@@ -83,7 +83,8 @@
                     },
                     {
                       "key": "status",
-                      "value": "pending"
+                      "value": "pending",
+                      "disabled": true
                     }
                   ]
                 }
@@ -266,7 +267,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"approve\": true,\n    \"blackListed\": false\n}\n",
+                  "raw": "{\n    \"approve\": true,\n    \"blackListed\": false,\n    \"role\": \"resident\"\n}\n",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -314,6 +315,16 @@
                 }
               ],
               "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accessToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
                 "method": "DELETE",
                 "header": [
                   {
@@ -980,7 +991,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/devices?pageSize=10",
+              "raw": "{{baseUrl}}/devices?pageSize=10&includeConfig=true",
               "host": ["{{baseUrl}}"],
               "path": ["devices"],
               "query": [
@@ -997,6 +1008,10 @@
                   "key": "room",
                   "value": "office",
                   "disabled": true
+                },
+                {
+                  "key": "includeConfig",
+                  "value": "true"
                 }
               ]
             }
@@ -1053,6 +1068,13 @@
               "raw": "{{baseUrl}}/devices/:deviceId",
               "host": ["{{baseUrl}}"],
               "path": ["devices", ":deviceId"],
+              "query": [
+                {
+                  "key": "includeConfig",
+                  "value": "true",
+                  "disabled": true
+                }
+              ],
               "variable": [
                 {
                   "key": "deviceId",
@@ -1116,7 +1138,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Google Nest\",\n    \"type\": \"speaker\",\n    \"brand\": \"google\",\n    \"transportProtocol\": \"http\",\n    \"ip\": \"198.186.0.12\",\n    \"room\": \"living-room\"\n}",
+              "raw": "{\n    \"name\": \"Office Table LED\",\n    \"type\": \"led\",\n    \"room\": \"office\",\n    \"tuyaDeviceId\": \"bf5e77175afcf5876b5t1f\",\n    \"updateInterval\": 0,\n    \"controls\": {\n        \"on\": false,\n        \"brightness\": 100,\n        \"color\": \"#B7D4FF\"\n    },\n    \"ip\": \"192.168.0.13\",\n    \"tuyaDeviceLocalKey\": \"GX~N3/l@iPWDn9Q2\",\n    \"brand\": \"tuya\",\n    \"transportProtocol\": \"tuya\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1179,7 +1201,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"text\": \"Hello world\"\n}",
+              "raw": "{\n    \"text\": \"hello\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1253,7 +1275,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"controls\": {\n        \"on\": false\n    }\n}",
+              "raw": "{\n    \"ip\": \"192.168.0.12\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1333,86 +1355,6 @@
             }
           },
           "response": []
-        },
-        {
-          "name": "Get All Devices Copy",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const allDevices = pm.response.json().items;",
-                  "    if (allDevices.length) {",
-                  "        const lastQueriedDevice = allDevices.pop();",
-                  "        pm.environment.set('lastQueriedDeviceId', lastQueriedDevice.externalId);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [""],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{accessToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [
-              {
-                "key": "x-host",
-                "value": "{{proxyHubHostname}}",
-                "type": "text"
-              },
-              {
-                "key": "X-Proxy-Authorization",
-                "value": "{{proxyAccessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "http://192.168.0.100:3020/devices?pageSize=20",
-              "protocol": "http",
-              "host": ["192", "168", "0", "100"],
-              "port": "3020",
-              "path": ["devices"],
-              "query": [
-                {
-                  "key": "pageSize",
-                  "value": "10",
-                  "disabled": true
-                },
-                {
-                  "key": "room",
-                  "value": "office",
-                  "disabled": true
-                },
-                {
-                  "key": "pageSize",
-                  "value": "20"
-                }
-              ]
-            }
-          },
-          "response": []
         }
       ]
     },
@@ -1474,7 +1416,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/scenarios?pageSize=20&includeInactive=true",
+              "raw": "{{baseUrl}}/scenarios?pageSize=20",
               "host": ["{{baseUrl}}"],
               "path": ["scenarios"],
               "query": [
@@ -1489,7 +1431,8 @@
                 },
                 {
                   "key": "includeInactive",
-                  "value": "true"
+                  "value": "true",
+                  "disabled": true
                 },
                 {
                   "key": "group",
@@ -1687,7 +1630,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n            \"name\": \"Main ceiling light On\",\n            \"description\": \"Switches on the main ceiling light on\",\n            \"group\": \"living_room\",\n            \"active\": true,\n            \"trigger\": {\n                \"sources\": [\n                    {\n                        \"type\": \"device\",\n                        \"device\": {\n                            \"externalId\": \"7662737f-400b-48c2-9719-45a4a14bad9c\",\n                            \"commands\": {\n                                \"are\": {\n                                    \"action\": \"on_press\"\n                                }\n                            }\n                        }\n                    }\n                ],\n                \"logic\": \"1\"\n            },\n            \"devices\": [\n                {\n                    \"externalId\": \"980f4053-1dcd-41fa-ba04-6d8bff9499d6\",\n                    \"set\": {\n                        \"controls\": {\n                            \"text\": \"Zalupa\"\n                        }\n                    }\n                }\n            ]\n        }",
+              "raw": "{\n    \"active\": false\n}",
               "options": {
                 "raw": {
                   "language": "json"
