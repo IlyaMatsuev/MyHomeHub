@@ -11,6 +11,6 @@ export interface User extends Document<string> {
     email: string;
     password?: string;
     role: UserRole;
-    googleId?: string;
+    googleIdHash?: string;
     googleEmail?: string;
 }

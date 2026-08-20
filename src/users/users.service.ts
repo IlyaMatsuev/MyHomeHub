@@ -15,8 +15,8 @@ export class UsersService {
         return this.userModel.findOne({ email }).exec();
     }
 
-    async findByGoogleId(googleId: string): Promise<User | undefined> {
-        return this.userModel.findOne({ googleId }).exec();
+    async findByGoogleIdHash(googleIdHash: string): Promise<User | undefined> {
+        return this.userModel.findOne({ googleIdHash }).exec();
     }
 
     async getUserByExternalId(externalId: string, options: { strict: boolean } = { strict: true }): Promise<User> {
@@ -36,7 +36,7 @@ export class UsersService {
             email: data.email,
             password: data.password,
             role: data.role,
-            googleId: data.googleId,
+            googleIdHash: data.googleIdHash,
             googleEmail: data.googleEmail,
         }).save({ validateBeforeSave: true });
     }
@@ -47,16 +47,16 @@ export class UsersService {
         return user.save({ validateBeforeSave: true });
     }
 
-    async linkGoogleAccount(externalId: string, googleId: string, googleEmail: string): Promise<User> {
+    async linkGoogleAccount(externalId: string, googleIdHash: string, googleEmail: string): Promise<User> {
         const user = await this.getUserByExternalId(externalId);
-        user.googleId = googleId;
+        user.googleIdHash = googleIdHash;
         user.googleEmail = googleEmail;
         return user.save({ validateBeforeSave: true });
     }
 
     async unlinkGoogleAccount(externalId: string): Promise<User> {
         const user = await this.getUserByExternalId(externalId);
-        user.googleId = undefined;
+        user.googleIdHash = undefined;
         user.googleEmail = undefined;
         return user.save({ validateBeforeSave: true });
     }

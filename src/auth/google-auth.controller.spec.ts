@@ -25,7 +25,7 @@ describe('GoogleAuthController', () => {
         email: 'test@example.com',
         password: 'hashed-password',
         role: UserRole.Resident,
-        googleId: 'google-sub-123',
+        googleIdHash: 'google-sub-hash-123',
         googleEmail: 'test@example.com',
     };
 
@@ -83,7 +83,7 @@ describe('GoogleAuthController', () => {
 
     describe('unlinkGoogleAccount', () => {
         it('should unlink the account of the authenticated user and return the updated profile', async () => {
-            mockGoogleAuthService.unlinkAccount.mockResolvedValue({ ...mockUser, googleId: undefined, googleEmail: undefined });
+            mockGoogleAuthService.unlinkAccount.mockResolvedValue({ ...mockUser, googleIdHash: undefined, googleEmail: undefined });
 
             const result = await controller.unlinkGoogleAccount(mockAuthenticatedUser);
 

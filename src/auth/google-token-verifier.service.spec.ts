@@ -23,6 +23,9 @@ describe('GoogleTokenVerifierService', () => {
 
     const mockTicket = (payload: unknown) => ({ getPayload: jest.fn().mockReturnValue(payload) });
 
+    // SHA-256 of the "google-sub-123" account id
+    const mockGoogleIdHash = '063b18a156ad902b3baec17855a4dad8b0e771d2feded36a8bc004088beb8c55';
+
     beforeEach(async () => {
         verifyIdToken = jest.fn();
         (OAuth2Client as unknown as jest.Mock).mockImplementation(() => ({ verifyIdToken }));
@@ -46,12 +49,20 @@ describe('GoogleTokenVerifierService', () => {
     });
 
     describe('verifyIdToken', () => {
-        it('should return the google profile with a lowercased email', async () => {
+        it('should return the google profile with a lowercased email and a hashed account id', async () => {
             verifyIdToken.mockResolvedValue(mockTicket(mockPayload));
 
             const result = await service.verifyIdToken('id-token');
 
-            expect(result).toEqual({ googleId: 'google-sub-123', email: 'test@example.com', name: 'Test User' });
+            expect(result).toEqual({ googleIdHash: mockGoogleIdHash, email: 'test@example.com', name: 'Test User' });
+        });
+
+        it('should never expose the google account id as is', async () => {
+            verifyIdToken.mockResolvedValue(mockTicket(mockPayload));
+
+            const result = await service.verifyIdToken('id-token');
+
+            expect(JSON.stringify(result)).not.toContain(mockPayload.sub);
         });
 
         it('should verify the token against every configured client id', async () => {

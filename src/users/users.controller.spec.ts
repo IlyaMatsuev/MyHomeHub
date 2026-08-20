@@ -58,7 +58,7 @@ describe('UsersController', () => {
             mockUsersService.getUserByExternalId.mockResolvedValue({
                 ...mockUser,
                 password: 'hashed-password',
-                googleId: 'google-sub-123',
+                googleIdHash: 'google-sub-hash-123',
                 googleEmail: 'test@example.com',
             });
 
@@ -80,7 +80,7 @@ describe('UsersController', () => {
         });
 
         it('should report no password for a user registered with a google account only', async () => {
-            mockUsersService.getUserByExternalId.mockResolvedValue({ ...mockUser, googleId: 'google-sub-123' });
+            mockUsersService.getUserByExternalId.mockResolvedValue({ ...mockUser, googleIdHash: 'google-sub-hash-123' });
 
             const result = await controller.me(mockAuthenticatedUser);
 

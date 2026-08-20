@@ -33,23 +33,23 @@ export class GoogleAuthService {
     async linkAccount(userExternalId: string, idToken: string): Promise<User> {
         const profile = await this.googleTokenVerifier.verifyIdToken(idToken);
         const user = await this.usersService.getUserByExternalId(userExternalId);
-        if (user.googleId === profile.googleId) {
+        if (user.googleIdHash === profile.googleIdHash) {
             return user;
         }
-        if (user.googleId) {
+        if (user.googleIdHash) {
             throw new FieldConflictException('This user is already linked to another Google account', 'idToken');
         }
-        if (await this.usersService.findByGoogleId(profile.googleId)) {
+        if (await this.usersService.findByGoogleIdHash(profile.googleIdHash)) {
             throw new FieldConflictException('This Google account is already linked to another user', 'idToken');
         }
 
         this.logger.debug(`Linking a Google account to the user ${user.externalId}`);
-        return this.usersService.linkGoogleAccount(user.externalId, profile.googleId, profile.email);
+        return this.usersService.linkGoogleAccount(user.externalId, profile.googleIdHash, profile.email);
     }
 
     async unlinkAccount(userExternalId: string): Promise<User> {
         const user = await this.usersService.getUserByExternalId(userExternalId);
-        if (!user.googleId) {
+        if (!user.googleIdHash) {
             throw new FieldValidationException('There is no Google account linked to this user', 'googleId');
         }
         if (!user.password) {
@@ -64,7 +64,7 @@ export class GoogleAuthService {
     }
 
     private async resolveUser(profile: GoogleProfile): Promise<User> {
-        const linkedUser = await this.usersService.findByGoogleId(profile.googleId);
+        const linkedUser = await this.usersService.findByGoogleIdHash(profile.googleIdHash);
         if (linkedUser) {
             return linkedUser;
         }
@@ -72,11 +72,11 @@ export class GoogleAuthService {
         // Google has verified the email ownership, so the account registered with the same email belongs to the same person
         const existingUser = await this.usersService.findByEmail(profile.email);
         if (existingUser) {
-            if (existingUser.googleId) {
+            if (existingUser.googleIdHash) {
                 throw new FieldConflictException('This user is already linked to another Google account', 'idToken');
             }
             this.logger.debug(`Linking a Google account to the existing user ${existingUser.externalId}`);
-            return this.usersService.linkGoogleAccount(existingUser.externalId, profile.googleId, profile.email);
+            return this.usersService.linkGoogleAccount(existingUser.externalId, profile.googleIdHash, profile.email);
         }
 
         const registrationRequest = await this.registrationRequestsService.getApprovedRequestByEmail(profile.email);
@@ -85,7 +85,7 @@ export class GoogleAuthService {
         return this.usersService.create({
             email: profile.email,
             role: registrationRequest.role,
-            googleId: profile.googleId,
+            googleIdHash: profile.googleIdHash,
             googleEmail: profile.email,
         });
     }

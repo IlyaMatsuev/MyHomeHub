@@ -26,7 +26,7 @@ export class UserResponseDto {
         this.externalId = user.externalId;
         this.email = user.email;
         this.role = user.role;
-        this.googleLinked = !!user.googleId;
+        this.googleLinked = !!user.googleIdHash;
         this.googleEmail = user.googleEmail;
         this.hasPassword = !!user.password;
     }

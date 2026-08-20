@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { Injectable, Logger, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { GoogleProfile } from 'auth/interfaces';
@@ -38,6 +39,12 @@ export class GoogleTokenVerifierService {
             throw new UnauthorizedException('The email of the provided Google account is not verified');
         }
 
-        return { googleId: payload.sub, email: payload.email.toLowerCase(), name: payload.name };
+        return { googleIdHash: this.hashGoogleId(payload.sub), email: payload.email.toLowerCase(), name: payload.name };
+    }
+
+    // The account id is not a secret, but there is no need to keep it recoverable either: it is only ever compared
+    // for equality, so hashing it keeps a leaked database from revealing which Google accounts the hub users own
+    private hashGoogleId(googleId: string): string {
+        return createHash('sha256').update(googleId).digest('hex');
     }
 }

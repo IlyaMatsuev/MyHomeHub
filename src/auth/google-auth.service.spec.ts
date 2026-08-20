@@ -15,7 +15,7 @@ describe('GoogleAuthService', () => {
     let registrationRequestsService: jest.Mocked<RegistrationRequestsService>;
     let googleTokenVerifier: jest.Mocked<GoogleTokenVerifierService>;
 
-    const mockProfile = { googleId: 'google-sub-123', email: 'test@example.com', name: 'Test User' };
+    const mockProfile = { googleIdHash: 'google-sub-hash-123', email: 'test@example.com', name: 'Test User' };
 
     const mockUser = {
         externalId: 'user-external-id',
@@ -38,7 +38,7 @@ describe('GoogleAuthService', () => {
                     provide: UsersService,
                     useValue: {
                         findByEmail: jest.fn(),
-                        findByGoogleId: jest.fn(),
+                        findByGoogleIdHash: jest.fn(),
                         getUserByExternalId: jest.fn(),
                         create: jest.fn(),
                         linkGoogleAccount: jest.fn(),
@@ -69,8 +69,8 @@ describe('GoogleAuthService', () => {
 
     describe('login', () => {
         it('should issue tokens for the user already linked to the google account', async () => {
-            const linkedUser = { ...mockUser, googleId: 'google-sub-123' };
-            usersService.findByGoogleId.mockResolvedValue(linkedUser as never);
+            const linkedUser = { ...mockUser, googleIdHash: 'google-sub-hash-123' };
+            usersService.findByGoogleIdHash.mockResolvedValue(linkedUser as never);
 
             const result = await service.login('id-token');
 
@@ -82,29 +82,29 @@ describe('GoogleAuthService', () => {
         });
 
         it('should link the google account to the existing user with the same email and issue tokens', async () => {
-            const linkedUser = { ...mockUser, googleId: 'google-sub-123', googleEmail: 'test@example.com' };
-            usersService.findByGoogleId.mockResolvedValue(undefined as never);
+            const linkedUser = { ...mockUser, googleIdHash: 'google-sub-hash-123', googleEmail: 'test@example.com' };
+            usersService.findByGoogleIdHash.mockResolvedValue(undefined as never);
             usersService.findByEmail.mockResolvedValue(mockUser as never);
             usersService.linkGoogleAccount.mockResolvedValue(linkedUser as never);
 
             const result = await service.login('id-token');
 
             expect(result).toEqual(mockTokens);
-            expect(usersService.linkGoogleAccount).toHaveBeenCalledWith('user-external-id', 'google-sub-123', 'test@example.com');
+            expect(usersService.linkGoogleAccount).toHaveBeenCalledWith('user-external-id', 'google-sub-hash-123', 'test@example.com');
             expect(authService.generateTokens).toHaveBeenCalledWith(linkedUser);
         });
 
         it('should throw FieldConflictException when the existing user is linked to another google account', async () => {
-            usersService.findByGoogleId.mockResolvedValue(undefined as never);
-            usersService.findByEmail.mockResolvedValue({ ...mockUser, googleId: 'another-google-sub' } as never);
+            usersService.findByGoogleIdHash.mockResolvedValue(undefined as never);
+            usersService.findByEmail.mockResolvedValue({ ...mockUser, googleIdHash: 'another-google-sub-hash' } as never);
 
             await expect(service.login('id-token')).rejects.toThrow(FieldConflictException);
             expect(usersService.linkGoogleAccount).not.toHaveBeenCalled();
         });
 
         it('should register a new user when the email has an approved registration request', async () => {
-            const newUser = { ...mockUser, password: undefined, googleId: 'google-sub-123', role: UserRole.Guest };
-            usersService.findByGoogleId.mockResolvedValue(undefined as never);
+            const newUser = { ...mockUser, password: undefined, googleIdHash: 'google-sub-hash-123', role: UserRole.Guest };
+            usersService.findByGoogleIdHash.mockResolvedValue(undefined as never);
             usersService.findByEmail.mockResolvedValue(undefined as never);
             registrationRequestsService.getApprovedRequestByEmail.mockResolvedValue({
                 status: RegistrationRequestStatus.Approved,
@@ -118,14 +118,14 @@ describe('GoogleAuthService', () => {
             expect(usersService.create).toHaveBeenCalledWith({
                 email: 'test@example.com',
                 role: UserRole.Guest,
-                googleId: 'google-sub-123',
+                googleIdHash: 'google-sub-hash-123',
                 googleEmail: 'test@example.com',
             });
             expect(authService.generateTokens).toHaveBeenCalledWith(newUser);
         });
 
         it('should not register a user when there is no approved registration request', async () => {
-            usersService.findByGoogleId.mockResolvedValue(undefined as never);
+            usersService.findByGoogleIdHash.mockResolvedValue(undefined as never);
             usersService.findByEmail.mockResolvedValue(undefined as never);
             registrationRequestsService.getApprovedRequestByEmail.mockRejectedValue(
                 new FieldValidationException('Your registration request has been rejected.', 'status'),
@@ -140,25 +140,25 @@ describe('GoogleAuthService', () => {
             googleTokenVerifier.verifyIdToken.mockRejectedValue(new Error('Invalid token'));
 
             await expect(service.login('invalid-token')).rejects.toThrow(Error);
-            expect(usersService.findByGoogleId).not.toHaveBeenCalled();
+            expect(usersService.findByGoogleIdHash).not.toHaveBeenCalled();
         });
     });
 
     describe('linkAccount', () => {
         it('should link the google account to the current user', async () => {
-            const linkedUser = { ...mockUser, googleId: 'google-sub-123', googleEmail: 'test@example.com' };
+            const linkedUser = { ...mockUser, googleIdHash: 'google-sub-hash-123', googleEmail: 'test@example.com' };
             usersService.getUserByExternalId.mockResolvedValue(mockUser as never);
-            usersService.findByGoogleId.mockResolvedValue(undefined as never);
+            usersService.findByGoogleIdHash.mockResolvedValue(undefined as never);
             usersService.linkGoogleAccount.mockResolvedValue(linkedUser as never);
 
             const result = await service.linkAccount('user-external-id', 'id-token');
 
             expect(result).toEqual(linkedUser);
-            expect(usersService.linkGoogleAccount).toHaveBeenCalledWith('user-external-id', 'google-sub-123', 'test@example.com');
+            expect(usersService.linkGoogleAccount).toHaveBeenCalledWith('user-external-id', 'google-sub-hash-123', 'test@example.com');
         });
 
         it('should be idempotent when the same google account is already linked', async () => {
-            const linkedUser = { ...mockUser, googleId: 'google-sub-123' };
+            const linkedUser = { ...mockUser, googleIdHash: 'google-sub-hash-123' };
             usersService.getUserByExternalId.mockResolvedValue(linkedUser as never);
 
             const result = await service.linkAccount('user-external-id', 'id-token');
@@ -168,7 +168,7 @@ describe('GoogleAuthService', () => {
         });
 
         it('should throw FieldConflictException when the user is linked to another google account', async () => {
-            usersService.getUserByExternalId.mockResolvedValue({ ...mockUser, googleId: 'another-google-sub' } as never);
+            usersService.getUserByExternalId.mockResolvedValue({ ...mockUser, googleIdHash: 'another-google-sub-hash' } as never);
 
             await expect(service.linkAccount('user-external-id', 'id-token')).rejects.toThrow(FieldConflictException);
             expect(usersService.linkGoogleAccount).not.toHaveBeenCalled();
@@ -176,7 +176,7 @@ describe('GoogleAuthService', () => {
 
         it('should throw FieldConflictException when the google account is linked to another user', async () => {
             usersService.getUserByExternalId.mockResolvedValue(mockUser as never);
-            usersService.findByGoogleId.mockResolvedValue({ ...mockUser, externalId: 'another-user-external-id' } as never);
+            usersService.findByGoogleIdHash.mockResolvedValue({ ...mockUser, externalId: 'another-user-external-id' } as never);
 
             await expect(service.linkAccount('user-external-id', 'id-token')).rejects.toThrow(FieldConflictException);
             expect(usersService.linkGoogleAccount).not.toHaveBeenCalled();
@@ -191,8 +191,8 @@ describe('GoogleAuthService', () => {
 
     describe('unlinkAccount', () => {
         it('should unlink the google account from the current user', async () => {
-            const unlinkedUser = { ...mockUser, googleId: undefined, googleEmail: undefined };
-            usersService.getUserByExternalId.mockResolvedValue({ ...mockUser, googleId: 'google-sub-123' } as never);
+            const unlinkedUser = { ...mockUser, googleIdHash: undefined, googleEmail: undefined };
+            usersService.getUserByExternalId.mockResolvedValue({ ...mockUser, googleIdHash: 'google-sub-hash-123' } as never);
             usersService.unlinkGoogleAccount.mockResolvedValue(unlinkedUser as never);
 
             const result = await service.unlinkAccount('user-external-id');
@@ -212,7 +212,7 @@ describe('GoogleAuthService', () => {
             usersService.getUserByExternalId.mockResolvedValue({
                 ...mockUser,
                 password: undefined,
-                googleId: 'google-sub-123',
+                googleIdHash: 'google-sub-hash-123',
             } as never);
 
             await expect(service.unlinkAccount('user-external-id')).rejects.toMatchObject({

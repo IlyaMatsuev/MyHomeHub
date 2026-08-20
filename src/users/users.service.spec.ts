@@ -74,17 +74,17 @@ describe('UsersService', () => {
         });
     });
 
-    describe('findByGoogleId', () => {
+    describe('findByGoogleIdHash', () => {
         it('should return user when found', async () => {
-            const googleUser = { ...mockUser, googleId: 'google-sub-123' };
+            const googleUser = { ...mockUser, googleIdHash: 'google-sub-hash-123' };
             mockUserModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(googleUser),
             });
 
-            const result = await service.findByGoogleId('google-sub-123');
+            const result = await service.findByGoogleIdHash('google-sub-hash-123');
 
             expect(result).toEqual(googleUser);
-            expect(mockUserModel.findOne).toHaveBeenCalledWith({ googleId: 'google-sub-123' });
+            expect(mockUserModel.findOne).toHaveBeenCalledWith({ googleIdHash: 'google-sub-hash-123' });
         });
 
         it('should return null when no user is linked to the google account', async () => {
@@ -92,7 +92,7 @@ describe('UsersService', () => {
                 exec: jest.fn().mockResolvedValue(null),
             });
 
-            const result = await service.findByGoogleId('unknown-google-sub');
+            const result = await service.findByGoogleIdHash('unknown-google-sub-hash');
 
             expect(result).toBeNull();
         });
@@ -150,12 +150,12 @@ describe('UsersService', () => {
             const result = await service.create({
                 email: 'google@example.com',
                 role: UserRole.Guest,
-                googleId: 'google-sub-123',
+                googleIdHash: 'google-sub-hash-123',
                 googleEmail: 'google@example.com',
             });
 
             expect(result.email).toBe('google@example.com');
-            expect(result.googleId).toBe('google-sub-123');
+            expect(result.googleIdHash).toBe('google-sub-hash-123');
             expect(result.googleEmail).toBe('google@example.com');
             expect(result.password).toBeUndefined();
         });
@@ -212,9 +212,9 @@ describe('UsersService', () => {
                 exec: jest.fn().mockResolvedValue(existingUser),
             });
 
-            const result = await service.linkGoogleAccount('user-external-id', 'google-sub-123', 'google@example.com');
+            const result = await service.linkGoogleAccount('user-external-id', 'google-sub-hash-123', 'google@example.com');
 
-            expect(result.googleId).toBe('google-sub-123');
+            expect(result.googleIdHash).toBe('google-sub-hash-123');
             expect(result.googleEmail).toBe('google@example.com');
             expect(existingUser.save).toHaveBeenCalledWith({ validateBeforeSave: true });
         });
@@ -224,7 +224,7 @@ describe('UsersService', () => {
                 exec: jest.fn().mockResolvedValue(null),
             });
 
-            await expect(service.linkGoogleAccount('missing-external-id', 'google-sub-123', 'google@example.com')).rejects.toThrow(
+            await expect(service.linkGoogleAccount('missing-external-id', 'google-sub-hash-123', 'google@example.com')).rejects.toThrow(
                 NotFoundException,
             );
         });
@@ -234,7 +234,7 @@ describe('UsersService', () => {
         it('should clear the google account details of an existing user', async () => {
             const existingUser = {
                 ...mockUser,
-                googleId: 'google-sub-123',
+                googleIdHash: 'google-sub-hash-123',
                 googleEmail: 'google@example.com',
                 save: jest.fn().mockImplementation(function () {
                     return Promise.resolve(this);
@@ -246,7 +246,7 @@ describe('UsersService', () => {
 
             const result = await service.unlinkGoogleAccount('user-external-id');
 
-            expect(result.googleId).toBeUndefined();
+            expect(result.googleIdHash).toBeUndefined();
             expect(result.googleEmail).toBeUndefined();
             expect(existingUser.save).toHaveBeenCalledWith({ validateBeforeSave: true });
         });

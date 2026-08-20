@@ -5,6 +5,7 @@ export interface CreateUserData {
     role: UserRole;
     /** Argon2 hash. Not set for the users registered with a Google account only */
     password?: string;
-    googleId?: string;
+    /** SHA-256 hash of the "sub" claim of the linked Google account */
+    googleIdHash?: string;
     googleEmail?: string;
 }

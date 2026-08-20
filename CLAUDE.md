@@ -125,9 +125,11 @@ The hub verifies **Google ID tokens** instead of running the OAuth redirect flow
 
 `GoogleTokenVerifierService` (`auth/google-token-verifier.service.ts`) validates the token with `google-auth-library` against the client IDs from `GOOGLE_CLIENT_ID` (comma-separated, since Google issues one per platform) and rejects tokens whose email is not verified by Google. Without the variable set the Google endpoints respond with **503**. `GoogleAuthService` (`auth/google-auth.service.ts`) then resolves the user for the verified profile:
 
-1. The user already linked to the Google account (`users.googleId`, a unique sparse index) is signed in.
+1. The user already linked to the Google account (`users.googleIdHash`, a unique sparse index) is signed in.
 2. Otherwise a user with the same email is linked to the Google account automatically — Google has verified the email ownership. A user already linked to a _different_ Google account gets a **409 Conflict**.
 3. Otherwise a new user is registered, but only when the email has an **approved registration request** — the Google sign-up follows the same approval policy as the credentials one (`RegistrationRequestsService.getApprovedRequestByEmail`, shared by both flows).
+
+The Google account id (the token `sub` claim) is stored **hashed** with SHA-256: it is only ever compared for equality, so keeping it recoverable buys nothing while a leaked database would otherwise reveal which Google accounts the hub users own. Only the hash leaves `GoogleTokenVerifierService`, so the id itself is never persisted nor logged.
 
 Users registered through Google have **no password** (`users.password` is only required when there is no `googleId`), so `PUT /auth/login` rejects them and `DELETE /auth/google/link` refuses to unlink until a password is set via the password reset flow. `GET /users/me` exposes `googleLinked`, `googleEmail` and `hasPassword` so a client can tell how the account can be authenticated.
 
