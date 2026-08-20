@@ -11,7 +11,7 @@ import {
     ApiForbidden,
 } from 'common/decorators';
 import { PaginationResponseDto } from 'common/dto';
-import { LocalNetworkOnly, Public } from 'auth/decorators';
+import { Public } from 'auth/decorators';
 import { StrictThrottle } from 'throttler/decorators';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
 import {
@@ -30,8 +30,7 @@ export class RegistrationRequestsController {
     // TODO: When creating a registration request, I need to respond with some kind of JWT token with a baked in request id
     //  Then, when trying to get request, I need to provide this token and check the user for which it was made in the guards
     //  To exclude the possibility to guess external id of request of the users
-    @Public()
-    @LocalNetworkOnly()
+    @Public({ localOnly: true })
     @Get('/:externalId')
     @ApiParam({
         name: 'externalId',
@@ -40,7 +39,7 @@ export class RegistrationRequestsController {
     })
     @ApiOperation({
         summary: 'Get a registration request by external ID',
-        description: 'Only accessible from the local network when LOCAL_NETWORK_ONLY_ENABLED is on',
+        description: 'Only accessible from the local network',
     })
     @ApiOkResponse({ type: RegistrationRequestResponseDto })
     @ApiNotFound('registration request')
@@ -60,14 +59,13 @@ export class RegistrationRequestsController {
         return this.registrationRequestsService.getRequests(query);
     }
 
-    @Public()
-    @LocalNetworkOnly()
+    @Public({ localOnly: true })
     @Post()
     @StrictThrottle('registrationRequest')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
         summary: 'Submit a new registration request',
-        description: 'Only accessible from the local network when LOCAL_NETWORK_ONLY_ENABLED is on',
+        description: 'Only accessible from the local network',
     })
     @ApiOkResponse({ type: RegistrationRequestResponseDto })
     @ApiValidationError()
@@ -96,8 +94,7 @@ export class RegistrationRequestsController {
         return this.registrationRequestsService.updateRequest(externalId, dto);
     }
 
-    @Public()
-    @LocalNetworkOnly()
+    @Public({ localOnly: true })
     @Delete('/:externalId')
     @StrictThrottle('registrationRequest')
     @ApiParam({
@@ -107,7 +104,7 @@ export class RegistrationRequestsController {
     })
     @ApiOperation({
         summary: 'Cancel a pending registration request',
-        description: 'Only accessible from the local network when LOCAL_NETWORK_ONLY_ENABLED is on',
+        description: 'Only accessible from the local network',
     })
     @ApiOkResponse({ type: RegistrationRequestResponseDto })
     @ApiNotFound('registration request')

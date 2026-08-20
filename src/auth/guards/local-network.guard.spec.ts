@@ -1,36 +1,26 @@
 import { ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { IS_LOCAL_NETWORK_ONLY_KEY } from 'auth/decorators';
-import { LocalNetworkService } from 'common/services';
+import { AuthConfigService } from 'auth/auth-config.service';
 import { LocalNetworkGuard } from './local-network.guard';
 
 describe('LocalNetworkGuard', () => {
     let guard: LocalNetworkGuard;
-    let mockReflector: { getAllAndOverride: jest.Mock };
-    let mockLocalNetworkService: { isRestrictionEnabled: jest.Mock; isLocalRequest: jest.Mock };
+    let mockAuthConfig: { isLocalNetworkOnlyEndpoint: jest.Mock };
     let debugSpy: jest.SpyInstance;
 
-    const handler = () => undefined;
-    const controllerClass = class {};
-
-    const createMockContext = (type = 'http'): ExecutionContext =>
+    const createMockContext = (ip?: string, remoteAddress?: string, type = 'http'): ExecutionContext =>
         ({
             getType: jest.fn().mockReturnValue(type),
             switchToHttp: jest.fn().mockReturnValue({
-                getRequest: jest.fn().mockReturnValue({ ip: '8.8.8.8', originalUrl: '/auth/register/requests' }),
+                getRequest: jest.fn().mockReturnValue({ ip, socket: { remoteAddress }, originalUrl: '/auth/register/requests' }),
             }),
-            getHandler: jest.fn().mockReturnValue(handler),
-            getClass: jest.fn().mockReturnValue(controllerClass),
+            getHandler: jest.fn(),
+            getClass: jest.fn(),
         }) as unknown as ExecutionContext;
 
     beforeEach(() => {
         debugSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined);
-        mockReflector = { getAllAndOverride: jest.fn().mockReturnValue(true) };
-        mockLocalNetworkService = {
-            isRestrictionEnabled: jest.fn().mockReturnValue(true),
-            isLocalRequest: jest.fn().mockReturnValue(false),
-        };
-        guard = new LocalNetworkGuard(mockReflector as unknown as Reflector, mockLocalNetworkService as unknown as LocalNetworkService);
+        mockAuthConfig = { isLocalNetworkOnlyEndpoint: jest.fn().mockReturnValue(true) };
+        guard = new LocalNetworkGuard(mockAuthConfig as unknown as AuthConfigService);
     });
 
     afterEach(() => {
@@ -39,34 +29,52 @@ describe('LocalNetworkGuard', () => {
     });
 
     it('should allow non-http contexts (e.g. MQTT) without checking the client address', () => {
-        expect(guard.canActivate(createMockContext('rpc'))).toBe(true);
-        expect(mockReflector.getAllAndOverride).not.toHaveBeenCalled();
-        expect(mockLocalNetworkService.isLocalRequest).not.toHaveBeenCalled();
+        expect(guard.canActivate(createMockContext('8.8.8.8', undefined, 'rpc'))).toBe(true);
+        expect(mockAuthConfig.isLocalNetworkOnlyEndpoint).not.toHaveBeenCalled();
     });
 
-    it('should allow endpoints that are not marked as local network only', () => {
-        mockReflector.getAllAndOverride.mockReturnValue(undefined);
+    it('should allow endpoints that are not restricted to the local network', () => {
+        mockAuthConfig.isLocalNetworkOnlyEndpoint.mockReturnValue(false);
 
-        expect(guard.canActivate(createMockContext())).toBe(true);
-        expect(mockLocalNetworkService.isLocalRequest).not.toHaveBeenCalled();
+        expect(guard.canActivate(createMockContext('8.8.8.8'))).toBe(true);
     });
 
-    it('should allow remote requests when the restriction is disabled', () => {
-        mockLocalNetworkService.isRestrictionEnabled.mockReturnValue(false);
-
-        expect(guard.canActivate(createMockContext())).toBe(true);
-        expect(mockLocalNetworkService.isLocalRequest).not.toHaveBeenCalled();
+    it.each([
+        ['127.0.0.1'],
+        ['10.20.30.40'],
+        ['172.16.0.1'],
+        ['172.31.255.254'],
+        ['192.168.1.15'],
+        ['169.254.10.10'],
+        ['::1'],
+        ['fd00::1'],
+        ['fe80::1'],
+        ['::ffff:192.168.1.15'],
+    ])('should allow the request coming from the local address %s', ip => {
+        expect(guard.canActivate(createMockContext(ip))).toBe(true);
     });
 
-    it('should allow requests coming from the local network', () => {
-        mockLocalNetworkService.isLocalRequest.mockReturnValue(true);
+    it.each([['8.8.8.8'], ['203.0.113.10'], ['172.32.0.1'], ['100.64.0.1'], ['2001:4860:4860::8888'], ['::ffff:8.8.8.8']])(
+        'should reject the request coming from the remote address %s',
+        ip => {
+            expect(() => guard.canActivate(createMockContext(ip))).toThrow(ForbiddenException);
+        },
+    );
 
-        expect(guard.canActivate(createMockContext())).toBe(true);
-        expect(mockReflector.getAllAndOverride).toHaveBeenCalledWith(IS_LOCAL_NETWORK_ONLY_KEY, [handler, controllerClass]);
+    it.each([[undefined], [''], ['   '], ['not-an-ip'], ['192.168.1.256']])(
+        'should reject the request with the unresolvable address %s',
+        ip => {
+            expect(() => guard.canActivate(createMockContext(ip))).toThrow(ForbiddenException);
+        },
+    );
+
+    it('should fall back to the socket remote address when the request IP is not resolved', () => {
+        expect(guard.canActivate(createMockContext(undefined, '10.0.0.5'))).toBe(true);
+        expect(() => guard.canActivate(createMockContext(undefined, '8.8.8.8'))).toThrow(ForbiddenException);
     });
 
-    it('should reject requests coming from outside of the local network', () => {
-        expect(() => guard.canActivate(createMockContext())).toThrow(ForbiddenException);
+    it('should log the rejected request on debug', () => {
+        expect(() => guard.canActivate(createMockContext('8.8.8.8'))).toThrow(ForbiddenException);
         expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('8.8.8.8'));
     });
 });

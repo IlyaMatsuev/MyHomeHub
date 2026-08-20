@@ -1,17 +1,14 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Logger } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
-import { IS_LOCAL_NETWORK_ONLY_KEY } from 'auth/decorators';
-import { LocalNetworkService } from 'common/services';
+import ipaddr from 'ipaddr.js';
+import { AuthConfigService } from 'auth/auth-config.service';
+import { LOCAL_IP_RANGES } from 'auth/auth.constants';
 
 @Injectable()
 export class LocalNetworkGuard implements CanActivate {
     private readonly logger = new Logger(LocalNetworkGuard.name);
 
-    constructor(
-        private readonly reflector: Reflector,
-        private readonly localNetworkService: LocalNetworkService,
-    ) {}
+    constructor(private readonly authConfig: AuthConfigService) {}
 
     canActivate(context: ExecutionContext): boolean {
         // The restriction only applies to the REST API
@@ -19,12 +16,14 @@ export class LocalNetworkGuard implements CanActivate {
         if (context.getType() !== 'http') {
             return true;
         }
-        if (!this.isLocalNetworkOnlyEndpoint(context) || !this.localNetworkService.isRestrictionEnabled()) {
+        if (!this.authConfig.isLocalNetworkOnlyEndpoint(context)) {
             return true;
         }
 
         const request = context.switchToHttp().getRequest<Request>();
-        if (this.localNetworkService.isLocalRequest(request)) {
+        // `request.ip` relies on the express `trust proxy` setting (see TRUST_PROXY) to resolve
+        // the real client IP from X-Forwarded-For when the server runs behind a reverse proxy
+        if (this.isLocalAddress(request?.ip ?? request?.socket?.remoteAddress)) {
             return true;
         }
 
@@ -33,7 +32,16 @@ export class LocalNetworkGuard implements CanActivate {
         throw new ForbiddenException('This endpoint is only accessible from the local network');
     }
 
-    private isLocalNetworkOnlyEndpoint(context: ExecutionContext): boolean {
-        return this.reflector.getAllAndOverride<boolean>(IS_LOCAL_NETWORK_ONLY_KEY, [context.getHandler(), context.getClass()]);
+    // `ipaddr.process` unwraps IPv4-mapped IPv6 addresses (e.g. ::ffff:192.168.1.5) so they are
+    // matched as IPv4, and an unresolvable address fails closed
+    private isLocalAddress(ip?: string): boolean {
+        if (!ip?.trim()) {
+            return false;
+        }
+        try {
+            return LOCAL_IP_RANGES.includes(ipaddr.process(ip.trim()).range());
+        } catch {
+            return false;
+        }
     }
 }
