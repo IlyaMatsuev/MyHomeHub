@@ -25,7 +25,16 @@ export class AuthService {
 
     async login(email: string, password: string): Promise<LoginResponseDto> {
         const user = await this.usersService.findByEmail(email);
-        if (!user?.password || !(await this.verifyUserPasswordHash(user.password, password))) {
+        if (!user) {
+            throw new UnauthorizedException();
+        }
+        // The users registered with a Google account have no password to verify against, so they can only sign in
+        // with the Google flow until they set one through the password reset
+        if (user.googleIdHash && !user.password) {
+            this.logger.debug(`The user ${user.externalId} has no password set and can only sign in with Google`);
+            throw new UnauthorizedException();
+        }
+        if (!user.password || !(await this.verifyUserPasswordHash(user.password, password))) {
             throw new UnauthorizedException();
         }
         return this.generateTokens(user);

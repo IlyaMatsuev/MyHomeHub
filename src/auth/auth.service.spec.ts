@@ -131,6 +131,13 @@ describe('AuthService', () => {
             expect(argon2.verify).not.toHaveBeenCalled();
         });
 
+        it('should throw UnauthorizedException without verifying the hash for a google-only account', async () => {
+            usersService.findByEmail.mockResolvedValue({ ...mockUser, password: undefined, googleIdHash: 'google-sub-hash-123' } as never);
+
+            await expect(service.login('test@example.com', 'password')).rejects.toThrow(UnauthorizedException);
+            expect(argon2.verify).not.toHaveBeenCalled();
+        });
+
         it('should throw UnauthorizedException when password is invalid', async () => {
             usersService.findByEmail.mockResolvedValue(mockUser as never);
             (argon2.verify as jest.Mock).mockResolvedValue(false);
