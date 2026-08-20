@@ -51,8 +51,6 @@ See the [MQTT configuration guide](../configs/mqtt/README.md) for MQTT broker se
 | **Server**   | `NODE_ENV`                     | Environment (`local`, `prod`)                                                                                                  |
 | **Server**   | `TZ_LATITUDE`, `TZ_LONGITUDE`  | Location for sunrise/sunset calculations                                                                                       |
 | **Server**   | `TRUST_PROXY`                  | Reverse proxy support used to resolve the real client IP (`false`, `true`, a hops count, or a list of trusted proxies/subnets) |
-| **Server**   | `LOCAL_NETWORK_ONLY_ENABLED`   | Reject requests to local network only endpoints coming from outside the local network (default enabled)                        |
-| **Server**   | `LOCAL_NETWORK_ALLOWED_CIDRS`  | Extra comma-separated addresses/subnets treated as local (e.g. a VPN subnet)                                                   |
 | **Auth**     | `JWT_SECRET`                   | Secret key for JWT signing                                                                                                     |
 | **Auth**     | `JWT_EXPIRATION_TIMEOUT`       | Token lifetime in seconds                                                                                                      |
 | **Auth**     | `PASSWORD_RESET_TOKEN_TTL_SEC` | Password reset token lifetime in seconds                                                                                       |
@@ -82,7 +80,7 @@ Some endpoints that do not require authentication are only served to clients fro
 | `GET /info`                                      | Local network only                           |
 | Login, token refresh, register, password restore | Public, so that users can authorize remotely |
 
-Requests from outside get a **403 Forbidden**. Loopback, private and link-local IPv4/IPv6 addresses count as local; anything else has to be listed in `LOCAL_NETWORK_ALLOWED_CIDRS` (e.g. `LOCAL_NETWORK_ALLOWED_CIDRS=100.64.0.0/10` for a Tailscale network). The whole restriction can be turned off with `LOCAL_NETWORK_ONLY_ENABLED=false`.
+Requests from outside get a **403 Forbidden**. Loopback, private and link-local IPv4/IPv6 addresses count as local, everything else is rejected. The restriction is always on and requires no configuration.
 
 #### Behind a Reverse Proxy
 

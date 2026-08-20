@@ -105,7 +105,7 @@ Authentication uses **Passport.js** with a `passport-jwt` strategy (`src/auth/st
 - `POST /auth/login` accepts either email/password **or** a `refreshToken` (providing both returns 400). It responds with a short-lived `accessToken` and a longer-lived `refreshToken`, allowing token renewal without re-entering credentials.
 - `POST /auth/password/reset` accepts `email` and `totp` (admin's authenticator TOTP — same secret used for TOTP registration) and returns a short-lived `resetToken`
 - `PUT /auth/password/change` accepts the `resetToken` and `newPassword`, rehashes it, and updates the user record. The password reset token is an opaque single-use random value (issued by `PasswordResetTokensService`), stored in Redis as a SHA-256-hashed key with `PASSWORD_RESET_TOKEN_TTL_SEC` TTL, and atomically consumed via `GETDEL` on use — it is not a JWT and shares no signing material with access/refresh tokens.
-- Three global guards run in order: `LocalNetworkGuard` (enforces `@LocalNetworkOnly()`), `JwtAuthGuard` (validates the access token, honoring `@Public()` and the local-auth bypass), then `RolesGuard` (enforces `@Roles(...)`).
+- Three global guards run in order: `LocalNetworkGuard` (enforces `@Public({ localOnly: true })`), `JwtAuthGuard` (validates the access token, honoring `@Public()` and the local-auth bypass), then `RolesGuard` (enforces `@Roles(...)`).
 
 Registration requests (`/auth/register/requests`) have a status lifecycle: `pending` → `approved`/`rejected` (admin via `PUT`) or `cancelled` (requester via the public `DELETE /auth/register/requests/{externalId}`; only `pending` requests can be cancelled). `POST` returns **409 Conflict** (`FieldConflictException` — the 409 twin of `FieldValidationException`) when a `pending`/`approved` request for the email already exists; `rejected` (unless blacklisted) and `cancelled` requests are reset to `pending` by re-submitting via `POST`. Cancelled requests cannot be approved and block `POST /auth/register` until re-requested.
 
@@ -119,13 +119,13 @@ Restrict endpoints with `@Roles(...)` from `auth/decorators`. Endpoints without 
 
 ### Local Network Restriction
 
-Endpoints marked with `@LocalNetworkOnly()` (from `auth/decorators`) are rejected with **403 Forbidden** unless the request originates from the local network. This exists so a hub exposed to the internet cannot have its unauthenticated endpoints abused (e.g. registration request spam). It is orthogonal to `@Public()`/`@Roles(...)` and can be combined with them.
+Endpoints marked with `@Public({ localOnly: true })` (from `auth/decorators`) are rejected with **403 Forbidden** unless the request originates from the local network. This exists so a hub exposed to the internet cannot have its unauthenticated endpoints abused (e.g. registration request spam). `localOnly` defaults to `false`, so a bare `@Public()` stays reachable from anywhere. The restriction is always enforced — there is no env variable to turn it off.
 
 Currently applied to `GET/POST/DELETE /auth/register/requests` (the public ones) and `GET /info`. The login, refresh, register and password restore endpoints stay reachable from anywhere so users can authorize remotely.
 
-`LocalNetworkService` (`common/services`, exported by the global `CommonModule`) does the address matching with `ipaddr.js`: IPv4 loopback/private/link-local, IPv6 loopback/unique-local/link-local, plus anything listed in `LOCAL_NETWORK_ALLOWED_CIDRS` (accepts `address/prefix` or a bare address). IPv4-mapped IPv6 addresses are unwrapped before matching, and an unresolvable address fails closed.
+`LocalNetworkGuard` (`auth/guards`) does the address matching with `ipaddr.js` by checking the address range against `LOCAL_IP_RANGES` (`auth/auth.constants`): IPv4 loopback/private/link-local, IPv6 loopback/unique-local/link-local. IPv4-mapped IPv6 addresses are unwrapped before matching, and an unresolvable address fails closed.
 
-The client IP comes from `request.ip`, which honors the express `trust proxy` setting, so the restriction works behind a reverse proxy. `TRUST_PROXY` accepts `false`, `true`, a number of proxy hops, or a comma-separated list of trusted proxies/subnets — `true` trusts `X-Forwarded-For` from any client and therefore allows spoofing the client IP, so a hop count or a proxy list should be preferred (the server logs a warning on startup when `TRUST_PROXY=true` is combined with the restriction).
+The client IP comes from `request.ip`, which honors the express `trust proxy` setting, so the restriction works behind a reverse proxy. `TRUST_PROXY` accepts `false`, `true`, a number of proxy hops, or a comma-separated list of trusted proxies/subnets — `true` trusts `X-Forwarded-For` from any client and therefore allows spoofing the client IP, so a hop count or a proxy list should be preferred (the server logs a warning on startup when `TRUST_PROXY=true`).
 
 ### Path Aliases (tsconfig.json)
 
@@ -163,8 +163,6 @@ Key variables:
 - `REDIS_*` - Redis connection (for rate limiting)
 - `THROTTLE_*` - Rate limiting configuration (enabled, TTL/limit for short/medium/long tiers)
 - `TRUST_PROXY` - Reverse proxy support used to resolve the real client IP (`false`, `true`, a hops count, or a list of trusted proxies/subnets)
-- `LOCAL_NETWORK_ONLY_ENABLED` - Enforce the local network restriction on `@LocalNetworkOnly()` endpoints (default enabled, set to `false` to disable)
-- `LOCAL_NETWORK_ALLOWED_CIDRS` - Extra comma-separated addresses/subnets treated as local (e.g. a VPN subnet)
 - `DEVICE_CONFIGS_DIR` - Directory with YAML device config files (default `configs/devices`)
 
 ### Device Configs
