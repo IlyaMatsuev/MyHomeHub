@@ -21,7 +21,7 @@ export const UserSchema = new mongoose.Schema(
             index: true,
         },
         // No "length" constraints because the password is stored as hash.
-        // Only required when there is no other way to authenticate the user (i.e. no linked Google account)
+        // Only required for manual registration
         password: {
             type: String,
             required: function () {
