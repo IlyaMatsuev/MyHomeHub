@@ -45,27 +45,48 @@ See the [MQTT configuration guide](../configs/mqtt/README.md) for MQTT broker se
 
 ### Environment Variables
 
-| Category     | Variable                       | Description                              |
-| ------------ | ------------------------------ | ---------------------------------------- |
-| **Server**   | `PORT`                         | HTTP server port                         |
-| **Server**   | `NODE_ENV`                     | Environment (`local`, `prod`)            |
-| **Server**   | `TZ_LATITUDE`, `TZ_LONGITUDE`  | Location for sunrise/sunset calculations |
-| **Auth**     | `JWT_SECRET`                   | Secret key for JWT signing               |
-| **Auth**     | `JWT_EXPIRATION_TIMEOUT`       | Token lifetime in seconds                |
-| **Auth**     | `PASSWORD_RESET_TOKEN_TTL_SEC` | Password reset token lifetime in seconds |
-| **Auth**     | `REGISTRATION_TOTP_SECRET`     | Admin TOTP secret for registration       |
-| **Auth**     | `USER_PASSWORD_SECRET`         | Argon2 hashing secret                    |
-| **Auth**     | `USER_PASSWORD_SALT`           | Argon2 hashing salt                      |
-| **Database** | `MONGO_DOMAIN`                 | MongoDB hostname                         |
-| **Database** | `MONGO_PORT`                   | MongoDB port                             |
-| **Database** | `MONGO_INITDB_DATABASE`        | Database name                            |
-| **Database** | `MONGO_INITDB_ROOT_USERNAME`   | MongoDB username                         |
-| **Database** | `MONGO_INITDB_ROOT_PASSWORD`   | MongoDB password                         |
-| **MQTT**     | `MQTT_CLIENT_ID`               | MQTT client identifier                   |
-| **MQTT**     | `MQTT_DOMAIN`                  | MQTT broker hostname                     |
-| **MQTT**     | `MQTT_PORT`                    | MQTT broker port                         |
-| **MQTT**     | `MQTT_USERNAME`                | MQTT username                            |
-| **MQTT**     | `MQTT_PASSWORD`                | MQTT password                            |
+| Category     | Variable                       | Description                                                                                                                    |
+| ------------ | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Server**   | `PORT`                         | HTTP server port                                                                                                               |
+| **Server**   | `NODE_ENV`                     | Environment (`local`, `prod`)                                                                                                  |
+| **Server**   | `TZ_LATITUDE`, `TZ_LONGITUDE`  | Location for sunrise/sunset calculations                                                                                       |
+| **Server**   | `TRUST_PROXY`                  | Reverse proxy support used to resolve the real client IP (`false`, `true`, a hops count, or a list of trusted proxies/subnets) |
+| **Auth**     | `JWT_SECRET`                   | Secret key for JWT signing                                                                                                     |
+| **Auth**     | `JWT_EXPIRATION_TIMEOUT`       | Token lifetime in seconds                                                                                                      |
+| **Auth**     | `PASSWORD_RESET_TOKEN_TTL_SEC` | Password reset token lifetime in seconds                                                                                       |
+| **Auth**     | `REGISTRATION_TOTP_SECRET`     | Admin TOTP secret for registration                                                                                             |
+| **Auth**     | `USER_PASSWORD_SECRET`         | Argon2 hashing secret                                                                                                          |
+| **Auth**     | `USER_PASSWORD_SALT`           | Argon2 hashing salt                                                                                                            |
+| **Database** | `MONGO_DOMAIN`                 | MongoDB hostname                                                                                                               |
+| **Database** | `MONGO_PORT`                   | MongoDB port                                                                                                                   |
+| **Database** | `MONGO_INITDB_DATABASE`        | Database name                                                                                                                  |
+| **Database** | `MONGO_INITDB_ROOT_USERNAME`   | MongoDB username                                                                                                               |
+| **Database** | `MONGO_INITDB_ROOT_PASSWORD`   | MongoDB password                                                                                                               |
+| **MQTT**     | `MQTT_CLIENT_ID`               | MQTT client identifier                                                                                                         |
+| **MQTT**     | `MQTT_DOMAIN`                  | MQTT broker hostname                                                                                                           |
+| **MQTT**     | `MQTT_PORT`                    | MQTT broker port                                                                                                               |
+| **MQTT**     | `MQTT_USERNAME`                | MQTT username                                                                                                                  |
+| **MQTT**     | `MQTT_PASSWORD`                | MQTT password                                                                                                                  |
+
+### Local Network Restriction
+
+Some endpoints that do not require authentication are only served to clients from the local network, so that a hub exposed to the internet cannot be abused by strangers (e.g. registration request spam):
+
+| Endpoint                                         | Access                                       |
+| ------------------------------------------------ | -------------------------------------------- |
+| `POST /auth/register/requests`                   | Local network only                           |
+| `GET /auth/register/requests/{externalId}`       | Local network only                           |
+| `DELETE /auth/register/requests/{externalId}`    | Local network only                           |
+| `GET /info`                                      | Local network only                           |
+| Login, token refresh, register, password restore | Public, so that users can authorize remotely |
+
+Requests from outside get a **403 Forbidden**. Loopback, private and link-local IPv4/IPv6 addresses count as local, everything else is rejected. The restriction is always on and requires no configuration.
+
+#### Behind a Reverse Proxy
+
+The client address is taken from the connection, unless `TRUST_PROXY` is configured, in which case it is resolved from the `X-Forwarded-For` header. Without it every request looks like it comes from the proxy, which for a proxy running in the same network means the restriction lets everything through.
+
+`TRUST_PROXY=true` trusts the header from any client and lets the client IP be spoofed. Prefer the number of proxies in front of the server (`TRUST_PROXY=1`) or a list of trusted proxies (`TRUST_PROXY=loopback,172.18.0.0/16`). See the [express guide](https://expressjs.com/en/guide/behind-proxies.html) for the supported values.
 
 ## Supported Device Brands
 

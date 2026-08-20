@@ -30,16 +30,20 @@ export class RegistrationRequestsController {
     // TODO: When creating a registration request, I need to respond with some kind of JWT token with a baked in request id
     //  Then, when trying to get request, I need to provide this token and check the user for which it was made in the guards
     //  To exclude the possibility to guess external id of request of the users
-    @Public()
+    @Public({ localOnly: true })
     @Get('/:externalId')
     @ApiParam({
         name: 'externalId',
         description: 'The external ID of the registration request, provided after creating the request',
         example: 'f3cec07c-9834-4a02-990d-28b0d99534ab',
     })
-    @ApiOperation({ summary: 'Get a registration request by external ID' })
+    @ApiOperation({
+        summary: 'Get a registration request by external ID',
+        description: 'Only accessible from the local network',
+    })
     @ApiOkResponse({ type: RegistrationRequestResponseDto })
     @ApiNotFound('registration request')
+    @ApiForbidden()
     async getRequest(@ExternalIdParam() externalId: string): Promise<RegistrationRequestResponseDto> {
         return new RegistrationRequestResponseDto(
             await this.registrationRequestsService.getRequestByExternalId(externalId, { strict: true }),
@@ -55,11 +59,15 @@ export class RegistrationRequestsController {
         return this.registrationRequestsService.getRequests(query);
     }
 
-    @Public()
+    // TODO: For each created request, ask for a captcha from the phone of some sort
+    @Public({ localOnly: true })
     @Post()
     @StrictThrottle('registrationRequest')
     @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'Submit a new registration request' })
+    @ApiOperation({
+        summary: 'Submit a new registration request',
+        description: 'Only accessible from the local network',
+    })
     @ApiOkResponse({ type: RegistrationRequestResponseDto })
     @ApiValidationError()
     @ApiForbidden()
@@ -87,7 +95,7 @@ export class RegistrationRequestsController {
         return this.registrationRequestsService.updateRequest(externalId, dto);
     }
 
-    @Public()
+    @Public({ localOnly: true })
     @Delete('/:externalId')
     @StrictThrottle('registrationRequest')
     @ApiParam({
@@ -95,10 +103,14 @@ export class RegistrationRequestsController {
         description: 'The external ID of the registration request, provided after creating the request',
         example: 'f3cec07c-9834-4a02-990d-28b0d99534ab',
     })
-    @ApiOperation({ summary: 'Cancel a pending registration request' })
+    @ApiOperation({
+        summary: 'Cancel a pending registration request',
+        description: 'Only accessible from the local network',
+    })
     @ApiOkResponse({ type: RegistrationRequestResponseDto })
     @ApiNotFound('registration request')
     @ApiValidationError()
+    @ApiForbidden()
     cancelRequest(@ExternalIdParam() externalId: string): Promise<RegistrationRequestResponseDto> {
         return this.registrationRequestsService.cancelRequest(externalId);
     }

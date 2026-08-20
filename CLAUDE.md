@@ -105,7 +105,7 @@ Authentication uses **Passport.js** with a `passport-jwt` strategy (`src/auth/st
 - `POST /auth/login` accepts either email/password **or** a `refreshToken` (providing both returns 400). It responds with a short-lived `accessToken` and a longer-lived `refreshToken`, allowing token renewal without re-entering credentials.
 - `POST /auth/password/reset` accepts `email` and `totp` (admin's authenticator TOTP — same secret used for TOTP registration) and returns a short-lived `resetToken`
 - `PUT /auth/password/change` accepts the `resetToken` and `newPassword`, rehashes it, and updates the user record. The password reset token is an opaque single-use random value (issued by `PasswordResetTokensService`), stored in Redis as a SHA-256-hashed key with `PASSWORD_RESET_TOKEN_TTL_SEC` TTL, and atomically consumed via `GETDEL` on use — it is not a JWT and shares no signing material with access/refresh tokens.
-- Two global guards run in order: `JwtAuthGuard` (validates the access token, honoring `@Public()` and the local-auth bypass) then `RolesGuard` (enforces `@Roles(...)`).
+- Three global guards run in order: `LocalNetworkGuard` (enforces `@Public({ localOnly: true })`), `JwtAuthGuard` (validates the access token, honoring `@Public()` and the local-auth bypass), then `RolesGuard` (enforces `@Roles(...)`).
 
 Registration requests (`/auth/register/requests`) have a status lifecycle: `pending` → `approved`/`rejected` (admin via `PUT`) or `cancelled` (requester via the public `DELETE /auth/register/requests/{externalId}`; only `pending` requests can be cancelled). `POST` returns **409 Conflict** (`FieldConflictException` — the 409 twin of `FieldValidationException`) when a `pending`/`approved` request for the email already exists; `rejected` (unless blacklisted) and `cancelled` requests are reset to `pending` by re-submitting via `POST`. Cancelled requests cannot be approved and block `POST /auth/register` until re-requested.
 
@@ -116,6 +116,16 @@ Users and registration requests carry a `role` (`UserRole`: `Admin`, `Resident`,
 - **Guest** - default role for new registration requests; limited access.
 
 Restrict endpoints with `@Roles(...)` from `auth/decorators`. Endpoints without `@Roles` are open to any authenticated user. Admins can assign the role granted on approval via the `role` field of `PUT /auth/register/requests/{externalId}`; the new user inherits the registration request's role.
+
+### Local Network Restriction
+
+Endpoints marked with `@Public({ localOnly: true })` (from `auth/decorators`) are rejected with **403 Forbidden** unless the request originates from the local network. This exists so a hub exposed to the internet cannot have its unauthenticated endpoints abused (e.g. registration request spam). `localOnly` defaults to `false`, so a bare `@Public()` stays reachable from anywhere. The restriction is always enforced — there is no env variable to turn it off.
+
+Currently applied to `GET/POST/DELETE /auth/register/requests` (the public ones) and `GET /info`. The login, refresh, register and password restore endpoints stay reachable from anywhere so users can authorize remotely.
+
+`LocalNetworkGuard` (`auth/guards`) does the address matching with `ipaddr.js` by checking the address range against `LOCAL_IP_RANGES` (`auth/auth.constants`): IPv4 loopback/private/link-local, IPv6 loopback/unique-local/link-local. IPv4-mapped IPv6 addresses are unwrapped before matching, and an unresolvable address fails closed.
+
+The client IP comes from `request.ip`, which honors the express `trust proxy` setting, so the restriction works behind a reverse proxy. `TRUST_PROXY` accepts `false`, `true`, a number of proxy hops, or a comma-separated list of trusted proxies/subnets — `true` trusts `X-Forwarded-For` from any client and therefore allows spoofing the client IP, so a hop count or a proxy list should be preferred (the server logs a warning on startup when `TRUST_PROXY=true`).
 
 ### Path Aliases (tsconfig.json)
 
@@ -152,7 +162,7 @@ Key variables:
 - `MQTT_*` - MQTT broker connection
 - `REDIS_*` - Redis connection (for rate limiting)
 - `THROTTLE_*` - Rate limiting configuration (enabled, TTL/limit for short/medium/long tiers)
-- `TRUST_PROXY` - Enable proxy support to rate limit by real client IP
+- `TRUST_PROXY` - Reverse proxy support used to resolve the real client IP (`false`, `true`, a hops count, or a list of trusted proxies/subnets)
 - `DEVICE_CONFIGS_DIR` - Directory with YAML device config files (default `configs/devices`)
 
 ### Device Configs

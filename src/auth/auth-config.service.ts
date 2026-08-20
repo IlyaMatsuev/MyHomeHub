@@ -2,6 +2,7 @@ import { ExecutionContext, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from 'auth/decorators';
+import { PublicOptions } from 'auth/interfaces';
 
 @Injectable()
 export class AuthConfigService {
@@ -11,7 +12,11 @@ export class AuthConfigService {
     ) {}
 
     isPublicEndpoint(context: ExecutionContext): boolean {
-        return this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
+        return !!this.getPublicOptions(context);
+    }
+
+    isLocalNetworkOnlyEndpoint(context: ExecutionContext): boolean {
+        return !!this.getPublicOptions(context)?.localOnly;
     }
 
     isAuthEnabled(): boolean {
@@ -65,6 +70,10 @@ export class AuthConfigService {
 
     getUserPasswordSalt(): string {
         return this.configService.get<string>('USER_PASSWORD_SALT');
+    }
+
+    private getPublicOptions(context: ExecutionContext): PublicOptions | undefined {
+        return this.reflector.getAllAndOverride<PublicOptions>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
     }
 
     private getNumberConfig(name: string): number | undefined {

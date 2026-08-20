@@ -21,11 +21,10 @@ async function bootstrap() {
 
     const config = app.get<ConfigService>(ConfigService);
 
-    if (config.get<string>('TRUST_PROXY') === 'true') {
-        app.set('trust proxy', true);
-    }
-
     app.useLogger(setupLogger(config));
+
+    setupTrustProxy(app, config);
+
     app.connectMicroservice<MicroserviceOptions>({
         transport: Transport.MQTT,
         options: {
@@ -54,6 +53,18 @@ async function bootstrap() {
 
     await app.startAllMicroservices();
     await app.listen(config.get<string>('PORT') ?? DEFAULT_PORT, '0.0.0.0');
+}
+
+/**
+ * TRUST_PROXY accepts:
+ * - `false`
+ * - `true` (trust any client)
+ * - the number of reverse proxies in front of the server (e.g. 1)
+ * - comma-separated list of trusted proxy addresses/subnets (e.g. loopback,192.168.0.1/16)
+ * Source: https://expressjs.com/en/guide/behind-proxies.html
+ */
+function setupTrustProxy(app: NestExpressApplication, config: ConfigService): void {
+    app.set('trust proxy', config.get<string>('TRUST_PROXY')?.trim());
 }
 
 function isProd(config: ConfigService): boolean {
