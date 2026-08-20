@@ -64,7 +64,7 @@ This is a **NestJS-based server** that controls IoT devices via multiple protoco
 ```
 AppModule
 ├── CommonModule          # Global filters, interceptors, ConditionsEvaluatorService
-├── AuthModule            # Passport.js JWT auth (login/refresh/register with TOTP), role-based access
+├── AuthModule            # Passport.js JWT auth (login/refresh/register with TOTP), Google sign-in, role-based access
 ├── UsersModule           # User management with Argon2 password hashing
 ├── DevicesModule         # Device CRUD, state management
 │   └── DevicesControlModule  # Device communication providers
@@ -105,17 +105,31 @@ Authentication uses **Passport.js** with a `passport-jwt` strategy (`src/auth/st
 - `POST /auth/login` accepts either email/password **or** a `refreshToken` (providing both returns 400). It responds with a short-lived `accessToken` and a longer-lived `refreshToken`, allowing token renewal without re-entering credentials.
 - `POST /auth/password/reset` accepts `email` and `totp` (admin's authenticator TOTP — same secret used for TOTP registration) and returns a short-lived `resetToken`
 - `PUT /auth/password/change` accepts the `resetToken` and `newPassword`, rehashes it, and updates the user record. The password reset token is an opaque single-use random value (issued by `PasswordResetTokensService`), stored in Redis as a SHA-256-hashed key with `PASSWORD_RESET_TOKEN_TTL_SEC` TTL, and atomically consumed via `GETDEL` on use — it is not a JWT and shares no signing material with access/refresh tokens.
-- Three global guards run in order: `LocalNetworkGuard` (enforces `@Public({ localOnly: true })`), `JwtAuthGuard` (validates the access token, honoring `@Public()` and the local-auth bypass), then `RolesGuard` (enforces `@Roles(...)`).
+- `PUT /auth/google/login` accepts a Google `idToken` and responds with the same `accessToken`/`refreshToken` pair as the credentials login
+- `POST /auth/google/link` and `DELETE /auth/google/link` link/unlink a Google account for the currently authenticated user
+- Three global guards run in order: `LocalNetworkGuard` (enforces `@Public({ localOnly: true })`), `JwtAuthGuard` (validates the access token, honoring `@Public()` and the local-auth bypass), then `RolesGuard` (enforces `@ForRoles(...)`).
 
 Registration requests (`/auth/register/requests`) have a status lifecycle: `pending` → `approved`/`rejected` (admin via `PUT`) or `cancelled` (requester via the public `DELETE /auth/register/requests/{externalId}`; only `pending` requests can be cancelled). `POST` returns **409 Conflict** (`FieldConflictException` — the 409 twin of `FieldValidationException`) when a `pending`/`approved` request for the email already exists; `rejected` (unless blacklisted) and `cancelled` requests are reset to `pending` by re-submitting via `POST`. Cancelled requests cannot be approved and block `POST /auth/register` until re-requested.
 
 Users and registration requests carry a `role` (`UserRole`: `Admin`, `Resident`, `Guest`):
 
-- **Admin** - full access (bypasses all `@Roles` checks). Assigned automatically on TOTP registration.
-- **Resident** - manages devices and scenarios (`@Roles(UserRole.Resident)` on those controllers).
+- **Admin** - full access (bypasses all `@ForRoles` checks). Assigned automatically on TOTP registration.
+- **Resident** - manages devices and scenarios (`@ForRoles(UserRole.Resident)` on those controllers).
 - **Guest** - default role for new registration requests; limited access.
 
-Restrict endpoints with `@Roles(...)` from `auth/decorators`. Endpoints without `@Roles` are open to any authenticated user. Admins can assign the role granted on approval via the `role` field of `PUT /auth/register/requests/{externalId}`; the new user inherits the registration request's role.
+Restrict endpoints with `@ForRoles(...)` from `auth/decorators`. `RolesGuard` only lets a request through when the user is an `Admin` or their role is listed in `@ForRoles(...)`, so an authenticated non-admin is rejected on an endpoint without the decorator — every non-admin endpoint must list its roles explicitly (e.g. `@ForRoles(UserRole.Resident, UserRole.Guest)` on `GET /users/me`). Admins can assign the role granted on approval via the `role` field of `PUT /auth/register/requests/{externalId}`; the new user inherits the registration request's role.
+
+### Google Sign-In
+
+The hub verifies **Google ID tokens** instead of running the OAuth redirect flow: the client (WEB or IOS app) performs the Google Sign-In itself and posts the resulting `idToken`. A self-hosted hub has no stable public address, so registering an OAuth redirect URI per installation is not practical, and the ID token flow needs no client secret.
+
+`GoogleTokenVerifierService` (`auth/google-token-verifier.service.ts`) validates the token with `google-auth-library` against the client IDs from `GOOGLE_CLIENT_ID` (comma-separated, since Google issues one per platform) and rejects tokens whose email is not verified by Google. Without the variable set the Google endpoints respond with **503**. `GoogleAuthService` (`auth/google-auth.service.ts`) then resolves the user for the verified profile:
+
+1. The user already linked to the Google account (`users.googleId`, a unique sparse index) is signed in.
+2. Otherwise a user with the same email is linked to the Google account automatically — Google has verified the email ownership. A user already linked to a _different_ Google account gets a **409 Conflict**.
+3. Otherwise a new user is registered, but only when the email has an **approved registration request** — the Google sign-up follows the same approval policy as the credentials one (`RegistrationRequestsService.getApprovedRequestByEmail`, shared by both flows).
+
+Users registered through Google have **no password** (`users.password` is only required when there is no `googleId`), so `PUT /auth/login` rejects them and `DELETE /auth/google/link` refuses to unlink until a password is set via the password reset flow. `GET /users/me` exposes `googleLinked`, `googleEmail` and `hasPassword` so a client can tell how the account can be authenticated.
 
 ### Local Network Restriction
 
@@ -156,6 +170,7 @@ Key variables:
 - `JWT_SECRET`, `JWT_EXPIRATION_TIMEOUT` - Access token signing secret and lifetime
 - `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRATION_TIMEOUT` - Refresh token signing secret and lifetime
 - `PASSWORD_RESET_TOKEN_TTL_SEC` - Password reset token lifetime in seconds (opaque Redis-backed token)
+- `GOOGLE_CLIENT_ID` - Comma-separated Google client IDs the Google ID tokens are verified against (empty disables the Google endpoints)
 - `REGISTRATION_TOTP_SECRET` - Admin TOTP for user registration and password restore
 - `USER_PASSWORD_SECRET`, `USER_PASSWORD_SALT` - Argon2 hashing
 - `MONGO_*` - MongoDB connection

@@ -12,7 +12,7 @@ A home-running server that controls, stores, and provides information about IoT 
 - **Multi-Protocol Device Support**: Control devices via MQTT, Tuya local API, HTTP, and Google Cast
 - **Device Brands**: ESP32 (custom MQTT devices using [SmartHomeDevices](https://github.com/IlyaMatsuev/SmartHomeDevices) library), Tuya, Shelly, Google Speakers
 - **Automation Scenarios**: Create automation rules with cron schedules and device state triggers
-- **Secure Authentication**: JWT-based authentication with TOTP for user registration
+- **Secure Authentication**: JWT-based authentication with TOTP for user registration and Google sign-in support
 - **REST API**: Full device management through REST endpoints with Swagger documentation
 - **Discoverable**: The hub can be discovered in the Wi-Fi network by sending a UDP request
 
