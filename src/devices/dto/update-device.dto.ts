@@ -58,7 +58,8 @@ export class UpdateDeviceDto {
     @IsEnum(DeviceBrand)
     @ApiProperty({
         required: false,
-        description: 'The new brand for the device',
+        description:
+            'The new brand for the device. Brand/protocol specific fields that no longer apply (e.g. `tuyaDeviceId` or `zigbeeFriendlyName`) are cleared automatically',
         enum: DeviceBrand,
     })
     brand?: DeviceBrand;
@@ -76,7 +77,8 @@ export class UpdateDeviceDto {
     @IsEnum(TransportProtocol)
     @ApiProperty({
         required: false,
-        description: 'The protocol to use for communicating with the device',
+        description:
+            'The protocol to use for communicating with the device. Brand/protocol specific fields that no longer apply (e.g. `tuyaDeviceId` or `zigbeeFriendlyName`) are cleared automatically',
         enum: TransportProtocol,
     })
     transportProtocol?: TransportProtocol;

@@ -16,7 +16,7 @@ import {
     DeviceResponseDto,
 } from 'devices/dto';
 import { DeviceConfigsService } from 'device-configs/device-configs.service';
-import { DeviceConfigKey } from 'device-configs/interfaces';
+import { DEVICE_CONFIG_SECTIONS, DeviceConfigKey, DeviceConfigSection } from 'device-configs/interfaces';
 import { DeviceConfigResponseDto } from 'device-configs/dto';
 import { DeviceUpdateRequestedEvent, DeviceUpdateCompletedEvent, DeviceCommandExecutedEvent } from 'devices/events';
 import { DEVICE_MODEL_PROVIDER_NAME } from 'devices/devices.constants';
@@ -233,16 +233,18 @@ export class DevicesService {
     }
 
     private async assignDtoValues(device: Device, updatedDevice: CreateDeviceDto | UpdateDeviceDto): Promise<Device> {
-        const controlService = this.getControlService(device);
-        for (const field of Object.keys(updatedDevice)) {
-            if (field === 'controls') {
-                device.controls = await controlService.mergeValidateControls(updatedDevice.controls, device.controls);
-            } else if (field === 'measurements') {
-                // TODO: Do I need to validate them?
-                device.measurements = updatedDevice.measurements;
-            } else {
-                device[field] = updatedDevice[field];
-            }
+        const fields = Object.keys(updatedDevice);
+        for (const field of fields.filter(field => !DEVICE_CONFIG_SECTIONS.includes(field as DeviceConfigSection))) {
+            device[field] = updatedDevice[field];
+        }
+
+        // Assign controls and measurements last to choose a correct control service in case device config keys have been changed on the device (brand/protocol)
+        if (fields.includes('controls')) {
+            device.controls = await this.getControlService(device).mergeValidateControls(updatedDevice.controls, device.controls);
+        }
+        if (fields.includes('measurements')) {
+            // TODO: Do I need to validate them?
+            device.measurements = updatedDevice.measurements;
         }
         return device;
     }

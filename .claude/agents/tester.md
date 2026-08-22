@@ -514,6 +514,14 @@ describe('HttpExceptionFilter', () => {
 ## Known Limitations
 
 - **ESM Modules**: Some device control providers (Tuya, Shelly) use ESM-only dependencies (`color`, `tuyapi`) that cannot be tested directly with Jest's CommonJS transform. Mock the factories instead.
+- **Mongoose schemas**: every `schemas/*.schema.ts` imports `uuid` for the `externalId` default, and `uuid` is ESM-only, so a spec importing a schema fails to even load with `SyntaxError: Unexpected token 'export'`. Mock it at the top of the spec (before the imports, so the hoisted `jest.mock` reads as intentional):
+
+    ```typescript
+    jest.mock('uuid', () => ({ v4: () => 'device-uuid-123' }));
+    ```
+
+    Schemas are excluded from coverage, but the logic in their hooks and validators is still worth testing - keep the per-rule cases in the sibling `*.validators.spec.ts` (plain functions, fake documents) and use the schema spec only for what needs a real document: that the hook is actually registered, and how it interacts with the field validators.
+
 - **Cron Jobs**: Prefer `jest.useFakeTimers()` for testing scheduled tasks. If the service under test calls `new CronJob(...).start()` for real (e.g. `SchedulerService.scheduleJob`), collect every returned `CronJob` and call `.stop()` on it in `afterEach` — otherwise the cron timer keeps the Jest worker alive and you'll see `A worker process has failed to exit gracefully`.
 
     ```typescript

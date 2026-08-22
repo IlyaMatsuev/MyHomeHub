@@ -659,6 +659,21 @@ describe('DevicesService', () => {
             expect(mockControlService.setControls).not.toHaveBeenCalled();
         });
 
+        it('should replace the measurements without merging them as controls', async () => {
+            const deviceWithSave = { ...mockDevice, save: jest.fn().mockResolvedValue(undefined) };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithSave),
+            });
+            mockControlService.mergeValidateControls.mockClear();
+
+            await service.updateDevice('device-uuid-123', new UpdateDeviceDto({ room: Room.Bedroom, measurements: { temperature: 25 } }));
+
+            expect(deviceWithSave.measurements).toEqual({ temperature: 25 });
+            expect(deviceWithSave.room).toBe(Room.Bedroom);
+            expect(deviceWithSave.controls).toEqual(mockDevice.controls);
+            expect(mockControlService.mergeValidateControls).not.toHaveBeenCalled();
+        });
+
         it('should emit DeviceUpdateCompletedEvent flagging measurements as updated', async () => {
             const deviceWithSave = { ...mockDevice, save: jest.fn().mockResolvedValue(undefined) };
             mockDeviceModel.findOne.mockReturnValue({
@@ -720,6 +735,8 @@ describe('DevicesService', () => {
         it('should rename zigbee device when friendly name changes', async () => {
             const deviceWithSave = {
                 ...mockDevice,
+                brand: DeviceBrand.Philips,
+                transportProtocol: TransportProtocol.Zigbee,
                 zigbeeIeeeAddress: '0xpairable',
                 zigbeeFriendlyName: 'old_name',
                 save: jest.fn().mockResolvedValue({
@@ -745,9 +762,35 @@ describe('DevicesService', () => {
             expect(mockZigbeeService.renameDevice).toHaveBeenCalledWith('0xpairable', 'new_name');
         });
 
+        it('should validate the controls with the control service of the updated brand', async () => {
+            const deviceWithSave = { ...mockDevice, save: jest.fn().mockResolvedValue(undefined) };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithSave),
+            });
+            mockControlService.mergeValidateControls.mockResolvedValue({ on: true });
+            mockControlServiceFactory.getControlService.mockClear();
+
+            const updateDto = new UpdateDeviceDto({
+                brand: DeviceBrand.Shelly,
+                transportProtocol: TransportProtocol.Http,
+                controls: { on: true },
+            });
+            await service.updateDevice('device-uuid-123', updateDto);
+
+            // The brand/protocol of the update have to be applied before the control service is resolved
+            expect(mockControlServiceFactory.getControlService).toHaveBeenCalledWith(
+                expect.objectContaining({ brand: DeviceBrand.Shelly, transportProtocol: TransportProtocol.Http }),
+            );
+            expect(mockControlServiceFactory.getControlService).not.toHaveBeenCalledWith(
+                expect.objectContaining({ brand: DeviceBrand.Tuya }),
+            );
+        });
+
         it('should not rename zigbee device when friendly name is unchanged', async () => {
             const deviceWithSave = {
                 ...mockDevice,
+                brand: DeviceBrand.Philips,
+                transportProtocol: TransportProtocol.Zigbee,
                 zigbeeIeeeAddress: '0xpairable',
                 zigbeeFriendlyName: 'same_name',
                 save: jest.fn().mockResolvedValue({

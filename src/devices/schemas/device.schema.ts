@@ -4,6 +4,7 @@ import { ZIGBEE_FRIENDLY_NAME_MAX_LENGTH, ZIGBEE_FRIENDLY_NAME_MIN_LENGTH, ZIGBE
 import { DeviceBrand, DeviceType, Room } from 'devices/interfaces';
 import { DEVICE_DEFAULT_UPDATE_INTERVAL, DEVICE_NAME_MAX_LENGTH, DEVICE_NAME_MIN_LENGTH } from 'devices/devices.constants';
 import { TransportProtocol } from 'devices-control/interfaces';
+import { dropScopedDependencyFields, isTuyaDevice, isZigbeeDevice } from 'devices/schemas/device.validators';
 
 export const DeviceSchema = new Schema(
     {
@@ -46,11 +47,11 @@ export const DeviceSchema = new Schema(
         tuyaDeviceId: {
             type: String,
             required: function () {
-                return this.brand === DeviceBrand.Tuya;
+                return isTuyaDevice(this);
             },
             validate: {
                 validator: function (): boolean {
-                    return this.brand === DeviceBrand.Tuya;
+                    return isTuyaDevice(this);
                 },
                 message: `Tuya device id can be specified only for a device of brand "${DeviceBrand.Tuya}"`,
             },
@@ -58,11 +59,11 @@ export const DeviceSchema = new Schema(
         tuyaDeviceLocalKey: {
             type: String,
             required: function () {
-                return this.brand === DeviceBrand.Tuya;
+                return isTuyaDevice(this);
             },
             validate: {
                 validator: function (): boolean {
-                    return this.brand === DeviceBrand.Tuya;
+                    return isTuyaDevice(this);
                 },
                 message: `Tuya device local key can be specified only for a device of brand "${DeviceBrand.Tuya}"`,
             },
@@ -95,12 +96,12 @@ export const DeviceSchema = new Schema(
             type: String,
             index: true,
             required: function () {
-                return this.transportProtocol === TransportProtocol.Zigbee;
+                return isZigbeeDevice(this);
             },
             validate: [
                 {
                     validator: function (): boolean {
-                        return this.transportProtocol === TransportProtocol.Zigbee;
+                        return isZigbeeDevice(this);
                     },
                     message: 'Zigbee IEEE address cannot be assign to a non-Zigbee device',
                 },
@@ -135,6 +136,8 @@ export const DeviceSchema = new Schema(
     },
     { timestamps: true },
 );
+
+DeviceSchema.pre('validate', dropScopedDependencyFields);
 
 DeviceSchema.pre('save', function (next) {
     if (this.isModified('controls')) {
