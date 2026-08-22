@@ -4,7 +4,7 @@ import { Model, RootFilterQuery } from 'mongoose';
 import { DevicesControlServiceFactory } from 'devices-control/devices-control-service.factory';
 import { DevicesControlService } from 'devices-control/devices-control.service';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
-import { Device, DeviceFilter, GetDeviceOptions } from 'devices/interfaces';
+import { Device, DeviceFilter, GetDeviceOptions, UpdateDeviceOptions } from 'devices/interfaces';
 import {
     GetDevicesDto,
     GetDeviceDto,
@@ -48,7 +48,7 @@ export class DevicesService {
 
         const device = await this.findDevice(event.selector, { strict: false });
         if (device) {
-            await this.updateDevice(device.externalId, event.update);
+            await this.updateDevice(device.externalId, event.update, { propagateControls: event.propagate });
         } else {
             this.logger.warn(`No device matched DeviceUpdatedEvent selector ${JSON.stringify(event.selector)}`);
         }
@@ -133,11 +133,15 @@ export class DevicesService {
         return newDevice;
     }
 
-    async updateDevice(externalId: string, updateDeviceDto: UpdateDeviceDto): Promise<Device> {
+    async updateDevice(
+        externalId: string,
+        updateDeviceDto: UpdateDeviceDto,
+        options: UpdateDeviceOptions = { propagateControls: true },
+    ): Promise<Device> {
         const device = await this.getDeviceByExternalId(externalId);
         const updatedDevice = await this.assignDtoValues(device, updateDeviceDto);
 
-        if (updateDeviceDto.controlsUpdated) {
+        if (updateDeviceDto.controlsUpdated && options.propagateControls) {
             await this.getControlService(updatedDevice).setControls(updatedDevice.controls);
         }
 

@@ -35,6 +35,7 @@ export class DevicesMqttService {
                         controls: pairRequest.controls,
                         measurements: pairRequest.measurements,
                     }),
+                    { propagateControls: false },
                 );
             }
             this.pairEsp32Device(existingDevice);
@@ -56,7 +57,9 @@ export class DevicesMqttService {
         try {
             this.logger.debug(`Syncing controls for a device with id "${deviceId}"`);
             const mappedControls = await this.deviceConfigsMapper.mapPayloadFromDevice(device, 'controls', controls);
-            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ controls: mappedControls }));
+            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ controls: mappedControls }), {
+                propagateControls: false,
+            });
         } catch (error) {
             this.logger.error(`Error while syncing controls for a device with id "${deviceId}"`);
             this.logger.error(error);

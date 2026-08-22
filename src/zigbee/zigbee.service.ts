@@ -88,6 +88,7 @@ export class ZigbeeService {
                             ...(hasControls && { controls }),
                             ...(hasMeasurements && { measurements }),
                         }),
+                        false,
                     ),
                 );
                 this.logger.debug(`Updated Zigbee device "${zigbeeFriendlyName}" state`);

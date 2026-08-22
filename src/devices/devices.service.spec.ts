@@ -143,7 +143,24 @@ describe('DevicesService', () => {
             await service.onDeviceUpdated(event);
 
             expect(mockDeviceModel.findOne).toHaveBeenCalledWith({ ip: '192.168.1.100' });
-            expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update);
+            expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update, { propagateControls: event.propagate });
+        });
+
+        it('should forward the propagate flag from the event to the update', async () => {
+            const matchedDevice = { ...mockDevice } as Device;
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(matchedDevice),
+            });
+            const updateDeviceSpy = jest.spyOn(service, 'updateDevice').mockResolvedValue(matchedDevice);
+
+            const event = new DeviceUpdateRequestedEvent(
+                { externalId: mockDevice.externalId },
+                new UpdateDeviceDto({ controls: { on: true } }),
+                false,
+            );
+            await service.onDeviceUpdated(event);
+
+            expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update, { propagateControls: false });
         });
 
         it('should resolve the device by its zigbee friendly name selector', async () => {
@@ -161,7 +178,7 @@ describe('DevicesService', () => {
             await service.onDeviceUpdated(event);
 
             expect(mockDeviceModel.findOne).toHaveBeenCalledWith({ zigbeeFriendlyName: 'old_name' });
-            expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update);
+            expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update, { propagateControls: event.propagate });
         });
 
         it('should warn and not update when no device matches the selector', async () => {
@@ -644,6 +661,28 @@ describe('DevicesService', () => {
                     controlsUpdated: true,
                     measurementsUpdated: false,
                 }),
+            );
+        });
+
+        it('should persist the controls without sending them back to the device when not propagating', async () => {
+            // Devices report the state they have already applied. Pushing it back would make every external
+            // change (a physical button press, the vendor app) bounce between the hub and the device.
+            const save = jest.fn().mockResolvedValue(undefined);
+            const deviceWithSave = { ...mockDevice, save };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithSave),
+            });
+            mockControlService.mergeValidateControls.mockResolvedValue({ on: true });
+            mockControlService.setControls.mockClear();
+            mockEventEmitter.emit.mockClear();
+
+            await service.updateDevice('device-uuid-123', new UpdateDeviceDto({ controls: { on: true } }), { propagateControls: false });
+
+            expect(mockControlService.setControls).not.toHaveBeenCalled();
+            expect(save).toHaveBeenCalledWith({ validateBeforeSave: true });
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                DeviceUpdateCompletedEvent.eventName,
+                expect.objectContaining({ deviceExternalId: 'device-uuid-123', controlsUpdated: true }),
             );
         });
 
