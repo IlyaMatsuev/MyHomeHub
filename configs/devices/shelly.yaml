@@ -20,6 +20,45 @@ plug:
         description: "The currently consumed power (watts) while the device is on"
         path: "apower"
 
+led:
+  http:
+    controls:
+      - label: "On"
+        name: "on"
+        type: boolean
+        description: "Switch on/off state"
+      - label: "Mode"
+        name: "mode"
+        type: enum
+        description: "Defines whether the light color or the color temperature is applied"
+        values:
+          - label: "Color"
+            name: "rgb"
+          - label: "White"
+            name: "cct"
+      - label: "Brightness"
+        name: "brightness"
+        type: number
+        description: "Brightness level 0-100"
+      - label: "Light color"
+        name: "color"
+        type: string
+        description: "Light color HEX number"
+      - label: "Color temperature"
+        name: "temperature"
+        type: number
+        description: "White light color temperature in kelvins (2700-6500)"
+      - label: "Transition duration"
+        name: "transitionDuration"
+        type: number
+        description: "Duration of the fade between the light states in seconds (0.5-10800)"
+    measurements:
+      - label: "Power"
+        name: "power"
+        type: number
+        description: "The currently consumed power (watts) while the device is on"
+        path: "apower"
+
 switch:
   http:
     controls:
