@@ -247,8 +247,10 @@ export class DevicesService {
             device.controls = await this.getControlService(device).mergeValidateControls(updatedDevice.controls, device.controls);
         }
         if (fields.includes('measurements')) {
-            // TODO: Do I need to validate them?
-            device.measurements = updatedDevice.measurements;
+            device.measurements = await this.getControlService(device).mergeValidateMeasurements(
+                updatedDevice.measurements,
+                device.measurements,
+            );
         }
         return device;
     }

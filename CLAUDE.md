@@ -90,6 +90,12 @@ Each device has:
 - `controls` - Writable state (on/off, brightness, color)
 - `measurements` - Read-only state (temperature, power consumption)
 
+### Device Payloads
+
+`controls` and `measurements` updates are **merged** into the stored payload, not replaced: an update carrying a single field leaves the rest of the stored fields intact. This matters for devices that report deltas rather than full state. Send `$override: true` alongside the payload to replace the stored one instead; the flag itself is stripped and never persisted.
+
+Both payload kinds are validated before the device document is saved, so an invalid payload rejects the whole update. `DevicesControlService.mergeValidateControls`/`mergeValidateMeasurements` do the merge and hand the result to the DTO returned by `getControlsDtoType()`/`getMeasurementsDtoType()` - the controls DTO is per brand/type (e.g. `ShellyLedControlsDto`), while measurements default to the generic `DevicePayloadDto` until a brand overrides `getMeasurementsDtoType()`.
+
 ### Scenario System
 
 Scenarios define automation rules with:

@@ -1,13 +1,23 @@
 import { ConfigService } from '@nestjs/config';
+import { IsBoolean, IsNumber, IsOptional } from 'class-validator';
 import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { DevicesControlService } from './devices-control.service';
 import { DeviceTransportServiceResolver } from 'devices-control/transport';
 import { TransportMessage, TransportProtocol } from 'devices-control/interfaces';
 import { Device, DeviceControls } from 'devices/interfaces';
 import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
+import { CustomValidationException } from 'common/exceptions';
 
 class TestControlsDto {
+    @IsOptional()
+    @IsBoolean()
     on?: boolean;
+}
+
+class TestMeasurementsDto {
+    @IsOptional()
+    @IsNumber()
+    power?: number;
 }
 
 class TestControlService extends DevicesControlService {
@@ -27,6 +37,12 @@ class TestControlService extends DevicesControlService {
             throw this.payloadError;
         }
         return this.payload;
+    }
+}
+
+class TestTypedMeasurementsControlService extends TestControlService {
+    protected getMeasurementsDtoType<T extends object>(): ClassConstructor<T> {
+        return TestMeasurementsDto as ClassConstructor<T>;
     }
 }
 
@@ -56,6 +72,70 @@ describe('DevicesControlService', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+    });
+
+    describe('mergeValidateControls', () => {
+        it('should merge the provided controls into the stored ones', async () => {
+            const merged = await service.mergeValidateControls({ on: true }, { on: false, brightness: 40 });
+
+            expect(merged).toEqual({ on: true, brightness: 40 });
+        });
+
+        it('should replace the stored controls when $override is set', async () => {
+            const merged = await service.mergeValidateControls({ $override: true, on: true }, { on: false, brightness: 40 });
+
+            expect(merged).toEqual({ on: true });
+        });
+
+        it('should not persist the $override flag itself', async () => {
+            const merged = await service.mergeValidateControls({ $override: true, on: true }, {});
+
+            expect(merged).not.toHaveProperty('$override');
+        });
+
+        it('should throw a validation exception when a merged control is invalid', async () => {
+            await expect(service.mergeValidateControls({ on: 'yes' } as unknown as DeviceControls, {})).rejects.toThrow(
+                CustomValidationException,
+            );
+        });
+    });
+
+    describe('mergeValidateMeasurements', () => {
+        it('should merge the provided measurements into the stored ones', async () => {
+            // Devices reporting a single changed value must not wipe the rest of the stored measurements
+            const merged = await service.mergeValidateMeasurements({ power: 4.5 }, { power: 10, voltage: 238, current: 0.029 });
+
+            expect(merged).toEqual({ power: 4.5, voltage: 238, current: 0.029 });
+        });
+
+        it('should replace the stored measurements when $override is set', async () => {
+            const merged = await service.mergeValidateMeasurements({ $override: true, power: 4.5 }, { power: 10, voltage: 238 });
+
+            expect(merged).toEqual({ power: 4.5 });
+        });
+
+        it('should not persist the $override flag itself', async () => {
+            const merged = await service.mergeValidateMeasurements({ $override: true, power: 4.5 }, {});
+
+            expect(merged).not.toHaveProperty('$override');
+        });
+
+        it('should keep the measurements the default payload dto does not describe', async () => {
+            const merged = await service.mergeValidateMeasurements({ aenergy: { total: 14.982 } }, {});
+
+            expect(merged).toEqual({ aenergy: { total: 14.982 } });
+        });
+
+        it('should throw a validation exception when the brand measurements dto rejects a value', async () => {
+            const typedService = new TestTypedMeasurementsControlService(
+                mockDevice as Device,
+                mockResolver as unknown as DeviceTransportServiceResolver,
+                {} as ConfigService,
+                mockDeviceConfigsMapper as unknown as DeviceConfigsMapperService,
+            );
+
+            await expect(typedService.mergeValidateMeasurements({ power: 'a lot' }, {})).rejects.toThrow(CustomValidationException);
+        });
     });
 
     describe('setControls', () => {

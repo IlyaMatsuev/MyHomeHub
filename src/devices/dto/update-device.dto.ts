@@ -136,7 +136,7 @@ export class UpdateDeviceDto {
     @ValidateNested()
     @ApiProperty({
         required: false,
-        description: 'Updated set of controls for the device',
+        description: 'Updated set of controls for the device. Merged into the stored ones unless "$override" is set',
         default: {},
     })
     controls?: DeviceControlsDto;
@@ -146,7 +146,7 @@ export class UpdateDeviceDto {
     @ValidateNested()
     @ApiProperty({
         required: false,
-        description: 'Updated set of measurements for the device',
+        description: 'Updated set of measurements for the device. Merged into the stored ones unless "$override" is set',
         default: {},
     })
     measurements?: DevicePayloadDto;

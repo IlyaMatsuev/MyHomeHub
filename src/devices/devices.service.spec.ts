@@ -52,6 +52,8 @@ describe('DevicesService', () => {
     const mockControlService = {
         mergeValidateControls: jest.fn(),
         validateControls: jest.fn(),
+        mergeValidateMeasurements: jest.fn(),
+        validateMeasurements: jest.fn(),
         setControls: jest.fn(),
     };
 
@@ -116,6 +118,7 @@ describe('DevicesService', () => {
         }).compile();
 
         service = module.get<DevicesService>(DevicesService);
+        mockControlService.mergeValidateMeasurements.mockImplementation(measurements => Promise.resolve(measurements));
     });
 
     afterEach(() => {
@@ -698,19 +701,35 @@ describe('DevicesService', () => {
             expect(mockControlService.setControls).not.toHaveBeenCalled();
         });
 
-        it('should replace the measurements without merging them as controls', async () => {
+        it('should merge the measurements through the control service without touching the controls', async () => {
             const deviceWithSave = { ...mockDevice, save: jest.fn().mockResolvedValue(undefined) };
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(deviceWithSave),
             });
             mockControlService.mergeValidateControls.mockClear();
+            mockControlService.mergeValidateMeasurements.mockResolvedValue({ power: 10, temperature: 25 });
 
             await service.updateDevice('device-uuid-123', new UpdateDeviceDto({ room: Room.Bedroom, measurements: { temperature: 25 } }));
 
-            expect(deviceWithSave.measurements).toEqual({ temperature: 25 });
+            expect(mockControlService.mergeValidateMeasurements).toHaveBeenCalledWith({ temperature: 25 }, mockDevice.measurements);
+            expect(deviceWithSave.measurements).toEqual({ power: 10, temperature: 25 });
             expect(deviceWithSave.room).toBe(Room.Bedroom);
             expect(deviceWithSave.controls).toEqual(mockDevice.controls);
             expect(mockControlService.mergeValidateControls).not.toHaveBeenCalled();
+        });
+
+        it('should reject the update without saving when the measurements are invalid', async () => {
+            const save = jest.fn().mockResolvedValue(undefined);
+            const deviceWithSave = { ...mockDevice, save };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithSave),
+            });
+            mockControlService.mergeValidateMeasurements.mockRejectedValue(new Error('invalid measurements'));
+
+            await expect(
+                service.updateDevice('device-uuid-123', new UpdateDeviceDto({ measurements: { power: 'a lot' } })),
+            ).rejects.toThrow('invalid measurements');
+            expect(save).not.toHaveBeenCalled();
         });
 
         it('should emit DeviceUpdateCompletedEvent flagging measurements as updated', async () => {

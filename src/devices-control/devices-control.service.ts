@@ -5,6 +5,7 @@ import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { CustomValidationException } from 'common/exceptions';
+import { DevicePayloadDto } from 'devices/dto';
 import { DeviceTransportServiceResolver } from 'devices-control/transport';
 import { TransportMessage } from 'devices-control/interfaces';
 import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
@@ -25,19 +26,24 @@ export abstract class DevicesControlService {
     protected abstract getControlsDtoType<T extends object>(): ClassConstructor<T>;
     protected abstract getControlsPayload<T extends DeviceControls>(controls: T): Promise<TransportMessage | null>;
 
-    mergeValidateControls(controls: DeviceControls, oldControls?: DeviceControls): Promise<DeviceControls | never> {
-        const { $override, ...otherControls } = controls ?? {};
-        const mergedControls: DeviceControls = $override ? { ...otherControls } : { ...oldControls, ...otherControls };
-        return this.validateControls(mergedControls);
+    protected getMeasurementsDtoType<T extends object>(): ClassConstructor<T> {
+        return DevicePayloadDto as ClassConstructor<T>;
     }
 
-    async validateControls(controls: DeviceControls): Promise<DeviceControls | never> {
-        const controlsDto = this.getControlsDto(controls);
-        const errors = await validate(controlsDto);
-        if (errors.length) {
-            throw CustomValidationException.fromClassValidator(errors);
-        }
-        return controls;
+    mergeValidateControls(controls: DeviceControls, oldControls?: DeviceControls): Promise<DeviceControls | never> {
+        return this.validateControls(this.mergePayload(controls, oldControls));
+    }
+
+    validateControls(controls: DeviceControls): Promise<DeviceControls | never> {
+        return this.validatePayload(controls, this.getControlsDtoType());
+    }
+
+    mergeValidateMeasurements(measurements: DevicePayload, oldMeasurements?: DevicePayload): Promise<DevicePayload | never> {
+        return this.validateMeasurements(this.mergePayload(measurements, oldMeasurements));
+    }
+
+    validateMeasurements(measurements: DevicePayload): Promise<DevicePayload | never> {
+        return this.validatePayload(measurements, this.getMeasurementsDtoType());
     }
 
     async setControls<T extends DeviceControls>(controls: T): Promise<void | never> {
@@ -70,5 +76,19 @@ export abstract class DevicesControlService {
 
     private getControlsDto<T extends object>(controls: DeviceControls): T {
         return plainToInstance(this.getControlsDtoType<T>(), controls);
+    }
+
+    // "$override" replaces the stored payload instead of merging into it, and is never persisted itself
+    private mergePayload<T extends DevicePayload>(payload: T, oldPayload?: T): T {
+        const { $override, ...otherFields } = payload ?? ({} as T);
+        return ($override ? { ...otherFields } : { ...oldPayload, ...otherFields }) as T;
+    }
+
+    private async validatePayload<T extends DevicePayload>(payload: T, dtoType: ClassConstructor<T>): Promise<T | never> {
+        const errors = await validate(plainToInstance(dtoType, payload));
+        if (errors.length) {
+            throw CustomValidationException.fromClassValidator(errors);
+        }
+        return payload;
     }
 }
