@@ -213,6 +213,147 @@ plug:
             expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Skipping config item "on" with unknown type'));
         });
 
+        it('should parse the validation fields of an item', () => {
+            const yaml = `
+led:
+  http:
+    controls:
+      - label: "Brightness"
+        name: "brightness"
+        type: number
+        default: 50
+        required: true
+        constraints:
+          min: 0
+          max: 100
+          integer: true
+`;
+
+            const [config] = parser.parseFile('/configs/shelly.yaml', yaml);
+
+            expect(config.controls).toEqual([
+                {
+                    label: 'Brightness',
+                    name: 'brightness',
+                    type: DeviceConfigItemType.Number,
+                    required: true,
+                    default: 50,
+                    constraints: { min: 0, max: 100, integer: true },
+                },
+            ]);
+        });
+
+        it('should mark the block as strict by default and honour an explicit "strict: false"', () => {
+            const yaml = `
+led:
+  http:
+    controls:
+      - label: "On"
+        name: "on"
+        type: boolean
+plug:
+  http:
+    strict: false
+    controls:
+      - label: "On"
+        name: "on"
+        type: boolean
+`;
+
+            const configs = parser.parseFile('/configs/shelly.yaml', yaml);
+
+            expect(configs.find(config => config.type === DeviceType.LED).strict).toBe(true);
+            expect(configs.find(config => config.type === DeviceType.Plug).strict).toBe(false);
+        });
+
+        it('should skip the constraints that do not apply to the item type', () => {
+            const yaml = `
+led:
+  http:
+    controls:
+      - label: "Mode"
+        name: "mode"
+        type: string
+        constraints:
+          min: 1
+          maxLength: 5
+`;
+
+            const [config] = parser.parseFile('/configs/shelly.yaml', yaml);
+
+            expect(config.controls[0].constraints).toEqual({ maxLength: 5 });
+            expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Skipping the "min" constraint of the config item "mode"'));
+        });
+
+        it('should skip an unknown constraint format', () => {
+            const yaml = `
+led:
+  http:
+    controls:
+      - label: "Color"
+        name: "color"
+        type: string
+        constraints:
+          format: rainbow
+`;
+
+            const [config] = parser.parseFile('/configs/shelly.yaml', yaml);
+
+            expect(config.controls[0].constraints).toBeUndefined();
+            expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Skipping the unknown format "rainbow"'));
+        });
+
+        it('should skip a default value that violates the constraints of its own item', () => {
+            const yaml = `
+led:
+  http:
+    controls:
+      - label: "Brightness"
+        name: "brightness"
+        type: number
+        default: 500
+        constraints:
+          max: 100
+`;
+
+            const [config] = parser.parseFile('/configs/shelly.yaml', yaml);
+
+            expect(config.controls[0].default).toBeUndefined();
+            expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Skipping the invalid default value of the config item'));
+        });
+
+        it('should warn when a required control does not declare a default value', () => {
+            const yaml = `
+led:
+  http:
+    controls:
+      - label: "On"
+        name: "on"
+        type: boolean
+        required: true
+`;
+
+            parser.parseFile('/configs/shelly.yaml', yaml);
+
+            expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('The required config item "on" does not declare a default value'));
+        });
+
+        it('should not warn when a required command does not declare a default value', () => {
+            const yaml = `
+led:
+  http:
+    commands:
+      - label: "Text"
+        name: "text"
+        type: string
+        required: true
+`;
+
+            parser.parseFile('/configs/shelly.yaml', yaml);
+
+            expect(warnSpy).not.toHaveBeenCalled();
+        });
+
         it('should return an empty array and log an error on malformed YAML', () => {
             const malformed = 'plug:\n  http:\n  - this is: invalid\n    indentation';
 

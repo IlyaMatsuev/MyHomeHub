@@ -175,11 +175,71 @@ Key variables:
 
 Per-brand YAML files under `configs/devices/<brand>.yaml` declare the metadata (label, type, description, value mappings) for the commands/controls/measurements that the UI can display per device. `DeviceConfigsService` reads the directory on startup and on file changes, then upserts one MongoDB document per `(brand, type, transportProtocol)` combination — stale documents not present in YAML are removed.
 
-Device configs are consumed in three places:
+Device configs are consumed in five places:
 
 - **Device GET endpoints** (`GET /devices`, `GET /devices/{externalId}`) accept an `includeConfig=true` query parameter. When set, each device response includes a `config` field with the matching config's non-empty `commands`/`controls`/`measurements` sections (omitted entirely when nothing matches).
 - **Outgoing payloads**: `DevicesControlService.setControls` passes the transport message payload through `DeviceConfigsMapperService.mapPayloadToDevice`, translating internal command/control names and values to the device-side ones declared via the config `path` fields. Names not present in the config are sent as-is.
 - **Incoming payloads**: ESP32 MQTT controls/measurements updates are translated back to internal names via `DeviceConfigsMapperService.mapPayloadFromDevice` (unknown fields kept), and Zigbee (zigbee2mqtt) state updates are categorized into commands/controls/measurements via `categorizeAndMapPayloadFromDevice` (fields that do not match the config - unknown names, or values missing from the item's `values` list - are dropped, and their names logged at debug level).
+- **Payload validation**: every controls/measurements/command payload is validated against the config by `DeviceConfigsValidatorService` (see below).
+- **Payload seeding**: a new device is created with every control/measurement its config declares, so the supported names are visible right after adding it (see below).
+
+#### Config item rules
+
+Beyond the display metadata, a config item can declare how its value is validated and initialized:
+
+```yaml
+led:
+    http:
+        # Optional, reject names the config does not declare. Default: true.
+        strict: true
+        controls:
+            - label: 'Brightness'
+              name: 'brightness'
+              # Required, control type: number | boolean | string | enum | object
+              type: number
+              # Optional, initialized on device creation. Default: null
+              default: 50
+              # Optional, if true - the item must be present (and non-null) in every payload for its section. Default: false
+              required: false
+              constraints:
+                  # Constraints for number type: min/max/integer
+                  min: 0
+                  max: 100
+                  integer: true
+            - label: 'Light color'
+              name: 'color'
+              type: string
+              constraints:
+                  # Constraints for string type: minLength/maxLength/pattern/format
+                  minLength: 4
+                  # Options: hex-color, ip, url
+                  format: 'hex-color'
+```
+
+`enum` items are validated against the `name` of their declared `values`. `object` items are only checked for being an object - their nested structure is delegated to the brand DTO (e.g. `speedLevels` of `Esp32FansControlsDto`), which is why complex controls can still be declared in YAML.
+
+The rules live in `device-configs/device-config-item.validators.ts` as pure functions, so the parser can reuse them to reject a `default` that violates its own item's constraints at load time.
+
+#### Validation policy
+
+`DeviceConfigsValidatorService` validates the **incoming payload** (not the merged result, so removing an item from YAML never breaks updates on devices that still store it). What happens on a violation depends on where the payload came from, expressed as `DeviceUpdateOrigin` on `updateDevice`/`addDevice`/`sendCommand`:
+
+- `Api` (default, also used by scenarios) - `DeviceConfigValidationPolicy.Throw`: the update is rejected with a `CustomValidationException` listing every violation.
+- `Device` (ESP32 MQTT sync, Zigbee state updates, ESP32 pairing) - `DeviceConfigValidationPolicy.Sanitize`: only the offending fields are dropped and logged at debug level, so one bad field never discards a whole state update. `required` presence is not enforced for this origin, because devices report deltas.
+
+All three sections are validated the same way: a device only accepts the items its config declares for the section being written, so an empty section accepts nothing. Validation is skipped only when the device has no config document at all, which keeps a brand unvalidated until its YAML file exists. `strict: false` on a protocol block keeps the value rules but allows undeclared names. There is deliberately no global switch to turn validation off: the config files are watched and re-synced live, so relaxing a rule in YAML applies within seconds and without a restart, which is a faster remedy than any env variable would be.
+
+Commands (`POST /devices/{externalId}/command`) are validated against the `commands` section only - a control is not a command. Note this differs from `DeviceConfigsMapperService.mapPayloadToDevice`, which maps outgoing names against both sections: mapping a superset of names is harmless, deciding what a caller may send is not.
+
+The config is what the API payloads are actually checked against, and it is the only place that can express rules for a brand with no DTO of its own. A brand DTO may still mirror those rules with `class-validator` decorators (e.g. `ShellyLedControlsDto`) to describe its Swagger schema and to keep the instance validatable on its own - when it does, the YAML and the DTO have to be changed together, because both run: the config validates the incoming payload and the DTO validates the merged result. A DTO must also keep whatever YAML cannot express, such as the nested `speedLevels` of `Esp32FansControlsDto`.
+
+#### Payload seeding and reconciliation
+
+`DevicesControlService.applyConfigDefaults` fills a device's `controls`/`measurements` with every name the config declares, using `default` when present and `null` otherwise (`null` means "state not known yet" - a fake `false`/`0` would misreport the device). Values already on the device always win. It runs on `addDevice` and when an update changes the config key (`brand`/`type`/`transportProtocol`).
+
+Because of the seeded nulls, outgoing payloads are passed through `stripEmptyValues` (`devices-control/devices-control.utils.ts`) before reaching a device, both in `setControls` and in the ESP32 pairing reply.
+
+Existing devices are kept in sync by `DevicesService.reconcileDevicePayloads`: it seeds newly declared items and `$unset`s the ones no longer declared, running on every `DeviceConfigsChangedEvent`, which `DeviceConfigsService` emits after each sync - including the initial one on startup. A section the config leaves empty is never touched, so an incomplete config cannot wipe stored state.
 
 ## Code Style
 

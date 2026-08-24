@@ -3,10 +3,19 @@ import { Injectable, Logger } from '@nestjs/common';
 import { load as parseYaml } from 'js-yaml';
 import { DeviceBrand, DeviceType } from 'devices/interfaces';
 import { TransportProtocol } from 'devices-control/interfaces';
-import { DeviceConfigItem, DeviceConfigItemType, ParsedDeviceConfig } from 'device-configs/interfaces';
+import {
+    DeviceConfigItem,
+    DeviceConfigItemConstraints,
+    DeviceConfigItemFormat,
+    DeviceConfigItemType,
+    DeviceConfigSection,
+    ParsedDeviceConfig,
+} from 'device-configs/interfaces';
+import { APPLICABLE_CONSTRAINTS, isEmptyValue, validateItemValue } from 'device-configs/validators';
 
-type RawDeviceConfigItem = Partial<DeviceConfigItem> & { type?: string };
+type RawDeviceConfigItem = Partial<DeviceConfigItem> & { type?: string; constraints?: Record<string, unknown> };
 type RawProtocolBlock = {
+    strict?: boolean;
     commands?: Array<RawDeviceConfigItem>;
     controls?: Array<RawDeviceConfigItem>;
     measurements?: Array<RawDeviceConfigItem>;
@@ -62,20 +71,21 @@ export class DeviceConfigsParserService {
             brand,
             type,
             transportProtocol,
-            commands: this.normalizeItems(block.commands),
-            controls: this.normalizeItems(block.controls),
-            measurements: this.normalizeItems(block.measurements),
+            strict: block.strict !== false,
+            commands: this.normalizeItems(block.commands, 'commands'),
+            controls: this.normalizeItems(block.controls, 'controls'),
+            measurements: this.normalizeItems(block.measurements, 'measurements'),
         };
     }
 
-    private normalizeItems(items?: Array<RawDeviceConfigItem>): Array<DeviceConfigItem> | undefined {
+    private normalizeItems(items: Array<RawDeviceConfigItem> | undefined, section: DeviceConfigSection): Array<DeviceConfigItem> {
         if (!Array.isArray(items) || !items.length) {
             return [];
         }
-        return items.map(item => this.normalizeItem(item)).filter((item): item is DeviceConfigItem => item !== null);
+        return items.map(item => this.normalizeItem(item, section)).filter((item): item is DeviceConfigItem => item !== null);
     }
 
-    private normalizeItem(item: RawDeviceConfigItem): DeviceConfigItem | null {
+    private normalizeItem(item: RawDeviceConfigItem, section: DeviceConfigSection): DeviceConfigItem | null {
         if (!item || !item.name || !item.label) {
             this.logger.warn(`Skipping config item without required "name"/"label" fields: ${JSON.stringify(item)}`);
             return null;
@@ -91,13 +101,53 @@ export class DeviceConfigsParserService {
             type,
             description: item.description,
             path: item.path,
+            required: item.required === true ? true : undefined,
+            constraints: this.normalizeConstraints(item, type),
         };
         if (Array.isArray(item.values) && item.values.length) {
             normalized.values = item.values
                 .filter(v => v && v.name !== undefined && v.label !== undefined)
                 .map(v => ({ label: v.label, name: String(v.name), path: v.path }));
         }
+        normalized.default = this.normalizeDefault(normalized, item.default, section);
         return normalized;
+    }
+
+    private normalizeConstraints(item: RawDeviceConfigItem, type: DeviceConfigItemType): DeviceConfigItemConstraints | undefined {
+        const rawConstraints = item.constraints;
+        if (!rawConstraints || typeof rawConstraints !== 'object') {
+            return undefined;
+        }
+
+        const applicable = APPLICABLE_CONSTRAINTS[type];
+        const constraints: DeviceConfigItemConstraints = {};
+        for (const [name, value] of Object.entries(rawConstraints)) {
+            if (!applicable.includes(name as keyof DeviceConfigItemConstraints)) {
+                this.logger.warn(`Skipping the "${name}" constraint of the config item "${item.name}": not applicable to "${type}" items`);
+                continue;
+            }
+            if (name === 'format' && !this.toEnumValue(String(value), DeviceConfigItemFormat)) {
+                this.logger.warn(`Skipping the unknown format "${value}" of the config item "${item.name}"`);
+                continue;
+            }
+            constraints[name] = value;
+        }
+        return Object.keys(constraints).length ? constraints : undefined;
+    }
+
+    private normalizeDefault(item: DeviceConfigItem, defaultValue: unknown, section: DeviceConfigSection): unknown {
+        if (isEmptyValue(defaultValue)) {
+            if (item.required && section !== 'commands') {
+                this.logger.warn(`The required config item "${item.name}" does not declare a default value`);
+            }
+            return undefined;
+        }
+        const error = validateItemValue(item, defaultValue);
+        if (error) {
+            this.logger.warn(`Skipping the invalid default value of the config item "${item.name}": ${error}`);
+            return undefined;
+        }
+        return defaultValue;
     }
 
     private safeParseYaml(filePath: string, content: string): RawDeviceConfigFile | null {
