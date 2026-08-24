@@ -9,8 +9,14 @@ led:
       - label: "Brightness"
         name: "brightness"
         type: number
-        description: "Brightness level 0-100"
+        description: "Brightness level 1-100"
+        constraints:
+          min: 1
+          max: 100
+          integer: true
       - label: "Light color"
         name: "color"
         type: string
         description: "Light color HEX number"
+        constraints:
+          format: "hex-color"

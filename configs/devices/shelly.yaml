@@ -40,18 +40,31 @@ led:
         name: "brightness"
         type: number
         description: "Brightness level 0-100"
+        constraints:
+          min: 0
+          max: 100
+          integer: true
       - label: "Light color"
         name: "color"
         type: string
         description: "Light color HEX number"
+        constraints:
+          format: "hex-color"
       - label: "Color temperature"
         name: "temperature"
         type: number
         description: "White light color temperature in kelvins (2700-6500)"
+        constraints:
+          min: 2700
+          max: 6500
+          integer: true
       - label: "Transition duration"
         name: "transitionDuration"
         type: number
         description: "Duration of the fade between the light states in seconds (0.5-10800)"
+        constraints:
+          min: 0.5
+          max: 10800
     measurements:
       - label: "Power"
         name: "power"

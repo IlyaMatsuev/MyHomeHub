@@ -8,6 +8,7 @@ import { Esp32MotionSensorControlService } from 'devices-control/providers/esp32
 import { DeviceTransportServiceResolver } from 'devices-control/transport';
 import { DEVICE_TRANSPORT_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
 import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
+import { DeviceConfigsValidatorService } from 'device-configs/device-configs-validator.service';
 
 @Injectable()
 export class Esp32ControlServiceFactory implements DeviceControlServiceFactory {
@@ -16,6 +17,7 @@ export class Esp32ControlServiceFactory implements DeviceControlServiceFactory {
         protected readonly transportServiceResolver: DeviceTransportServiceResolver,
         private readonly configService: ConfigService,
         private readonly deviceConfigsMapper: DeviceConfigsMapperService,
+        private readonly deviceConfigsValidator: DeviceConfigsValidatorService,
     ) {}
 
     eligible(device: Device): boolean {
@@ -24,11 +26,29 @@ export class Esp32ControlServiceFactory implements DeviceControlServiceFactory {
 
     createService(device: Device): Esp32ControlService {
         if (device.type === DeviceType.Fans) {
-            return new Esp32FansControlService(device, this.transportServiceResolver, this.configService, this.deviceConfigsMapper);
+            return new Esp32FansControlService(
+                device,
+                this.transportServiceResolver,
+                this.configService,
+                this.deviceConfigsMapper,
+                this.deviceConfigsValidator,
+            );
         }
         if (device.type === DeviceType.MotionSensor) {
-            return new Esp32MotionSensorControlService(device, this.transportServiceResolver, this.configService, this.deviceConfigsMapper);
+            return new Esp32MotionSensorControlService(
+                device,
+                this.transportServiceResolver,
+                this.configService,
+                this.deviceConfigsMapper,
+                this.deviceConfigsValidator,
+            );
         }
-        return new Esp32ControlService(device, this.transportServiceResolver, this.configService, this.deviceConfigsMapper);
+        return new Esp32ControlService(
+            device,
+            this.transportServiceResolver,
+            this.configService,
+            this.deviceConfigsMapper,
+            this.deviceConfigsValidator,
+        );
     }
 }

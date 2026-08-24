@@ -4,12 +4,14 @@ import { PhilipsControlServiceFactory } from './philips-control-service.factory'
 import { PhilipsControlService } from './philips-control.service';
 import { DeviceTransportServiceResolver } from 'devices-control/transport';
 import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
+import { DeviceConfigsValidatorService } from 'device-configs/device-configs-validator.service';
 
 describe('PhilipsControlServiceFactory', () => {
     let factory: PhilipsControlServiceFactory;
     let mockConfigService: jest.Mocked<ConfigService>;
     let mockResolver: jest.Mocked<DeviceTransportServiceResolver>;
     let mockDeviceConfigsMapper: jest.Mocked<DeviceConfigsMapperService>;
+    let mockDeviceConfigsValidator: jest.Mocked<DeviceConfigsValidatorService>;
 
     const mockPhilipsDevice: Partial<Device> = {
         externalId: 'device-uuid-123',
@@ -33,8 +35,9 @@ describe('PhilipsControlServiceFactory', () => {
         mockConfigService = {} as jest.Mocked<ConfigService>;
         mockResolver = { send: jest.fn() } as unknown as jest.Mocked<DeviceTransportServiceResolver>;
         mockDeviceConfigsMapper = { mapPayloadToDevice: jest.fn() } as unknown as jest.Mocked<DeviceConfigsMapperService>;
+        mockDeviceConfigsValidator = { validateSection: jest.fn() } as unknown as jest.Mocked<DeviceConfigsValidatorService>;
 
-        factory = new PhilipsControlServiceFactory(mockResolver, mockConfigService, mockDeviceConfigsMapper);
+        factory = new PhilipsControlServiceFactory(mockResolver, mockConfigService, mockDeviceConfigsMapper, mockDeviceConfigsValidator);
     });
 
     afterEach(() => {

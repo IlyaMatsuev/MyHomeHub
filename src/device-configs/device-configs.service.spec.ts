@@ -3,18 +3,21 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Model } from 'mongoose';
 import { DeviceBrand, DeviceType } from 'devices/interfaces';
 import { TransportProtocol } from 'devices-control/interfaces';
 import { DeviceConfig } from 'device-configs/interfaces';
 import { DeviceConfigsParserService } from './device-configs-parser.service';
 import { DeviceConfigsService } from './device-configs.service';
+import { DeviceConfigsChangedEvent } from 'device-configs/events';
 
 describe('DeviceConfigsService', () => {
     let tempDir: string;
     let model: jest.Mocked<Model<DeviceConfig>>;
     let configService: jest.Mocked<ConfigService>;
     let parser: DeviceConfigsParserService;
+    let eventEmitter: jest.Mocked<EventEmitter2>;
     let service: DeviceConfigsService;
     let warnSpy: jest.SpyInstance;
     let logSpy: jest.SpyInstance;
@@ -34,7 +37,8 @@ describe('DeviceConfigsService', () => {
             get: jest.fn((key: string) => (key === 'DEVICE_CONFIGS_DIR' ? tempDir : undefined)),
         } as unknown as jest.Mocked<ConfigService>;
         parser = new DeviceConfigsParserService();
-        service = new DeviceConfigsService(model, configService, parser);
+        eventEmitter = { emit: jest.fn() } as unknown as jest.Mocked<EventEmitter2>;
+        service = new DeviceConfigsService(model, configService, parser, eventEmitter);
         warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
         logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
         errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
@@ -127,6 +131,36 @@ describe('DeviceConfigsService', () => {
                 type: DeviceType.Remote,
                 transportProtocol: TransportProtocol.Zigbee,
             });
+        });
+
+        it('should persist the strictness of every protocol block', async () => {
+            writeFileSync(
+                join(tempDir, 'shelly.yaml'),
+                [
+                    'plug:',
+                    '  http:',
+                    '    controls:',
+                    '      - label: "On"',
+                    '        name: "on"',
+                    '        type: boolean',
+                    'led:',
+                    '  http:',
+                    '    strict: false',
+                    '    controls:',
+                    '      - label: "On"',
+                    '        name: "on"',
+                    '        type: boolean',
+                ].join('\n'),
+            );
+
+            await service.syncFromDisk();
+
+            const calls = model.updateOne.mock.calls as unknown as Array<[{ type: DeviceType }, { $set: { strict: boolean } }]>;
+            const strictByType = calls.map(([filter, update]) => [filter.type, update.$set.strict]);
+            expect(strictByType).toEqual([
+                [DeviceType.Plug, true],
+                [DeviceType.LED, false],
+            ]);
         });
 
         it('should delete all documents when no configs are parsed', async () => {
@@ -230,6 +264,45 @@ describe('DeviceConfigsService', () => {
         });
     });
 
+    describe('DeviceConfigsChangedEvent', () => {
+        const writeShellyConfig = () => {
+            writeFileSync(
+                join(tempDir, 'shelly.yaml'),
+                ['plug:', '  http:', '    controls:', '      - label: "On"', '        name: "on"', '        type: boolean'].join('\n'),
+            );
+        };
+
+        it('should emit the parsed configs after the sync completes', async () => {
+            writeShellyConfig();
+
+            const parsed = await service.syncFromDisk();
+
+            expect(eventEmitter.emit).toHaveBeenCalledWith(DeviceConfigsChangedEvent.eventName, new DeviceConfigsChangedEvent(parsed));
+        });
+
+        it('should emit on the initial sync, so the devices are reconciled on startup', async () => {
+            writeShellyConfig();
+
+            await service.onApplicationBootstrap();
+
+            expect(eventEmitter.emit).toHaveBeenCalledWith(DeviceConfigsChangedEvent.eventName, expect.any(DeviceConfigsChangedEvent));
+        });
+
+        it('should emit an empty set of configs when every config file is gone', async () => {
+            await service.syncFromDisk();
+
+            expect(eventEmitter.emit).toHaveBeenCalledWith(DeviceConfigsChangedEvent.eventName, new DeviceConfigsChangedEvent([]));
+        });
+
+        it('should not emit when the configs directory does not exist', async () => {
+            configService.get.mockReturnValue(join(tempDir, 'missing-subdir'));
+
+            await service.syncFromDisk();
+
+            expect(eventEmitter.emit).not.toHaveBeenCalled();
+        });
+    });
+
     describe('getConfig', () => {
         it('should query the config by brand, type and transport protocol only', async () => {
             const key = {
@@ -241,6 +314,41 @@ describe('DeviceConfigsService', () => {
             await service.getConfig({ ...key, extraField: 'ignored' } as never);
 
             expect(model.findOne).toHaveBeenCalledWith(key);
+        });
+
+        it('should query the database only once per config key', async () => {
+            const key = { brand: DeviceBrand.Shelly, type: DeviceType.Plug, transportProtocol: TransportProtocol.Http };
+
+            await service.getConfig(key);
+            await service.getConfig(key);
+
+            expect(model.findOne).toHaveBeenCalledTimes(1);
+        });
+
+        it('should cache the misses as well, so an unconfigured brand does not query on every payload', async () => {
+            const key = { brand: DeviceBrand.Tuya, type: DeviceType.LED, transportProtocol: TransportProtocol.Tuya };
+
+            await expect(service.getConfig(key)).resolves.toBeNull();
+            await expect(service.getConfig(key)).resolves.toBeNull();
+
+            expect(model.findOne).toHaveBeenCalledTimes(1);
+        });
+
+        it('should query each config key separately', async () => {
+            await service.getConfig({ brand: DeviceBrand.Shelly, type: DeviceType.Plug, transportProtocol: TransportProtocol.Http });
+            await service.getConfig({ brand: DeviceBrand.Shelly, type: DeviceType.LED, transportProtocol: TransportProtocol.Http });
+
+            expect(model.findOne).toHaveBeenCalledTimes(2);
+        });
+
+        it('should drop the cached configs after a sync, so a yaml change applies right away', async () => {
+            const key = { brand: DeviceBrand.Shelly, type: DeviceType.Plug, transportProtocol: TransportProtocol.Http };
+            await service.getConfig(key);
+
+            await service.syncFromDisk();
+            await service.getConfig(key);
+
+            expect(model.findOne).toHaveBeenCalledTimes(2);
         });
     });
 
@@ -264,14 +372,14 @@ describe('DeviceConfigsService', () => {
         });
     });
 
-    describe('onModuleInit', () => {
+    describe('onApplicationBootstrap', () => {
         it('should run an initial sync', async () => {
             writeFileSync(
                 join(tempDir, 'google.yaml'),
                 ['speaker:', '  http:', '    commands:', '      - label: "TTS"', '        name: "text"', '        type: string'].join('\n'),
             );
 
-            await service.onModuleInit();
+            await service.onApplicationBootstrap();
 
             expect(model.updateOne).toHaveBeenCalledTimes(1);
         });

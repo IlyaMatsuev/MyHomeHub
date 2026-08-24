@@ -1,11 +1,14 @@
 fans:
   mqtt:
-    # TODO: Add support for complex controls like "speedLevels"
     controls:
       - label: "On"
         name: "on"
         type: boolean
         description: "Switch on/off state"
+      - label: "Speed levels"
+        name: "speedLevels"
+        type: object
+        description: "Temperature thresholds the fan speed levels switch at. The structure is validated by the ESP32 fans DTO"
     measurements:
       - label: "Temperature (C)"
         name: "temperature"
@@ -15,3 +18,6 @@ fans:
         name: "speedPercentage"
         type: number
         description: "How fast the fans spin based on the temperature level"
+        constraints:
+          min: 0
+          max: 100
