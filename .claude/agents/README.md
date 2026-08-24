@@ -10,7 +10,6 @@ This directory contains prompt configurations for AI agents that assist with dev
 | **Implementer** | `implementer.md` | Writes code following Architect's plans             |
 | **Reviewer**    | `reviewer.md`    | Reviews code for quality and standards              |
 | **Tester**      | `tester.md`      | Writes unit and integration tests                   |
-| **StoryTeller** | `storyteller.md` | Creates documentation                               |
 
 ## Workflow
 
@@ -35,12 +34,7 @@ Feature Request
      ▼
 ┌────────┐
 │ Tester │  ← Writes tests
-└────┬───┘
-     │ Tests pass
-     ▼
-┌─────────────┐
-│ StoryTeller │  ← Documents the feature
-└─────────────┘
+└────────┘
 ```
 
 ## Usage
@@ -82,15 +76,6 @@ Each agent produces artifacts the next agent consumes:
     - Completed source code
     - Service/controller files to test
 
-5. **Tester → StoryTeller**
-    - Test coverage report
-    - API behavior documentation
-
-6. **All Agents → StoryTeller**
-    - Architecture decisions (from Architect)
-    - API contracts (from Implementer)
-    - Usage examples (from Tester)
-
 ## Quick Reference
 
 ### Architect Outputs
@@ -118,10 +103,3 @@ Each agent produces artifacts the next agent consumes:
 - `*.spec.ts` test files
 - Mock factories
 - Integration tests
-
-### StoryTeller Outputs
-
-- Swagger decorators
-- JSDoc comments
-- README files
-- Configuration docs
