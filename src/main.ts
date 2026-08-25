@@ -75,7 +75,7 @@ function setupCors(app: NestExpressApplication, config: ConfigService): void {
     const raw = config.get<string>('CORS_ORIGINS')?.trim();
     if (!raw) {
         if (isProd(config)) {
-            new Logger('Bootstrap').warn('CORS_ORIGINS is not set — falling back to allow-all in a prod environment');
+            new Logger('Bootstrap').warn('CORS_ORIGINS is not set - falling back to allow-all in a prod environment');
         }
         app.enableCors();
         return;

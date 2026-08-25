@@ -74,13 +74,37 @@ describe('UsersService', () => {
         });
     });
 
-    describe('getUserByExternalId', () => {
+    describe('findByGoogleIdHash', () => {
+        it('should return user when found', async () => {
+            const googleUser = { ...mockUser, googleIdHash: 'google-sub-hash-123' };
+            mockUserModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(googleUser),
+            });
+
+            const result = await service.findByGoogleIdHash('google-sub-hash-123');
+
+            expect(result).toEqual(googleUser);
+            expect(mockUserModel.findOne).toHaveBeenCalledWith({ googleIdHash: 'google-sub-hash-123' });
+        });
+
+        it('should return null when no user is linked to the google account', async () => {
+            mockUserModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            const result = await service.findByGoogleIdHash('unknown-google-sub-hash');
+
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('findByExternalId', () => {
         it('should return user when found', async () => {
             mockUserModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockUser),
             });
 
-            const result = await service.getUserByExternalId('user-external-id');
+            const result = await service.findByExternalId('user-external-id');
 
             expect(result).toEqual(mockUser);
             expect(mockUserModel.findOne).toHaveBeenCalledWith({ externalId: 'user-external-id' });
@@ -91,7 +115,7 @@ describe('UsersService', () => {
                 exec: jest.fn().mockResolvedValue(null),
             });
 
-            await expect(service.getUserByExternalId('nonexistent-external-id')).rejects.toThrow(NotFoundException);
+            await expect(service.findByExternalId('nonexistent-external-id')).rejects.toThrow(NotFoundException);
         });
 
         it('should return null when user not found in non-strict mode', async () => {
@@ -99,7 +123,7 @@ describe('UsersService', () => {
                 exec: jest.fn().mockResolvedValue(null),
             });
 
-            const result = await service.getUserByExternalId('nonexistent-external-id', { strict: false });
+            const result = await service.findByExternalId('nonexistent-external-id', { strict: false });
 
             expect(result).toBeNull();
         });
@@ -111,11 +135,29 @@ describe('UsersService', () => {
                 exec: jest.fn().mockResolvedValue(null),
             });
 
-            const result = await service.create('new@example.com', 'hashed-password', UserRole.Resident);
+            const result = await service.create({ email: 'new@example.com', password: 'hashed-password', role: UserRole.Resident });
 
             expect(result.email).toBe('new@example.com');
             expect(result.password).toBe('hashed-password');
             expect(result.role).toBe(UserRole.Resident);
+        });
+
+        it('should create a user with a linked google account and no password', async () => {
+            mockUserModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            const result = await service.create({
+                email: 'google@example.com',
+                role: UserRole.Guest,
+                googleIdHash: 'google-sub-hash-123',
+                googleEmail: 'google@example.com',
+            });
+
+            expect(result.email).toBe('google@example.com');
+            expect(result.googleIdHash).toBe('google-sub-hash-123');
+            expect(result.googleEmail).toBe('google@example.com');
+            expect(result.password).toBeUndefined();
         });
 
         it('should throw FieldValidationException when user with email already exists', async () => {
@@ -123,8 +165,10 @@ describe('UsersService', () => {
                 exec: jest.fn().mockResolvedValue(mockUser),
             });
 
-            await expect(service.create('test@example.com', 'hashed-password', UserRole.Guest)).rejects.toThrow(FieldValidationException);
-            await expect(service.create('test@example.com', 'hashed-password', UserRole.Guest)).rejects.toMatchObject({
+            const data = { email: 'test@example.com', password: 'hashed-password', role: UserRole.Guest };
+
+            await expect(service.create(data)).rejects.toThrow(FieldValidationException);
+            await expect(service.create(data)).rejects.toMatchObject({
                 response: {
                     messages: ['User with the provided email already exists'],
                     details: { errors: [{ message: 'User with the provided email already exists', path: 'email' }] },
@@ -153,6 +197,66 @@ describe('UsersService', () => {
             });
 
             await expect(service.updatePassword('missing-external-id', 'new-hashed-password')).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('linkGoogleAccount', () => {
+        it('should store the google account details on an existing user', async () => {
+            const existingUser = {
+                ...mockUser,
+                save: jest.fn().mockImplementation(function () {
+                    return Promise.resolve(this);
+                }),
+            };
+            mockUserModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(existingUser),
+            });
+
+            const result = await service.linkGoogleAccount('user-external-id', 'google-sub-hash-123', 'google@example.com');
+
+            expect(result.googleIdHash).toBe('google-sub-hash-123');
+            expect(result.googleEmail).toBe('google@example.com');
+            expect(existingUser.save).toHaveBeenCalledWith({ validateBeforeSave: true });
+        });
+
+        it('should throw NotFoundException when user does not exist', async () => {
+            mockUserModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            await expect(service.linkGoogleAccount('missing-external-id', 'google-sub-hash-123', 'google@example.com')).rejects.toThrow(
+                NotFoundException,
+            );
+        });
+    });
+
+    describe('unlinkGoogleAccount', () => {
+        it('should clear the google account details of an existing user', async () => {
+            const existingUser = {
+                ...mockUser,
+                googleIdHash: 'google-sub-hash-123',
+                googleEmail: 'google@example.com',
+                save: jest.fn().mockImplementation(function () {
+                    return Promise.resolve(this);
+                }),
+            };
+            mockUserModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(existingUser),
+            });
+
+            const result = await service.unlinkGoogleAccount('user-external-id');
+
+            expect(result.googleIdHash).toBeUndefined();
+            expect(result.googleEmail).toBeUndefined();
+            expect(existingUser.save).toHaveBeenCalledWith({ validateBeforeSave: true });
+        });
+
+        it('should throw NotFoundException when user does not exist', async () => {
+            mockUserModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            await expect(service.unlinkGoogleAccount('missing-external-id')).rejects.toThrow(NotFoundException);
         });
     });
 });

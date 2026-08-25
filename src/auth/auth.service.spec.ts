@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { FieldValidationException } from 'common/exceptions';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
@@ -49,7 +49,7 @@ describe('AuthService', () => {
                     provide: UsersService,
                     useValue: {
                         findByEmail: jest.fn(),
-                        getUserByExternalId: jest.fn(),
+                        findByExternalId: jest.fn(),
                         create: jest.fn(),
                         updatePassword: jest.fn(),
                     },
@@ -68,7 +68,7 @@ describe('AuthService', () => {
                 {
                     provide: RegistrationRequestsService,
                     useValue: {
-                        getRequestByEmail: jest.fn(),
+                        getApprovedRequestByEmail: jest.fn(),
                         createAutoApprovedRequest: jest.fn(),
                     },
                 },
@@ -124,6 +124,35 @@ describe('AuthService', () => {
             await expect(service.login('nonexistent@example.com', 'password')).rejects.toThrow(UnauthorizedException);
         });
 
+        it('should throw UnauthorizedException when the user has no password set', async () => {
+            usersService.findByEmail.mockResolvedValue({ ...mockUser, password: undefined } as never);
+
+            await expect(service.login('test@example.com', 'password')).rejects.toThrow(UnauthorizedException);
+            expect(argon2.verify).not.toHaveBeenCalled();
+        });
+
+        it('should throw BadRequestException without verifying the hash for a google-only account', async () => {
+            usersService.findByEmail.mockResolvedValue({ ...mockUser, password: undefined, googleIdHash: 'google-sub-hash-123' } as never);
+
+            await expect(service.login('test@example.com', 'password')).rejects.toThrow(BadRequestException);
+            expect(argon2.verify).not.toHaveBeenCalled();
+        });
+
+        it('should tell a google-only account to use the google login', async () => {
+            usersService.findByEmail.mockResolvedValue({ ...mockUser, password: undefined, googleIdHash: 'google-sub-hash-123' } as never);
+
+            await expect(service.login('test@example.com', 'password')).rejects.toThrow(
+                'You do not have a password set up yet. Please use Google login.',
+            );
+        });
+
+        it('should still throw UnauthorizedException for a passwordless account with no google link', async () => {
+            usersService.findByEmail.mockResolvedValue({ ...mockUser, password: undefined, googleIdHash: undefined } as never);
+
+            await expect(service.login('test@example.com', 'password')).rejects.toThrow(UnauthorizedException);
+            expect(argon2.verify).not.toHaveBeenCalled();
+        });
+
         it('should throw UnauthorizedException when password is invalid', async () => {
             usersService.findByEmail.mockResolvedValue(mockUser as never);
             (argon2.verify as jest.Mock).mockResolvedValue(false);
@@ -135,13 +164,13 @@ describe('AuthService', () => {
     describe('refreshToken', () => {
         it('should issue new tokens for a valid refresh token', async () => {
             jwtService.verifyAsync.mockResolvedValue({ sub: 'user-external-id' } as never);
-            usersService.getUserByExternalId.mockResolvedValue(mockUser as never);
+            usersService.findByExternalId.mockResolvedValue(mockUser as never);
             jwtService.signAsync.mockResolvedValueOnce('access-token').mockResolvedValueOnce('refresh-token');
 
             const result = await service.refreshToken('valid-refresh-token');
 
             expect(result).toEqual({ externalId: 'user-external-id', accessToken: 'access-token', refreshToken: 'refresh-token' });
-            expect(usersService.getUserByExternalId).toHaveBeenCalledWith('user-external-id', { strict: false });
+            expect(usersService.findByExternalId).toHaveBeenCalledWith('user-external-id', { strict: false });
         });
 
         it('should throw UnauthorizedException when refresh token is invalid', async () => {
@@ -152,7 +181,7 @@ describe('AuthService', () => {
 
         it('should throw UnauthorizedException when the user no longer exists', async () => {
             jwtService.verifyAsync.mockResolvedValue({ sub: 'user-external-id' } as never);
-            usersService.getUserByExternalId.mockResolvedValue(null as never);
+            usersService.findByExternalId.mockResolvedValue(null as never);
 
             await expect(service.refreshToken('valid-refresh-token')).rejects.toThrow(UnauthorizedException);
         });
@@ -175,7 +204,11 @@ describe('AuthService', () => {
                 encoding: 'base32',
                 token: '123456',
             });
-            expect(usersService.create).toHaveBeenCalledWith('new@example.com', 'new-hashed-password', UserRole.Admin);
+            expect(usersService.create).toHaveBeenCalledWith({
+                email: 'new@example.com',
+                password: 'new-hashed-password',
+                role: UserRole.Admin,
+            });
             expect(registrationRequestsService.createAutoApprovedRequest).toHaveBeenCalledWith('new@example.com');
         });
 
@@ -189,7 +222,7 @@ describe('AuthService', () => {
         it('should create user when registration request is approved and no TOTP provided', async () => {
             const newUser = { ...mockUser, _id: 'new-user-id', email: 'approved@example.com' };
             const approvedRequest = { status: RegistrationRequestStatus.Approved, role: UserRole.Resident };
-            registrationRequestsService.getRequestByEmail.mockResolvedValue(approvedRequest as never);
+            registrationRequestsService.getApprovedRequestByEmail.mockResolvedValue(approvedRequest as never);
             (argon2.hash as jest.Mock).mockResolvedValue('new-hashed-password');
             usersService.create.mockResolvedValue(newUser as never);
 
@@ -197,82 +230,22 @@ describe('AuthService', () => {
 
             // role is undefined because UserRole[newUser.role] has no reverse lookup for string enums
             expect(result).toEqual({ externalId: 'user-external-id', email: 'approved@example.com', role: undefined });
-            expect(usersService.create).toHaveBeenCalledWith('approved@example.com', 'new-hashed-password', UserRole.Resident);
+            expect(usersService.create).toHaveBeenCalledWith({
+                email: 'approved@example.com',
+                password: 'new-hashed-password',
+                role: UserRole.Resident,
+            });
         });
 
-        it('should throw FieldValidationException when no TOTP and no registration request exists', async () => {
-            registrationRequestsService.getRequestByEmail.mockResolvedValue(null);
+        it('should propagate the registration request validation error and not create a user', async () => {
+            const requestError = new FieldValidationException(
+                'No registration request found for this email. Please submit a registration request first.',
+                'email',
+            );
+            registrationRequestsService.getApprovedRequestByEmail.mockRejectedValue(requestError);
 
             await expect(service.register('new@example.com', 'password')).rejects.toThrow(FieldValidationException);
-            await expect(service.register('new@example.com', 'password')).rejects.toMatchObject({
-                response: {
-                    messages: ['No registration request found for this email. Please submit a registration request first.'],
-                    details: {
-                        errors: [
-                            {
-                                message: 'No registration request found for this email. Please submit a registration request first.',
-                                path: 'email',
-                            },
-                        ],
-                    },
-                },
-            });
-            expect(usersService.create).not.toHaveBeenCalled();
-        });
-
-        it('should throw FieldValidationException when registration request is pending', async () => {
-            const pendingRequest = { status: RegistrationRequestStatus.Pending };
-            registrationRequestsService.getRequestByEmail.mockResolvedValue(pendingRequest as never);
-
-            await expect(service.register('pending@example.com', 'password')).rejects.toThrow(FieldValidationException);
-            await expect(service.register('pending@example.com', 'password')).rejects.toMatchObject({
-                response: {
-                    messages: ['Your registration request has not been reviewed yet. Please wait for admin approval.'],
-                    details: {
-                        errors: [
-                            {
-                                message: 'Your registration request has not been reviewed yet. Please wait for admin approval.',
-                                path: 'status',
-                            },
-                        ],
-                    },
-                },
-            });
-            expect(usersService.create).not.toHaveBeenCalled();
-        });
-
-        it('should throw FieldValidationException when registration request is rejected', async () => {
-            const rejectedRequest = { status: RegistrationRequestStatus.Rejected };
-            registrationRequestsService.getRequestByEmail.mockResolvedValue(rejectedRequest as never);
-
-            await expect(service.register('rejected@example.com', 'password')).rejects.toThrow(FieldValidationException);
-            await expect(service.register('rejected@example.com', 'password')).rejects.toMatchObject({
-                response: {
-                    messages: ['Your registration request has been rejected.'],
-                    details: { errors: [{ message: 'Your registration request has been rejected.', path: 'status' }] },
-                },
-            });
-            expect(usersService.create).not.toHaveBeenCalled();
-        });
-
-        it('should throw FieldValidationException when registration request is cancelled', async () => {
-            const cancelledRequest = { status: RegistrationRequestStatus.Cancelled };
-            registrationRequestsService.getRequestByEmail.mockResolvedValue(cancelledRequest as never);
-
-            await expect(service.register('cancelled@example.com', 'password')).rejects.toThrow(FieldValidationException);
-            await expect(service.register('cancelled@example.com', 'password')).rejects.toMatchObject({
-                response: {
-                    messages: ['Your registration request has been cancelled. Please submit a new registration request.'],
-                    details: {
-                        errors: [
-                            {
-                                message: 'Your registration request has been cancelled. Please submit a new registration request.',
-                                path: 'status',
-                            },
-                        ],
-                    },
-                },
-            });
+            expect(registrationRequestsService.getApprovedRequestByEmail).toHaveBeenCalledWith('new@example.com');
             expect(usersService.create).not.toHaveBeenCalled();
         });
     });
@@ -315,14 +288,14 @@ describe('AuthService', () => {
     describe('changePassword', () => {
         it('should consume the reset token, hash the new password, and update it for the user', async () => {
             passwordResetTokensService.consume.mockResolvedValue('user-external-id');
-            usersService.getUserByExternalId.mockResolvedValue(mockUser as never);
+            usersService.findByExternalId.mockResolvedValue(mockUser as never);
             (argon2.hash as jest.Mock).mockResolvedValue('new-hashed-password');
             (usersService.updatePassword as jest.Mock).mockResolvedValue(mockUser as never);
 
             await service.changePassword('valid-reset-token', 'new-password');
 
             expect(passwordResetTokensService.consume).toHaveBeenCalledWith('valid-reset-token');
-            expect(usersService.getUserByExternalId).toHaveBeenCalledWith('user-external-id', { strict: false });
+            expect(usersService.findByExternalId).toHaveBeenCalledWith('user-external-id', { strict: false });
             expect(argon2.hash).toHaveBeenCalledWith('new-password', {
                 secret: Buffer.from('test-password-secret'),
                 salt: Buffer.from('test-salt'),
@@ -334,13 +307,13 @@ describe('AuthService', () => {
             passwordResetTokensService.consume.mockRejectedValue(new UnauthorizedException());
 
             await expect(service.changePassword('invalid-token', 'new-password')).rejects.toThrow(UnauthorizedException);
-            expect(usersService.getUserByExternalId).not.toHaveBeenCalled();
+            expect(usersService.findByExternalId).not.toHaveBeenCalled();
             expect(usersService.updatePassword).not.toHaveBeenCalled();
         });
 
         it('should throw UnauthorizedException when the user no longer exists', async () => {
             passwordResetTokensService.consume.mockResolvedValue('user-external-id');
-            usersService.getUserByExternalId.mockResolvedValue(null as never);
+            usersService.findByExternalId.mockResolvedValue(null as never);
 
             await expect(service.changePassword('valid-reset-token', 'new-password')).rejects.toThrow(UnauthorizedException);
             expect(usersService.updatePassword).not.toHaveBeenCalled();

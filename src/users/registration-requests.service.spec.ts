@@ -481,4 +481,87 @@ describe('RegistrationRequestsService', () => {
             await expect(service.getRequestByEmail('nonexistent@example.com', { strict: true })).rejects.toThrow(NotFoundException);
         });
     });
+
+    describe('getApprovedRequestByEmail', () => {
+        const mockFoundRequest = (request: unknown) => {
+            mockRegistrationRequestModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(request),
+            });
+        };
+
+        it('should return the request when it is approved', async () => {
+            const approvedRequest = createMockRequest({ status: RegistrationRequestStatus.Approved, role: UserRole.Resident });
+            mockFoundRequest(approvedRequest);
+
+            const result = await service.getApprovedRequestByEmail('test@example.com');
+
+            expect(result.role).toBe(UserRole.Resident);
+        });
+
+        it('should throw FieldValidationException when there is no request for the email', async () => {
+            mockFoundRequest(null);
+
+            await expect(service.getApprovedRequestByEmail('nonexistent@example.com')).rejects.toMatchObject({
+                response: {
+                    messages: ['No registration request found for this email. Please submit a registration request first.'],
+                    details: {
+                        errors: [
+                            {
+                                message: 'No registration request found for this email. Please submit a registration request first.',
+                                path: 'email',
+                            },
+                        ],
+                    },
+                },
+            });
+        });
+
+        it('should throw FieldValidationException when the request is still pending', async () => {
+            mockFoundRequest(createMockRequest({ status: RegistrationRequestStatus.Pending }));
+
+            await expect(service.getApprovedRequestByEmail('test@example.com')).rejects.toMatchObject({
+                response: {
+                    messages: ['Your registration request has not been reviewed yet. Please wait for admin approval.'],
+                    details: {
+                        errors: [
+                            {
+                                message: 'Your registration request has not been reviewed yet. Please wait for admin approval.',
+                                path: 'status',
+                            },
+                        ],
+                    },
+                },
+            });
+        });
+
+        it('should throw FieldValidationException when the request is rejected', async () => {
+            mockFoundRequest(createMockRequest({ status: RegistrationRequestStatus.Rejected }));
+
+            await expect(service.getApprovedRequestByEmail('test@example.com')).rejects.toThrow(FieldValidationException);
+            await expect(service.getApprovedRequestByEmail('test@example.com')).rejects.toMatchObject({
+                response: {
+                    messages: ['Your registration request has been rejected.'],
+                    details: { errors: [{ message: 'Your registration request has been rejected.', path: 'status' }] },
+                },
+            });
+        });
+
+        it('should throw FieldValidationException when the request is cancelled', async () => {
+            mockFoundRequest(createMockRequest({ status: RegistrationRequestStatus.Cancelled }));
+
+            await expect(service.getApprovedRequestByEmail('test@example.com')).rejects.toMatchObject({
+                response: {
+                    messages: ['Your registration request has been cancelled. Please submit a new registration request.'],
+                    details: {
+                        errors: [
+                            {
+                                message: 'Your registration request has been cancelled. Please submit a new registration request.',
+                                path: 'status',
+                            },
+                        ],
+                    },
+                },
+            });
+        });
+    });
 });

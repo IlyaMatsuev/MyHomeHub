@@ -72,6 +72,16 @@ export class AuthConfigService {
         return this.configService.get<string>('USER_PASSWORD_SALT');
     }
 
+    getGoogleClientIds(): Array<string> {
+        return (
+            this.configService
+                .get<string>('GOOGLE_CLIENT_ID')
+                ?.split(',')
+                .map(clientId => clientId.trim())
+                .filter(Boolean) ?? []
+        );
+    }
+
     private getPublicOptions(context: ExecutionContext): PublicOptions | undefined {
         return this.reflector.getAllAndOverride<PublicOptions>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
     }

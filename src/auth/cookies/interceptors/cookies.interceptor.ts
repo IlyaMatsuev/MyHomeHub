@@ -5,6 +5,7 @@ import { map, Observable } from 'rxjs';
 import { WITH_COOKIES_KEY, WithCookiesMetadata } from 'auth/cookies/decorators';
 import { CookiesConfigService } from 'auth/cookies/cookies-config.service';
 
+// TODO: the cookies for accessToken and refreshToken are set here and never read back when accepting requests
 @Injectable()
 export class CookiesInterceptor implements NestInterceptor {
     constructor(

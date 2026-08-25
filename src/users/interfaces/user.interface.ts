@@ -9,6 +9,8 @@ export enum UserRole {
 export interface User extends Document<string> {
     externalId: string;
     email: string;
-    password: string;
+    password?: string;
     role: UserRole;
+    googleIdHash?: string;
+    googleEmail?: string;
 }
