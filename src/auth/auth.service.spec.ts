@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { FieldValidationException } from 'common/exceptions';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
@@ -49,7 +49,7 @@ describe('AuthService', () => {
                     provide: UsersService,
                     useValue: {
                         findByEmail: jest.fn(),
-                        getUserByExternalId: jest.fn(),
+                        findByExternalId: jest.fn(),
                         create: jest.fn(),
                         updatePassword: jest.fn(),
                     },
@@ -131,8 +131,23 @@ describe('AuthService', () => {
             expect(argon2.verify).not.toHaveBeenCalled();
         });
 
-        it('should throw UnauthorizedException without verifying the hash for a google-only account', async () => {
+        it('should throw BadRequestException without verifying the hash for a google-only account', async () => {
             usersService.findByEmail.mockResolvedValue({ ...mockUser, password: undefined, googleIdHash: 'google-sub-hash-123' } as never);
+
+            await expect(service.login('test@example.com', 'password')).rejects.toThrow(BadRequestException);
+            expect(argon2.verify).not.toHaveBeenCalled();
+        });
+
+        it('should tell a google-only account to use the google login', async () => {
+            usersService.findByEmail.mockResolvedValue({ ...mockUser, password: undefined, googleIdHash: 'google-sub-hash-123' } as never);
+
+            await expect(service.login('test@example.com', 'password')).rejects.toThrow(
+                'You do not have a password set up yet. Please use Google login.',
+            );
+        });
+
+        it('should still throw UnauthorizedException for a passwordless account with no google link', async () => {
+            usersService.findByEmail.mockResolvedValue({ ...mockUser, password: undefined, googleIdHash: undefined } as never);
 
             await expect(service.login('test@example.com', 'password')).rejects.toThrow(UnauthorizedException);
             expect(argon2.verify).not.toHaveBeenCalled();
@@ -149,13 +164,13 @@ describe('AuthService', () => {
     describe('refreshToken', () => {
         it('should issue new tokens for a valid refresh token', async () => {
             jwtService.verifyAsync.mockResolvedValue({ sub: 'user-external-id' } as never);
-            usersService.getUserByExternalId.mockResolvedValue(mockUser as never);
+            usersService.findByExternalId.mockResolvedValue(mockUser as never);
             jwtService.signAsync.mockResolvedValueOnce('access-token').mockResolvedValueOnce('refresh-token');
 
             const result = await service.refreshToken('valid-refresh-token');
 
             expect(result).toEqual({ externalId: 'user-external-id', accessToken: 'access-token', refreshToken: 'refresh-token' });
-            expect(usersService.getUserByExternalId).toHaveBeenCalledWith('user-external-id', { strict: false });
+            expect(usersService.findByExternalId).toHaveBeenCalledWith('user-external-id', { strict: false });
         });
 
         it('should throw UnauthorizedException when refresh token is invalid', async () => {
@@ -166,7 +181,7 @@ describe('AuthService', () => {
 
         it('should throw UnauthorizedException when the user no longer exists', async () => {
             jwtService.verifyAsync.mockResolvedValue({ sub: 'user-external-id' } as never);
-            usersService.getUserByExternalId.mockResolvedValue(null as never);
+            usersService.findByExternalId.mockResolvedValue(null as never);
 
             await expect(service.refreshToken('valid-refresh-token')).rejects.toThrow(UnauthorizedException);
         });
@@ -273,14 +288,14 @@ describe('AuthService', () => {
     describe('changePassword', () => {
         it('should consume the reset token, hash the new password, and update it for the user', async () => {
             passwordResetTokensService.consume.mockResolvedValue('user-external-id');
-            usersService.getUserByExternalId.mockResolvedValue(mockUser as never);
+            usersService.findByExternalId.mockResolvedValue(mockUser as never);
             (argon2.hash as jest.Mock).mockResolvedValue('new-hashed-password');
             (usersService.updatePassword as jest.Mock).mockResolvedValue(mockUser as never);
 
             await service.changePassword('valid-reset-token', 'new-password');
 
             expect(passwordResetTokensService.consume).toHaveBeenCalledWith('valid-reset-token');
-            expect(usersService.getUserByExternalId).toHaveBeenCalledWith('user-external-id', { strict: false });
+            expect(usersService.findByExternalId).toHaveBeenCalledWith('user-external-id', { strict: false });
             expect(argon2.hash).toHaveBeenCalledWith('new-password', {
                 secret: Buffer.from('test-password-secret'),
                 salt: Buffer.from('test-salt'),
@@ -292,13 +307,13 @@ describe('AuthService', () => {
             passwordResetTokensService.consume.mockRejectedValue(new UnauthorizedException());
 
             await expect(service.changePassword('invalid-token', 'new-password')).rejects.toThrow(UnauthorizedException);
-            expect(usersService.getUserByExternalId).not.toHaveBeenCalled();
+            expect(usersService.findByExternalId).not.toHaveBeenCalled();
             expect(usersService.updatePassword).not.toHaveBeenCalled();
         });
 
         it('should throw UnauthorizedException when the user no longer exists', async () => {
             passwordResetTokensService.consume.mockResolvedValue('user-external-id');
-            usersService.getUserByExternalId.mockResolvedValue(null as never);
+            usersService.findByExternalId.mockResolvedValue(null as never);
 
             await expect(service.changePassword('valid-reset-token', 'new-password')).rejects.toThrow(UnauthorizedException);
             expect(usersService.updatePassword).not.toHaveBeenCalled();

@@ -35,8 +35,7 @@ export const UserSchema = new mongoose.Schema(
             enum: Object.values(UserRole),
             default: DEFAULT_USER_ROLE,
         },
-        // SHA-256 hash of the "sub" claim of the linked Google account, so a leaked database does not expose
-        // the identifiers of the Google accounts themselves. Sparse, so the users without a linked account don't collide
+        // SHA-256 hash of the "sub" claim of the linked Google account
         googleIdHash: {
             type: String,
             required: false,

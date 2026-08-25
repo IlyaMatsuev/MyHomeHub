@@ -18,7 +18,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const exceptionResponse = exception.getResponse();
 
         if (typeof exceptionResponse === 'object') {
-            // Custom validation exceptions already carry the `messages`/`details` shape — pass them through.
+            // Custom validation exceptions already carry the `messages`/`details` shape - pass them through.
             if ('message' in exceptionResponse) {
                 return this.normalizeMessages(exceptionResponse.message as string | Array<string>);
             }

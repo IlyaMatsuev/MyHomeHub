@@ -98,13 +98,13 @@ describe('UsersService', () => {
         });
     });
 
-    describe('getUserByExternalId', () => {
+    describe('findByExternalId', () => {
         it('should return user when found', async () => {
             mockUserModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockUser),
             });
 
-            const result = await service.getUserByExternalId('user-external-id');
+            const result = await service.findByExternalId('user-external-id');
 
             expect(result).toEqual(mockUser);
             expect(mockUserModel.findOne).toHaveBeenCalledWith({ externalId: 'user-external-id' });
@@ -115,7 +115,7 @@ describe('UsersService', () => {
                 exec: jest.fn().mockResolvedValue(null),
             });
 
-            await expect(service.getUserByExternalId('nonexistent-external-id')).rejects.toThrow(NotFoundException);
+            await expect(service.findByExternalId('nonexistent-external-id')).rejects.toThrow(NotFoundException);
         });
 
         it('should return null when user not found in non-strict mode', async () => {
@@ -123,7 +123,7 @@ describe('UsersService', () => {
                 exec: jest.fn().mockResolvedValue(null),
             });
 
-            const result = await service.getUserByExternalId('nonexistent-external-id', { strict: false });
+            const result = await service.findByExternalId('nonexistent-external-id', { strict: false });
 
             expect(result).toBeNull();
         });

@@ -19,7 +19,7 @@ export class UsersService {
         return this.userModel.findOne({ googleIdHash }).exec();
     }
 
-    async getUserByExternalId(externalId: string, options: { strict: boolean } = { strict: true }): Promise<User> {
+    async findByExternalId(externalId: string, options: { strict: boolean } = { strict: true }): Promise<User> {
         const user = await this.userModel.findOne({ externalId }).exec();
         if (!user && options.strict) {
             throw new NotFoundException('There is no user matching these criteria');
@@ -42,20 +42,20 @@ export class UsersService {
     }
 
     async updatePassword(externalId: string, passwordHash: string): Promise<User> {
-        const user = await this.getUserByExternalId(externalId);
+        const user = await this.findByExternalId(externalId);
         user.password = passwordHash;
         return user.save({ validateBeforeSave: true });
     }
 
     async linkGoogleAccount(externalId: string, googleIdHash: string, googleEmail: string): Promise<User> {
-        const user = await this.getUserByExternalId(externalId);
+        const user = await this.findByExternalId(externalId);
         user.googleIdHash = googleIdHash;
         user.googleEmail = googleEmail;
         return user.save({ validateBeforeSave: true });
     }
 
     async unlinkGoogleAccount(externalId: string): Promise<User> {
-        const user = await this.getUserByExternalId(externalId);
+        const user = await this.findByExternalId(externalId);
         user.googleIdHash = undefined;
         user.googleEmail = undefined;
         return user.save({ validateBeforeSave: true });

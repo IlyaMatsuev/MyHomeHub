@@ -411,7 +411,7 @@ export const createMockScenario = (overrides = {}) => ({
 6. **Mock external dependencies** - database, HTTP, MQTT
 7. **Test edge cases** - empty arrays, null values, boundaries
 8. **Test error conditions** - ensure proper exceptions thrown
-9. **Tear down anything that keeps the event loop alive** - if a test (or the code under test) creates a `CronJob`, `setInterval`, MQTT client, DB connection, or any other resource with an internal timer/handle, stop/close it in `afterEach` or `afterAll`. Otherwise Jest prints `A worker process has failed to exit gracefully`. Mocking the `SchedulerRegistry` does **not** prevent this — the `CronJob` itself is what schedules the timer, so it must be `.stop()`ed regardless of whether the registry is mocked.
+9. **Tear down anything that keeps the event loop alive** - if a test (or the code under test) creates a `CronJob`, `setInterval`, MQTT client, DB connection, or any other resource with an internal timer/handle, stop/close it in `afterEach` or `afterAll`. Otherwise Jest prints `A worker process has failed to exit gracefully`. Mocking the `SchedulerRegistry` does **not** prevent this - the `CronJob` itself is what schedules the timer, so it must be `.stop()`ed regardless of whether the registry is mocked.
 
 ## Coverage Requirements
 
@@ -522,7 +522,7 @@ describe('HttpExceptionFilter', () => {
 
     Schemas are excluded from coverage, but the logic in their hooks and validators is still worth testing - keep the per-rule cases in the sibling `*.validators.spec.ts` (plain functions, fake documents) and use the schema spec only for what needs a real document: that the hook is actually registered, and how it interacts with the field validators.
 
-- **Cron Jobs**: Prefer `jest.useFakeTimers()` for testing scheduled tasks. If the service under test calls `new CronJob(...).start()` for real (e.g. `SchedulerService.scheduleJob`), collect every returned `CronJob` and call `.stop()` on it in `afterEach` — otherwise the cron timer keeps the Jest worker alive and you'll see `A worker process has failed to exit gracefully`.
+- **Cron Jobs**: Prefer `jest.useFakeTimers()` for testing scheduled tasks. If the service under test calls `new CronJob(...).start()` for real (e.g. `SchedulerService.scheduleJob`), collect every returned `CronJob` and call `.stop()` on it in `afterEach` - otherwise the cron timer keeps the Jest worker alive and you'll see `A worker process has failed to exit gracefully`.
 
     ```typescript
     const startedJobs: Array<CronJob> = [];

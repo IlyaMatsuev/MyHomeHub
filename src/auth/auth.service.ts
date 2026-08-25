@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import * as speakeasy from 'speakeasy';
@@ -28,11 +28,8 @@ export class AuthService {
         if (!user) {
             throw new UnauthorizedException();
         }
-        // The users registered with a Google account have no password to verify against, so they can only sign in
-        // with the Google flow until they set one through the password reset
         if (user.googleIdHash && !user.password) {
-            this.logger.debug(`The user ${user.externalId} has no password set and can only sign in with Google`);
-            throw new UnauthorizedException();
+            throw new BadRequestException(`You do not have a password set up yet. Please use Google login.`);
         }
         if (!user.password || !(await this.verifyUserPasswordHash(user.password, password))) {
             throw new UnauthorizedException();
@@ -50,7 +47,7 @@ export class AuthService {
             throw new UnauthorizedException();
         }
 
-        const user = await this.usersService.getUserByExternalId(payload.sub, { strict: false });
+        const user = await this.usersService.findByExternalId(payload.sub, { strict: false });
         if (!user) {
             throw new UnauthorizedException();
         }
@@ -93,7 +90,7 @@ export class AuthService {
 
     async changePassword(resetToken: string, newPassword: string): Promise<void> {
         const userExternalId = await this.passwordResetTokensService.consume(resetToken);
-        const user = await this.usersService.getUserByExternalId(userExternalId, { strict: false });
+        const user = await this.usersService.findByExternalId(userExternalId, { strict: false });
         if (!user) {
             throw new UnauthorizedException();
         }

@@ -109,13 +109,13 @@ Scenarios define automation rules with:
 Authentication uses **Passport.js** with a `passport-jwt` strategy (`src/auth/strategies/jwt.strategy.ts`):
 
 - `POST /auth/login` accepts either email/password **or** a `refreshToken` (providing both returns 400). It responds with a short-lived `accessToken` and a longer-lived `refreshToken`, allowing token renewal without re-entering credentials.
-- `POST /auth/password/reset` accepts `email` and `totp` (admin's authenticator TOTP — same secret used for TOTP registration) and returns a short-lived `resetToken`
-- `PUT /auth/password/change` accepts the `resetToken` and `newPassword`, rehashes it, and updates the user record. The password reset token is an opaque single-use random value (issued by `PasswordResetTokensService`), stored in Redis as a SHA-256-hashed key with `PASSWORD_RESET_TOKEN_TTL_SEC` TTL, and atomically consumed via `GETDEL` on use — it is not a JWT and shares no signing material with access/refresh tokens.
+- `POST /auth/password/reset` accepts `email` and `totp` (admin's authenticator TOTP - same secret used for TOTP registration) and returns a short-lived `resetToken`
+- `PUT /auth/password/change` accepts the `resetToken` and `newPassword`, rehashes it, and updates the user record. The password reset token is an opaque single-use random value (issued by `PasswordResetTokensService`), stored in Redis as a SHA-256-hashed key with `PASSWORD_RESET_TOKEN_TTL_SEC` TTL, and atomically consumed via `GETDEL` on use - it is not a JWT and shares no signing material with access/refresh tokens.
 - `PUT /auth/google/login` accepts a Google `idToken` and responds with the same `accessToken`/`refreshToken` pair as the credentials login
 - `POST /auth/google/link` and `DELETE /auth/google/link` link/unlink a Google account for the currently authenticated user
 - Three global guards run in order: `LocalNetworkGuard` (enforces `@Public({ localOnly: true })`), `JwtAuthGuard` (validates the access token, honoring `@Public()` and the local-auth bypass), then `RolesGuard` (enforces `@ForRoles(...)`).
 
-Registration requests (`/auth/register/requests`) have a status lifecycle: `pending` → `approved`/`rejected` (admin via `PUT`) or `cancelled` (requester via the public `DELETE /auth/register/requests/{externalId}`; only `pending` requests can be cancelled). `POST` returns **409 Conflict** (`FieldConflictException` — the 409 twin of `FieldValidationException`) when a `pending`/`approved` request for the email already exists; `rejected` (unless blacklisted) and `cancelled` requests are reset to `pending` by re-submitting via `POST`. Cancelled requests cannot be approved and block `POST /auth/register` until re-requested.
+Registration requests (`/auth/register/requests`) have a status lifecycle: `pending` → `approved`/`rejected` (admin via `PUT`) or `cancelled` (requester via the public `DELETE /auth/register/requests/{externalId}`; only `pending` requests can be cancelled). `POST` returns **409 Conflict** (`FieldConflictException` - the 409 twin of `FieldValidationException`) when a `pending`/`approved` request for the email already exists; `rejected` (unless blacklisted) and `cancelled` requests are reset to `pending` by re-submitting via `POST`. Cancelled requests cannot be approved and block `POST /auth/register` until re-requested.
 
 Users and registration requests carry a `role` (`UserRole`: `Admin`, `Resident`, `Guest`):
 
@@ -123,23 +123,23 @@ Users and registration requests carry a `role` (`UserRole`: `Admin`, `Resident`,
 - **Resident** - manages devices and scenarios (`@ForRoles(UserRole.Resident)` on those controllers).
 - **Guest** - default role for new registration requests; limited access.
 
-Restrict endpoints with `@ForRoles(...)` from `auth/decorators`. `RolesGuard` only lets a request through when the user is an `Admin` or their role is listed in `@ForRoles(...)`, so an authenticated non-admin is rejected on an endpoint without the decorator — every non-admin endpoint must list its roles explicitly (e.g. `@ForRoles(UserRole.Resident, UserRole.Guest)` on `GET /users/me`). Admins can assign the role granted on approval via the `role` field of `PUT /auth/register/requests/{externalId}`; the new user inherits the registration request's role.
+Restrict endpoints with `@ForRoles(...)` from `auth/decorators`. `RolesGuard` only lets a request through when the user is an `Admin` or their role is listed in `@ForRoles(...)`, so an authenticated non-admin is rejected on an endpoint without the decorator - every non-admin endpoint must list its roles explicitly (e.g. `@ForRoles(UserRole.Resident, UserRole.Guest)` on `GET /users/me`). Admins can assign the role granted on approval via the `role` field of `PUT /auth/register/requests/{externalId}`; the new user inherits the registration request's role.
 
 ### Google Sign-In
 
 The hub verifies **Google ID tokens** instead of running the OAuth redirect flow: the client (WEB or IOS app) performs the Google Sign-In itself and posts the resulting `idToken`. A self-hosted hub has no stable public address, so registering an OAuth redirect URI per installation is not practical, and the ID token flow needs no client secret.
 
-This is also why there is **no `passport-google-oauth20` strategy**, even though the JWT authentication is Passport-based. That strategy implements the browser redirect (authorization code) flow: it needs a client secret and a publicly reachable `/auth/google/callback` URI registered in the Google console for every hub installation, and it ends with a redirect the native apps would have to intercept. The apps already hold a signed ID token, so all that is left for the hub is to verify its signature and audience — a single `google-auth-library` call with no session or redirect state, which a Passport strategy would only wrap without adding anything.
+This is also why there is **no `passport-google-oauth20` strategy**, even though the JWT authentication is Passport-based. That strategy implements the browser redirect (authorization code) flow: it needs a client secret and a publicly reachable `/auth/google/callback` URI registered in the Google console for every hub installation, and it ends with a redirect the native apps would have to intercept. The apps already hold a signed ID token, so all that is left for the hub is to verify its signature and audience - a single `google-auth-library` call with no session or redirect state, which a Passport strategy would only wrap without adding anything.
 
 `GoogleTokenVerifierService` (`auth/google-token-verifier.service.ts`) validates the token with `google-auth-library` against the client IDs from `GOOGLE_CLIENT_ID` (comma-separated, since Google issues one per platform) and rejects tokens whose email is not verified by Google. Without the variable set the Google endpoints respond with **503**.
 
-`GOOGLE_CLIENT_ID` holds the OAuth client IDs of the **hub client apps** (the WEB and IOS apps), not of the people signing in — nothing has to be configured per household member. Anyone can open the app, sign in with their own Google account, and the hub registers them as long as their email has an approved registration request. The value is a public identifier shipped inside the apps (not a secret) and is set once, when the hub is installed. It cannot be dropped either: it is the `audience` the ID token is checked against, and without it a token that Google issued to any other application would be accepted here.
+`GOOGLE_CLIENT_ID` holds the OAuth client IDs of the **hub client apps** (the WEB and IOS apps), not of the people signing in - nothing has to be configured per household member. Anyone can open the app, sign in with their own Google account, and the hub registers them as long as their email has an approved registration request. The value is a public identifier shipped inside the apps (not a secret) and is set once, when the hub is installed. It cannot be dropped either: it is the `audience` the ID token is checked against, and without it a token that Google issued to any other application would be accepted here.
 
 `GoogleAuthService` (`auth/google-auth.service.ts`) resolves the user for the verified profile:
 
 1. The user already linked to the Google account (`users.googleIdHash`, a unique sparse index) is signed in.
-2. Otherwise a user with the same email is linked to the Google account automatically — Google has verified the email ownership. A user already linked to a _different_ Google account gets a **409 Conflict**.
-3. Otherwise a new user is registered, but only when the email has an **approved registration request** — the Google sign-up follows the same approval policy as the credentials one (`RegistrationRequestsService.getApprovedRequestByEmail`, shared by both flows).
+2. Otherwise a user with the same email is linked to the Google account automatically - Google has verified the email ownership. A user already linked to a _different_ Google account gets a **409 Conflict**.
+3. Otherwise a new user is registered, but only when the email has an **approved registration request** - the Google sign-up follows the same approval policy as the credentials one (`RegistrationRequestsService.getApprovedRequestByEmail`, shared by both flows).
 
 The Google account id (the token `sub` claim) is stored **hashed** with SHA-256: it is only ever compared for equality, so keeping it recoverable buys nothing while a leaked database would otherwise reveal which Google accounts the hub users own. Only the hash leaves `GoogleTokenVerifierService`, so the id itself is never persisted nor logged.
 
@@ -147,13 +147,13 @@ Users registered through Google have **no password** (`users.password` is only r
 
 ### Local Network Restriction
 
-Endpoints marked with `@Public({ localOnly: true })` (from `auth/decorators`) are rejected with **403 Forbidden** unless the request originates from the local network. This exists so a hub exposed to the internet cannot have its unauthenticated endpoints abused (e.g. registration request spam). `localOnly` defaults to `false`, so a bare `@Public()` stays reachable from anywhere. The restriction is always enforced — there is no env variable to turn it off.
+Endpoints marked with `@Public({ localOnly: true })` (from `auth/decorators`) are rejected with **403 Forbidden** unless the request originates from the local network. This exists so a hub exposed to the internet cannot have its unauthenticated endpoints abused (e.g. registration request spam). `localOnly` defaults to `false`, so a bare `@Public()` stays reachable from anywhere. The restriction is always enforced - there is no env variable to turn it off.
 
 Currently applied to `GET/POST/DELETE /auth/register/requests` (the public ones) and `GET /info`. The login, refresh, register and password restore endpoints stay reachable from anywhere so users can authorize remotely.
 
 `LocalNetworkGuard` (`auth/guards`) does the address matching with `ipaddr.js` by checking the address range against `LOCAL_IP_RANGES` (`auth/auth.constants`): IPv4 loopback/private/link-local, IPv6 loopback/unique-local/link-local. IPv4-mapped IPv6 addresses are unwrapped before matching, and an unresolvable address fails closed.
 
-The client IP comes from `request.ip`, which honors the express `trust proxy` setting, so the restriction works behind a reverse proxy. `TRUST_PROXY` accepts `false`, `true`, a number of proxy hops, or a comma-separated list of trusted proxies/subnets — `true` trusts `X-Forwarded-For` from any client and therefore allows spoofing the client IP, so a hop count or a proxy list should be preferred (the server logs a warning on startup when `TRUST_PROXY=true`).
+The client IP comes from `request.ip`, which honors the express `trust proxy` setting, so the restriction works behind a reverse proxy. `TRUST_PROXY` accepts `false`, `true`, a number of proxy hops, or a comma-separated list of trusted proxies/subnets - `true` trusts `X-Forwarded-For` from any client and therefore allows spoofing the client IP, so a hop count or a proxy list should be preferred (the server logs a warning on startup when `TRUST_PROXY=true`).
 
 ### Path Aliases (tsconfig.json)
 
@@ -196,7 +196,7 @@ Key variables:
 
 ### Device Configs
 
-Per-brand YAML files under `configs/devices/<brand>.yaml` declare the metadata (label, type, description, value mappings) for the commands/controls/measurements that the UI can display per device. `DeviceConfigsService` reads the directory on startup and on file changes, then upserts one MongoDB document per `(brand, type, transportProtocol)` combination — stale documents not present in YAML are removed.
+Per-brand YAML files under `configs/devices/<brand>.yaml` declare the metadata (label, type, description, value mappings) for the commands/controls/measurements that the UI can display per device. `DeviceConfigsService` reads the directory on startup and on file changes, then upserts one MongoDB document per `(brand, type, transportProtocol)` combination - stale documents not present in YAML are removed.
 
 Device configs are consumed in five places:
 
@@ -276,11 +276,11 @@ Existing devices are kept in sync by `DevicesService.reconcileDevicePayloads`: i
 
 ## Capturing Corrections
 
-When the user corrects the way you act — points out a mistake, rejects an approach, or teaches a rule they want followed from now on — after fixing the immediate problem, also update the instruction file that would have prevented the mistake, so the lesson sticks for future sessions. Do this without being asked.
+When the user corrects the way you act - points out a mistake, rejects an approach, or teaches a rule they want followed from now on - after fixing the immediate problem, also update the instruction file that would have prevented the mistake, so the lesson sticks for future sessions. Do this without being asked.
 
 Pick the narrowest file that covers the rule:
 
 - Role-specific guidance (how the Tester writes tests, how the Architect plans, etc.) → the matching file under `.claude/agents/*.md`
 - Repo-wide guidance (conventions, commands, architecture, workflow rules) → this `CLAUDE.md`
 
-When writing the update, include **why** (the concrete mistake or reasoning) alongside the rule, so future-you can judge edge cases instead of following it blindly. Skip this step for one-off stylistic nits or purely local fixes that aren't generalizable — only capture corrections that would apply again.
+When writing the update, include **why** (the concrete mistake or reasoning) alongside the rule, so future-you can judge edge cases instead of following it blindly. Skip this step for one-off stylistic nits or purely local fixes that aren't generalizable - only capture corrections that would apply again.

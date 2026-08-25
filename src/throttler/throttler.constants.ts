@@ -10,7 +10,6 @@ export const STRICT_THROTTLE_PROFILES = {
     login: { limit: 5, ttl: seconds(15 * 60) },
     loginRefresh: { limit: 30, ttl: seconds(5 * 60) },
     googleLogin: { limit: 10, ttl: seconds(15 * 60) },
-    googleLink: { limit: 5, ttl: seconds(15 * 60) },
     register: { limit: 5, ttl: seconds(60 * 60) },
     passwordReset: { limit: 3, ttl: seconds(60 * 60) },
     passwordChange: { limit: 5, ttl: seconds(15 * 60) },

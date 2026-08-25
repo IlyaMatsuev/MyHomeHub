@@ -4,9 +4,9 @@ import { ApiConflict, ApiInternalError, ApiNotFound, ApiUnauthorized, ApiValidat
 import { CurrentUser, ForRoles, Public } from 'auth/decorators';
 import { WithCookies } from 'auth/cookies/decorators';
 import { AuthenticatedUser } from 'auth/interfaces';
+import { GoogleAuthService } from 'auth/google-auth.service';
 import { StrictThrottle } from 'throttler/decorators';
 import { GoogleLoginDto, LoginResponseDto } from 'auth/dto';
-import { GoogleAuthService } from 'auth/google-auth.service';
 import { UserResponseDto } from 'users/dto';
 import { UserRole } from 'users/interfaces';
 
@@ -37,7 +37,6 @@ export class GoogleAuthController {
 
     @Post('link')
     @ForRoles(UserRole.Resident, UserRole.Guest)
-    @StrictThrottle('googleLink')
     @HttpCode(HttpStatus.OK)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Link a Google account to the currently logged in user' })
@@ -51,7 +50,6 @@ export class GoogleAuthController {
 
     @Delete('link')
     @ForRoles(UserRole.Resident, UserRole.Guest)
-    @StrictThrottle('googleLink')
     @ApiBearerAuth()
     @ApiOperation({
         summary: 'Unlink the Google account from the currently logged in user',

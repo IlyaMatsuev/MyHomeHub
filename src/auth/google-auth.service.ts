@@ -1,38 +1,35 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { createHash } from 'crypto';
+import { Injectable, Logger, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
+import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { UsersService } from 'users/users.service';
 import { RegistrationRequestsService } from 'users/registration-requests.service';
 import { User } from 'users/interfaces';
 import { LoginResponseDto } from 'auth/dto';
 import { GoogleProfile } from 'auth/interfaces';
 import { AuthService } from 'auth/auth.service';
-import { GoogleTokenVerifierService } from 'auth/google-token-verifier.service';
+import { AuthConfigService } from 'auth/auth-config.service';
 import { FieldConflictException, FieldValidationException } from 'common/exceptions';
 
 @Injectable()
 export class GoogleAuthService {
     private readonly logger = new Logger(GoogleAuthService.name);
+    private readonly client = new OAuth2Client();
 
     constructor(
         private readonly authService: AuthService,
+        private readonly authConfig: AuthConfigService,
         private readonly usersService: UsersService,
         private readonly registrationRequestsService: RegistrationRequestsService,
-        private readonly googleTokenVerifier: GoogleTokenVerifierService,
     ) {}
 
-    /**
-     * Signs in the owner of the Google account the ID token was issued for.
-     *
-     * The account is registered on the fly when its email has an approved registration request,
-     * so the Google sign-up follows the same approval policy as the regular one
-     */
     async login(idToken: string): Promise<LoginResponseDto> {
-        const profile = await this.googleTokenVerifier.verifyIdToken(idToken);
-        return this.authService.generateTokens(await this.resolveUser(profile));
+        const profile = await this.verifyIdToken(idToken);
+        return this.authService.generateTokens(await this.resolveUserByGoogleEmail(profile));
     }
 
     async linkAccount(userExternalId: string, idToken: string): Promise<User> {
-        const profile = await this.googleTokenVerifier.verifyIdToken(idToken);
-        const user = await this.usersService.getUserByExternalId(userExternalId);
+        const profile = await this.verifyIdToken(idToken);
+        const user = await this.usersService.findByExternalId(userExternalId);
         if (user.googleIdHash === profile.googleIdHash) {
             return user;
         }
@@ -42,13 +39,11 @@ export class GoogleAuthService {
         if (await this.usersService.findByGoogleIdHash(profile.googleIdHash)) {
             throw new FieldConflictException('This Google account is already linked to another user', 'idToken');
         }
-
-        this.logger.debug(`Linking a Google account to the user ${user.externalId}`);
         return this.usersService.linkGoogleAccount(user.externalId, profile.googleIdHash, profile.email);
     }
 
     async unlinkAccount(userExternalId: string): Promise<User> {
-        const user = await this.usersService.getUserByExternalId(userExternalId);
+        const user = await this.usersService.findByExternalId(userExternalId);
         if (!user.googleIdHash) {
             throw new FieldValidationException('There is no Google account linked to this user', 'googleId');
         }
@@ -63,13 +58,12 @@ export class GoogleAuthService {
         return this.usersService.unlinkGoogleAccount(user.externalId);
     }
 
-    private async resolveUser(profile: GoogleProfile): Promise<User> {
+    private async resolveUserByGoogleEmail(profile: GoogleProfile): Promise<User> {
         const linkedUser = await this.usersService.findByGoogleIdHash(profile.googleIdHash);
         if (linkedUser) {
             return linkedUser;
         }
 
-        // Google has verified the email ownership, so the account registered with the same email belongs to the same person
         const existingUser = await this.usersService.findByEmail(profile.email);
         if (existingUser) {
             if (existingUser.googleIdHash) {
@@ -88,5 +82,34 @@ export class GoogleAuthService {
             googleIdHash: profile.googleIdHash,
             googleEmail: profile.email,
         });
+    }
+
+    private async verifyIdToken(idToken: string): Promise<GoogleProfile> {
+        const audience = this.authConfig.getGoogleClientIds();
+        if (!audience.length) {
+            throw new ServiceUnavailableException('Google authentication is not configured on this server');
+        }
+
+        let payload: TokenPayload;
+        try {
+            const ticket = await this.client.verifyIdToken({ idToken, audience });
+            payload = ticket.getPayload();
+        } catch (error) {
+            this.logger.debug(`Google ID token verification failed: ${error?.message}`);
+            throw new UnauthorizedException('The provided Google ID token is not valid');
+        }
+
+        if (!payload?.sub || !payload?.email) {
+            throw new UnauthorizedException('The provided Google ID token does not contain the account details');
+        }
+        if (!payload.email_verified) {
+            throw new UnauthorizedException('The email of the provided Google account is not verified');
+        }
+
+        return { googleIdHash: this.hashGoogleId(payload.sub), email: payload.email.toLowerCase(), name: payload.name };
+    }
+
+    private hashGoogleId(googleId: string): string {
+        return createHash('sha256').update(googleId).digest('hex');
     }
 }

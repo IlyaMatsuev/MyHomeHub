@@ -19,6 +19,6 @@ export class UsersController {
     @ApiOperation({ summary: 'Get the details of the currently logged in user' })
     @ApiOkResponse({ type: UserResponseDto })
     async me(@CurrentUser() user: AuthenticatedUser): Promise<UserResponseDto> {
-        return new UserResponseDto(await this.usersService.getUserByExternalId(user.userId));
+        return new UserResponseDto(await this.usersService.findByExternalId(user.userId));
     }
 }
