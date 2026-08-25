@@ -114,7 +114,10 @@ export class DevicesService {
     }
 
     async getDevice(externalId: string, options: GetDeviceDto = new GetDeviceDto()): Promise<DeviceResponseDto> {
-        const device = await this.getDeviceByExternalId(externalId);
+        let device = await this.getDeviceByExternalId(externalId);
+        if (options.fresh) {
+            device = await this.syncDeviceState(device);
+        }
         if (!options.includeConfig) {
             return device;
         }
@@ -231,6 +234,32 @@ export class DevicesService {
         const pairableDevices = cachedZigbeeDevices.filter(d => !existingZigbeeDevicesIds.has(d.zigbeeIeeeAddress));
 
         return new PaginationResponseDto(pairableDevices, options.page, options.pageSize);
+    }
+
+    /**
+     * Reads the current state from the device and stores it, so that the caller gets the fresh controls/measurements.
+     * A device that is unreachable or cannot be polled keeps its stored state - one offline device should not fail the request
+     */
+    private async syncDeviceState(device: Device): Promise<Device> {
+        try {
+            const state = await this.getControlService(device).getState();
+            if (!state) {
+                return device;
+            }
+
+            const update = new UpdateDeviceDto({
+                ...(Object.keys(state.controls).length && { controls: state.controls }),
+                ...(Object.keys(state.measurements).length && { measurements: state.measurements }),
+            });
+            if (!update.controlsUpdated && !update.measurementsUpdated) {
+                this.logger.debug(`The device "${device.externalId}" reported no state, keeping the stored one`);
+                return device;
+            }
+            return await this.updateDevice(device.externalId, update, { propagateControls: false, origin: DeviceUpdateOrigin.Device });
+        } catch (error) {
+            this.logger.warn(`Failed to read the state of the device "${device.externalId}": ${error}`);
+            return device;
+        }
     }
 
     private async findDevice(filter: DeviceFilter, options: GetDeviceOptions = { strict: true }): Promise<DeviceResponseDto> {

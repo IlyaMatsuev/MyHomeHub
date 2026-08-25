@@ -10,7 +10,7 @@ import { DeviceTransportServiceResolver } from 'devices-control/transport';
 import { TransportMessage } from 'devices-control/interfaces';
 import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
 import { DeviceConfigsValidatorService } from 'device-configs/device-configs-validator.service';
-import { DeviceConfigValidationPolicy } from 'device-configs/interfaces';
+import { DeviceConfigPayloads, DeviceConfigValidationPolicy } from 'device-configs/interfaces';
 import { stripEmptyValues } from 'devices-control/utils';
 
 export abstract class DevicesControlService {
@@ -33,6 +33,42 @@ export abstract class DevicesControlService {
 
     protected getMeasurementsDtoType<T extends object>(): ClassConstructor<T> {
         return DevicePayloadDto as ClassConstructor<T>;
+    }
+
+    /**
+     * Message that asks a device for its current state.
+     * Returns null for the brands that cannot be polled - those either push their state (MQTT) or have no state at all
+     */
+    protected getStatePayload(): TransportMessage | null {
+        return null;
+    }
+
+    /**
+     * Splits a raw device response into controls and measurements, still using the device-side names and values
+     */
+    protected parseStatePayload(response: unknown): DeviceConfigPayloads | never {
+        this.logger.debug(`Ignoring the state response of the device "${this.device.externalId}": ${JSON.stringify(response)}`);
+        return { controls: {}, measurements: {} };
+    }
+
+    /**
+     * Reads the current state from a device and translates it into the internal controls/measurements names.
+     * Returns null when the device cannot be polled, so the caller can keep the stored state
+     */
+    async getState(): Promise<DeviceConfigPayloads | null | never> {
+        const message = this.getStatePayload();
+        if (!message) {
+            this.logger.debug(`Reading the state is not supported for the device "${this.device.externalId}"`);
+            return null;
+        }
+
+        const response = await this.transportServiceResolver.receive(this.device.transportProtocol, message);
+        const state = this.parseStatePayload(response);
+        const [controls, measurements] = await Promise.all([
+            this.deviceConfigsMapper.mapPayloadFromDevice(this.device, 'controls', state.controls),
+            this.deviceConfigsMapper.mapPayloadFromDevice(this.device, 'measurements', state.measurements),
+        ]);
+        return { controls, measurements };
     }
 
     /**

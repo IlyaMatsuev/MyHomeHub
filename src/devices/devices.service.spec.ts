@@ -58,6 +58,7 @@ describe('DevicesService', () => {
         validateCommand: jest.fn(),
         applyConfigDefaults: jest.fn(),
         setControls: jest.fn(),
+        getState: jest.fn(),
     };
 
     beforeEach(async () => {
@@ -124,6 +125,7 @@ describe('DevicesService', () => {
 
         service = module.get<DevicesService>(DevicesService);
         mockControlService.mergeValidateMeasurements.mockImplementation(measurements => Promise.resolve(measurements));
+        mockControlService.getState.mockResolvedValue(null);
     });
 
     afterEach(() => {
@@ -499,6 +501,106 @@ describe('DevicesService', () => {
             const result = await service.getDevice('device-uuid-123', query);
 
             expect(result.config).toBeUndefined();
+        });
+
+        it('should not read the state from the device when fresh is not set', async () => {
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockDevice),
+            });
+
+            await service.getDevice('device-uuid-123', new GetDeviceDto());
+
+            expect(mockControlService.getState).not.toHaveBeenCalled();
+        });
+
+        it('should store and return the state read from the device when fresh is true', async () => {
+            const refreshedDevice = { ...mockDevice, controls: { on: true }, measurements: { power: 4.5 } } as Device;
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockDevice),
+            });
+            mockControlService.getState.mockResolvedValue({ controls: { on: true }, measurements: { power: 4.5 } });
+            const updateDeviceSpy = jest.spyOn(service, 'updateDevice').mockResolvedValue(refreshedDevice);
+
+            const query = new GetDeviceDto();
+            query.fresh = true;
+            const result = await service.getDevice('device-uuid-123', query);
+
+            expect(result).toBe(refreshedDevice);
+            expect(updateDeviceSpy).toHaveBeenCalledWith(
+                'device-uuid-123',
+                new UpdateDeviceDto({ controls: { on: true }, measurements: { power: 4.5 } }),
+                { propagateControls: false, origin: DeviceUpdateOrigin.Device },
+            );
+        });
+
+        it('should not update the device when its brand cannot be polled', async () => {
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockDevice),
+            });
+            mockControlService.getState.mockResolvedValue(null);
+            const updateDeviceSpy = jest.spyOn(service, 'updateDevice');
+
+            const query = new GetDeviceDto();
+            query.fresh = true;
+            const result = await service.getDevice('device-uuid-123', query);
+
+            expect(result).toEqual(mockDevice);
+            expect(updateDeviceSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not update the device when it reports no state at all', async () => {
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockDevice),
+            });
+            mockControlService.getState.mockResolvedValue({ controls: {}, measurements: {} });
+            const updateDeviceSpy = jest.spyOn(service, 'updateDevice');
+
+            const query = new GetDeviceDto();
+            query.fresh = true;
+            await service.getDevice('device-uuid-123', query);
+
+            expect(updateDeviceSpy).not.toHaveBeenCalled();
+        });
+
+        it('should return the stored device when it is unreachable', async () => {
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockDevice),
+            });
+            mockControlService.getState.mockRejectedValue(new Error('device is offline'));
+            const updateDeviceSpy = jest.spyOn(service, 'updateDevice');
+            const warnSpy = jest.spyOn(service['logger'], 'warn').mockImplementation();
+
+            const query = new GetDeviceDto();
+            query.fresh = true;
+            const result = await service.getDevice('device-uuid-123', query);
+
+            expect(result).toEqual(mockDevice);
+            expect(updateDeviceSpy).not.toHaveBeenCalled();
+            expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to read the state of the device'));
+        });
+
+        it('should include the config of the refreshed device when fresh and includeConfig are combined', async () => {
+            const refreshedDevice = { ...mockDevice, controls: { on: true } };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockDevice),
+            });
+            mockControlService.getState.mockResolvedValue({ controls: { on: true }, measurements: {} });
+            jest.spyOn(service, 'updateDevice').mockResolvedValue({
+                ...refreshedDevice,
+                toObject: jest.fn().mockReturnValue(refreshedDevice),
+            } as unknown as Device);
+            mockDeviceConfigsService.getConfig.mockResolvedValue({
+                ...mockDevice,
+                controls: [{ label: 'On', name: 'on', type: DeviceConfigItemType.Boolean }],
+            });
+
+            const query = new GetDeviceDto();
+            query.fresh = true;
+            query.includeConfig = true;
+            const result = await service.getDevice('device-uuid-123', query);
+
+            expect(result.controls).toEqual({ on: true });
+            expect(result.config).toEqual({ controls: [{ label: 'On', name: 'on', type: DeviceConfigItemType.Boolean }] });
         });
     });
 

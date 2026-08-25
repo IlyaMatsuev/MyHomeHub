@@ -40,11 +40,38 @@ export const SHELLY_CONTROL_PARAMS: Record<string, ShellyControlParam> = {
     color: { namePath: 'rgb', transform: value => toRgbArray(value) },
 };
 
+// Shelly status fields the hub controls are read from. Kept apart from SHELLY_CONTROL_PARAMS because the "Set" params
+// and the "GetStatus" fields of the same control differ (e.g. "on" is set as "on" but reported back as "output").
+// The controls the status does not report (like "transitionDuration") are simply not listed here
+export const SHELLY_STATUS_CONTROLS: Record<string, ShellyControlParam> = {
+    on: { namePath: 'output' },
+    mode: { namePath: 'mode' },
+    brightness: { namePath: 'brightness' },
+    temperature: { namePath: 'ct' },
+    color: { namePath: 'rgb', transform: value => toHexColor(value) },
+};
+
 // Available controls for each Shelly component
 export const SHELLY_COMPONENT_CONTROLS: Record<ShellyComponent, ReadonlyArray<string>> = {
     [ShellyComponent.Switch]: ['on'],
     [ShellyComponent.RGBCCT]: ['on', 'mode', 'brightness', 'color', 'temperature', 'transitionDuration'],
 };
+
+// [255, 0, 128] -> "#ff0080"
+function toHexColor(value: unknown): unknown {
+    if (!Array.isArray(value) || value.length < 3) {
+        return value;
+    }
+    const channels = value.slice(0, 3).map(channel => Number(channel));
+    if (channels.some(channel => !Number.isFinite(channel))) {
+        return value;
+    }
+    return `#${channels.map(channel => clampColorChannel(channel).toString(16).padStart(2, '0')).join('')}`;
+}
+
+function clampColorChannel(channel: number): number {
+    return Math.min(Math.max(Math.round(channel), 0), 255);
+}
 
 function toRgbArray(value: unknown): unknown {
     const hex = `${value}`.replace('#', '');

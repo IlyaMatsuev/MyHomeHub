@@ -35,4 +35,6 @@ export type TransportMessage = MqttMessage | HttpMessage | TuyaMessage | ZigbeeM
 export interface DeviceTransportService {
     readonly protocol: TransportProtocol;
     send(message: TransportMessage): Promise<void>;
+    // Implemented only by the request/response transports, so that the current device state can be read back
+    receive?(message: TransportMessage): Promise<unknown>;
 }
