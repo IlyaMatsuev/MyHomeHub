@@ -96,6 +96,22 @@ Each device has:
 
 Both payload kinds are validated before the device document is saved, so an invalid payload rejects the whole update. `DevicesControlService.mergeValidateControls`/`mergeValidateMeasurements` do the merge and hand the result to the DTO returned by `getControlsDtoType()`/`getMeasurementsDtoType()` - the controls DTO is per brand/type (e.g. `ShellyLedControlsDto`), while measurements default to the generic `DevicePayloadDto` until a brand overrides `getMeasurementsDtoType()`.
 
+### Reading the Device State
+
+Devices that push their state (ESP32 over MQTT, Zigbee via zigbee2mqtt) keep the stored payloads current on their own. The ones reached over a request/response protocol - Shelly over HTTP - never report anything back, so `GET /devices/{externalId}` accepts a **`fresh=true`** query parameter: the hub polls the device first, stores what it reports, and returns the updated document. It defaults to `false`, so the endpoint stays a plain database read unless the caller asks for a round trip to the device.
+
+The polling itself is a brand capability of `DevicesControlService`, mirroring how `setControls` works in the opposite direction:
+
+- `getStatePayload()` returns the transport message that asks a device for its state, or `null` (the default) for the brands that cannot be polled.
+- `parseStatePayload()` splits the raw device response into `controls`/`measurements`, still using the device-side names.
+- `getState()` runs both, translates the two sections through `DeviceConfigsMapperService.mapPayloadFromDevice` and returns `null` when the brand cannot be polled.
+
+Only the request/response transports implement `DeviceTransportService.receive()` (currently `HttpTransportService`, with a `DEVICE_STATE_READ_TIMEOUT_MS` timeout so an offline device cannot block the API response). `DeviceTransportServiceResolver.receive()` throws for the transports that do not.
+
+The refreshed payloads go through the regular `updateDevice` path with `DeviceUpdateOrigin.Device` and `propagateControls: false`: they are merged and sanitized like any other device-originated update (invalid or undeclared fields are dropped, not rejected), the state is not echoed back to the device, and `DeviceUpdateCompletedEvent` still fires so scenarios react to what the device reports. A device that is unreachable, returns an unexpected response, or cannot be polled at all is logged and the **stored** document is returned - one offline device must not fail the request.
+
+For Shelly this reads the status of the device's primary component (`Switch.GetStatus` for plugs/switches, `RGBCCT.GetStatus` for LEDs). The status field names are mapped back with `SHELLY_STATUS_CONTROLS`, which is deliberately separate from the outgoing `SHELLY_CONTROL_PARAMS`: the same control is named differently in the two directions (`on` is set as `on` but reported as `output`), so a single YAML `path` could not express both.
+
 ### Scenario System
 
 Scenarios define automation rules with:
@@ -202,7 +218,7 @@ Device configs are consumed in five places:
 
 - **Device GET endpoints** (`GET /devices`, `GET /devices/{externalId}`) accept an `includeConfig=true` query parameter. When set, each device response includes a `config` field with the matching config's non-empty `commands`/`controls`/`measurements` sections (omitted entirely when nothing matches).
 - **Outgoing payloads**: `DevicesControlService.setControls` passes the transport message payload through `DeviceConfigsMapperService.mapPayloadToDevice`, translating internal command/control names and values to the device-side ones declared via the config `path` fields. Names not present in the config are sent as-is.
-- **Incoming payloads**: ESP32 MQTT controls/measurements updates are translated back to internal names via `DeviceConfigsMapperService.mapPayloadFromDevice` (unknown fields kept), and Zigbee (zigbee2mqtt) state updates are categorized into commands/controls/measurements via `categorizeAndMapPayloadFromDevice` (fields that do not match the config - unknown names, or values missing from the item's `values` list - are dropped, and their names logged at debug level).
+- **Incoming payloads**: ESP32 MQTT controls/measurements updates and the Shelly state polled by `GET /devices/{externalId}?fresh=true` are translated back to internal names via `DeviceConfigsMapperService.mapPayloadFromDevice` (unknown fields kept), and Zigbee (zigbee2mqtt) state updates are categorized into commands/controls/measurements via `categorizeAndMapPayloadFromDevice` (fields that do not match the config - unknown names, or values missing from the item's `values` list - are dropped, and their names logged at debug level).
 - **Payload validation**: every controls/measurements/command payload is validated against the config by `DeviceConfigsValidatorService` (see below).
 - **Payload seeding**: a new device is created with every control/measurement its config declares, so the supported names are visible right after adding it (see below).
 

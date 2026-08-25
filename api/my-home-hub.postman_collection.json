@@ -1249,6 +1249,12 @@
                   "key": "includeConfig",
                   "value": "true",
                   "disabled": true
+                },
+                {
+                  "key": "fresh",
+                  "value": "true",
+                  "description": "Read the current state from the device before responding",
+                  "disabled": true
                 }
               ],
               "variable": [
