@@ -3,7 +3,7 @@ import { DevicesMqttService } from './devices-mqtt.service';
 import { DevicesService } from './devices.service';
 import { MqttService } from 'mqtt/mqtt.service';
 import { PairAcceptDto, PairRequestDto, UpdateDeviceDto } from './dto';
-import { Device, DeviceBrand, DeviceType, Room } from './interfaces';
+import { Device, DeviceBrand, DeviceType, DeviceUpdateOrigin, Room } from './interfaces';
 import { ESP32_DEVICE_PAIR_REQUEST_REPLY_TOPIC } from './devices.constants';
 import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
 
@@ -92,6 +92,42 @@ describe('DevicesMqttService', () => {
             );
         });
 
+        it('should pass the pairing payload as device originated, so a bad field is dropped instead of rejecting the device', async () => {
+            const pairRequest = {
+                deviceIp: '192.168.1.100',
+                deviceName: 'New ESP32 Device',
+                toCreateDevice: jest.fn().mockReturnValue({ name: 'New ESP32 Device' }),
+            } as unknown as PairRequestDto;
+
+            mockDevicesService.getDeviceByIp.mockResolvedValue(null);
+            mockDevicesService.addDevice.mockResolvedValue(mockDevice);
+
+            await service.handleEsp32DevicePairRequest(pairRequest);
+
+            expect(mockDevicesService.addDevice).toHaveBeenCalledWith(expect.anything(), { origin: DeviceUpdateOrigin.Device });
+        });
+
+        it('should not send the controls seeded with null back to the device', async () => {
+            const pairRequest = {
+                deviceIp: '192.168.1.100',
+                deviceName: 'New ESP32 Device',
+                toCreateDevice: jest.fn().mockReturnValue({ name: 'New ESP32 Device' }),
+            } as unknown as PairRequestDto;
+
+            mockDevicesService.getDeviceByIp.mockResolvedValue(null);
+            mockDevicesService.addDevice.mockResolvedValue({
+                ...mockDevice,
+                controls: { on: false, speedLevels: null, temperature: null },
+            } as Device);
+
+            await service.handleEsp32DevicePairRequest(pairRequest);
+
+            expect(mockMqttService.publish).toHaveBeenCalledWith(
+                ESP32_DEVICE_PAIR_REQUEST_REPLY_TOPIC,
+                expect.objectContaining({ controls: { on: false } }),
+            );
+        });
+
         it('should update an existing device and publish an accept reply', async () => {
             const pairRequest = {
                 deviceIp: '192.168.1.100',
@@ -106,7 +142,10 @@ describe('DevicesMqttService', () => {
 
             await service.handleEsp32DevicePairRequest(pairRequest);
 
-            expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('device-uuid-123', expect.any(UpdateDeviceDto));
+            expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('device-uuid-123', expect.any(UpdateDeviceDto), {
+                propagateControls: false,
+                origin: DeviceUpdateOrigin.Device,
+            });
             expect(mockDevicesService.addDevice).not.toHaveBeenCalled();
             expect(mockMqttService.publish).toHaveBeenCalledWith(
                 ESP32_DEVICE_PAIR_REQUEST_REPLY_TOPIC,
@@ -155,7 +194,10 @@ describe('DevicesMqttService', () => {
             await service.handleEsp32DeviceControlsSync('device-uuid-123', { on: true, brightness: 50 });
 
             expect(mockDevicesService.getDeviceByExternalId).toHaveBeenCalledWith('device-uuid-123', { strict: false });
-            expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('device-uuid-123', expect.any(UpdateDeviceDto));
+            expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('device-uuid-123', expect.any(UpdateDeviceDto), {
+                propagateControls: false,
+                origin: DeviceUpdateOrigin.Device,
+            });
             const dto = mockDevicesService.updateDevice.mock.calls[0][1];
             expect(dto.controls).toEqual({ on: true, brightness: 50 });
         });
@@ -197,7 +239,10 @@ describe('DevicesMqttService', () => {
             await service.handleEsp32DeviceMeasurementsUpdate('device-uuid-123', { temperature: 25, humidity: 60 });
 
             expect(mockDevicesService.getDeviceByExternalId).toHaveBeenCalledWith('device-uuid-123', { strict: false });
-            expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('device-uuid-123', expect.any(UpdateDeviceDto));
+            expect(mockDevicesService.updateDevice).toHaveBeenCalledWith('device-uuid-123', expect.any(UpdateDeviceDto), {
+                propagateControls: true,
+                origin: DeviceUpdateOrigin.Device,
+            });
             const dto = mockDevicesService.updateDevice.mock.calls[0][1];
             expect(dto.measurements).toEqual({ temperature: 25, humidity: 60 });
         });

@@ -2,10 +2,13 @@ import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { ConditionsEvaluatorService, DeviceConditionContext } from 'common/services';
 import { UpdateDeviceDto } from 'devices/dto';
+import { DevicePayload } from 'devices/interfaces';
 import { DeviceUpdateCompletedEvent, DeviceCommandExecutedEvent, DeviceUpdateRequestedEvent } from 'devices/events';
 import { DevicesService } from 'devices/devices.service';
+import { DEVICE_CONFIG_SECTIONS } from 'device-configs/interfaces';
 import {
     Scenario,
+    ScenarioDeviceConditionSection,
     ScenarioDeviceTriggerSource,
     ScenarioExecutionContext,
     ScenarioTriggerSource,
@@ -79,10 +82,33 @@ export class ScenariosExecutionService {
                 const deviceSource = source as ScenarioDeviceTriggerSource;
                 const device = await this.devicesService.getDeviceByExternalId(deviceSource.device.externalId);
                 const deviceContext: DeviceConditionContext = { device, commands: context.commands };
-                conditions.push(this.conditionsEvaluatorService.deviceConditionIsMet(deviceSource, deviceContext));
+                const conditionIsMet = this.conditionsEvaluatorService.deviceConditionIsMet(deviceSource, deviceContext);
+                if (!conditionIsMet) {
+                    this.logger.debug(this.formatUnmetDeviceCondition(deviceSource, deviceContext));
+                }
+                conditions.push(conditionIsMet);
             }
         }
         return conditions;
+    }
+
+    /**
+     * Explains which section of a device trigger source did not match, so that a scenario that never runs
+     * can be told apart from a scenario whose conditions are simply not satisfied yet
+     */
+    private formatUnmetDeviceCondition(source: ScenarioDeviceTriggerSource, context: DeviceConditionContext): string {
+        const actualPayloads: Record<ScenarioDeviceConditionSection, DevicePayload> = {
+            controls: context.device?.controls,
+            measurements: context.device?.measurements,
+            commands: context.commands,
+        };
+        const details = DEVICE_CONFIG_SECTIONS.filter(section => source.device[section]?.are)
+            .map(
+                section =>
+                    `${section}: expected ${JSON.stringify(source.device[section].are)}, got ${JSON.stringify(actualPayloads[section] ?? null)}`,
+            )
+            .join('; ');
+        return `Device trigger source "${source.device.externalId}" is not met - ${details}`;
     }
 
     private async executeScenario(scenario: Scenario): Promise<void> {

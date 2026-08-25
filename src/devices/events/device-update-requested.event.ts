@@ -1,4 +1,5 @@
 import { UpdateDeviceDto } from 'devices/dto';
+import { DeviceUpdateOrigin } from 'devices/interfaces';
 
 type DeviceIdKeys = 'externalId' | 'ip' | 'zigbeeFriendlyName';
 
@@ -12,5 +13,8 @@ export class DeviceUpdateRequestedEvent {
     constructor(
         readonly selector: UpdatedDeviceSelector,
         readonly update: UpdateDeviceDto,
+        // Set to "false" to prevent sending a device update state back to the device (repeated device state update)
+        readonly propagate: boolean = true,
+        readonly origin: DeviceUpdateOrigin = DeviceUpdateOrigin.Api,
     ) {}
 }

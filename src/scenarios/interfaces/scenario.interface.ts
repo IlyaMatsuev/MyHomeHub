@@ -1,5 +1,6 @@
 import { Document } from 'mongodb';
 import { ScenarioCronTimeAdjustOption, ScenarioTriggerSourceType } from 'scenarios/interfaces';
+import { DEVICE_CONFIG_SECTIONS } from 'device-configs/interfaces';
 
 export interface ScenarioTriggerSource {
     type: ScenarioTriggerSourceType;
@@ -14,6 +15,8 @@ export interface ScenarioCronTriggerSource extends ScenarioTriggerSource {
 export interface ScenarioDeviceTriggerSourceConditions {
     are: Record<string, object>;
 }
+
+export type ScenarioDeviceConditionSection = (typeof DEVICE_CONFIG_SECTIONS)[number];
 
 export interface ScenarioDeviceTriggerSource extends ScenarioTriggerSource {
     type: ScenarioTriggerSourceType.Device;

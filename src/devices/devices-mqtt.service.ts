@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PairAcceptDto, PairRequestDto, DeviceControlsDto, DevicePayloadDto, UpdateDeviceDto } from 'devices/dto';
 import { DevicesService } from 'devices/devices.service';
-import { Device } from 'devices/interfaces';
+import { Device, DeviceUpdateOrigin } from 'devices/interfaces';
 import { MqttService } from 'mqtt/mqtt.service';
 import { ESP32_DEVICE_PAIR_REQUEST_REPLY_TOPIC } from 'devices/devices.constants';
 import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
+import { stripEmptyValues } from 'devices-control/utils';
 
 @Injectable()
 export class DevicesMqttService {
@@ -27,7 +28,7 @@ export class DevicesMqttService {
 
             let existingDevice = await this.devicesService.getDeviceByIp(pairRequest.deviceIp);
             if (!existingDevice) {
-                existingDevice = await this.devicesService.addDevice(pairRequest.toCreateDevice());
+                existingDevice = await this.devicesService.addDevice(pairRequest.toCreateDevice(), { origin: DeviceUpdateOrigin.Device });
             } else {
                 await this.devicesService.updateDevice(
                     existingDevice.externalId,
@@ -35,6 +36,7 @@ export class DevicesMqttService {
                         controls: pairRequest.controls,
                         measurements: pairRequest.measurements,
                     }),
+                    { propagateControls: false, origin: DeviceUpdateOrigin.Device },
                 );
             }
             this.pairEsp32Device(existingDevice);
@@ -56,7 +58,10 @@ export class DevicesMqttService {
         try {
             this.logger.debug(`Syncing controls for a device with id "${deviceId}"`);
             const mappedControls = await this.deviceConfigsMapper.mapPayloadFromDevice(device, 'controls', controls);
-            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ controls: mappedControls }));
+            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ controls: mappedControls }), {
+                propagateControls: false,
+                origin: DeviceUpdateOrigin.Device,
+            });
         } catch (error) {
             this.logger.error(`Error while syncing controls for a device with id "${deviceId}"`);
             this.logger.error(error);
@@ -73,7 +78,10 @@ export class DevicesMqttService {
         try {
             this.logger.debug(`Updating measurements for a device with id "${deviceId}": ${JSON.stringify(measurements)}`);
             const mappedMeasurements = await this.deviceConfigsMapper.mapPayloadFromDevice(device, 'measurements', measurements);
-            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ measurements: mappedMeasurements }));
+            await this.devicesService.updateDevice(deviceId, new UpdateDeviceDto({ measurements: mappedMeasurements }), {
+                propagateControls: true,
+                origin: DeviceUpdateOrigin.Device,
+            });
         } catch (error) {
             this.logger.error(`Error while retrieving measurements for a device with id "${deviceId}"`);
             this.logger.error(error);
@@ -83,7 +91,7 @@ export class DevicesMqttService {
     private pairEsp32Device(device: Device) {
         this.mqttService.publish(
             ESP32_DEVICE_PAIR_REQUEST_REPLY_TOPIC,
-            PairAcceptDto.accept(device.externalId, device.controls, device.updateInterval),
+            PairAcceptDto.accept(device.externalId, stripEmptyValues(device.controls), device.updateInterval),
         );
     }
 

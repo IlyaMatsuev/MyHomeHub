@@ -5,7 +5,7 @@ import { MqttService } from 'mqtt/mqtt.service';
 import { DevicesService } from 'devices/devices.service';
 import { UpdateDeviceDto } from 'devices/dto';
 import { DeviceUpdateRequestedEvent } from 'devices/events';
-import { DeviceBrand, DeviceType, Room, Device } from 'devices/interfaces';
+import { DeviceBrand, DeviceType, DeviceUpdateOrigin, Room, Device } from 'devices/interfaces';
 import { ZIGBEE_BRIDGE_DEVICE_REMOVE_TOPIC, ZIGBEE_BRIDGE_DEVICE_RENAME_TOPIC, ZIGBEE_BRIDGE_PERMIT_JOIN_TOPIC } from './zigbee.constants';
 import { ZigbeeBridge } from './store/zigbee-bridge';
 import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
@@ -155,7 +155,13 @@ describe('ZigbeeService', () => {
 
             expect(mockDevicesService.getDeviceByZigbeeFriendlyName).toHaveBeenCalledWith('living_room_bulb');
             expect(mockDeviceConfigsMapper.categorizeAndMapPayloadFromDevice).toHaveBeenCalledWith(mockDevice, { action: 'on' });
-            expect(mockDevicesService.sendCommand).toHaveBeenCalledWith('device-uuid-123', { action: 'on' });
+            expect(mockDevicesService.sendCommand).toHaveBeenCalledWith(
+                'device-uuid-123',
+                { action: 'on' },
+                {
+                    origin: DeviceUpdateOrigin.Device,
+                },
+            );
             expect(mockEventEmitter.emit).not.toHaveBeenCalled();
         });
 
@@ -193,7 +199,13 @@ describe('ZigbeeService', () => {
 
             await service.handleDeviceStateUpdate('living_room_bulb', { action: 'on', state: 'ON', battery: 90, unknown_field: 1 });
 
-            expect(mockDevicesService.sendCommand).toHaveBeenCalledWith('device-uuid-123', { action: 'on' });
+            expect(mockDevicesService.sendCommand).toHaveBeenCalledWith(
+                'device-uuid-123',
+                { action: 'on' },
+                {
+                    origin: DeviceUpdateOrigin.Device,
+                },
+            );
             const [event] = emittedDeviceUpdates();
             expect(event.update.measurements).toEqual({ battery: 90 });
             expect(event.update.controls).toEqual({ on: true });

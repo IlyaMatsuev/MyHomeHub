@@ -11,6 +11,7 @@ import {
 import { ZigbeeBridge } from 'zigbee/store/zigbee-bridge';
 import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
 import { DeviceUpdateRequestedEvent } from 'devices/events';
+import { DeviceUpdateOrigin } from 'devices/interfaces';
 
 @Injectable()
 export class ZigbeeService {
@@ -73,7 +74,7 @@ export class ZigbeeService {
             if (Object.keys(commands).length) {
                 // TODO: Decouple by emitting DeviceCommandRequestedEvent.
                 //  The command payload will be handled and validated in DevicesService and DeviceCommandExecutedEvent fired after
-                await this.devicesService.sendCommand(device.externalId, commands);
+                await this.devicesService.sendCommand(device.externalId, commands, { origin: DeviceUpdateOrigin.Device });
             }
 
             const hasControls = Object.keys(controls).length > 0;
@@ -88,6 +89,8 @@ export class ZigbeeService {
                             ...(hasControls && { controls }),
                             ...(hasMeasurements && { measurements }),
                         }),
+                        false,
+                        DeviceUpdateOrigin.Device,
                     ),
                 );
                 this.logger.debug(`Updated Zigbee device "${zigbeeFriendlyName}" state`);

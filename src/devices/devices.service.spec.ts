@@ -5,12 +5,14 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DevicesService } from './devices.service';
 import { DEVICE_MODEL_PROVIDER_NAME } from './devices.constants';
 import { DEVICES_CONTROL_FACTORY_PROVIDER } from 'devices-control/devices-control.constants';
-import { Device, DeviceBrand, DeviceType, Room } from './interfaces';
+import { Device, DeviceBrand, DeviceType, DeviceUpdateOrigin, Room } from './interfaces';
 import { TransportProtocol } from 'devices-control/interfaces';
 import { DeviceCommandExecutedEvent, DeviceUpdateCompletedEvent, DeviceUpdateRequestedEvent } from './events';
 import { CreateDeviceDto, UpdateDeviceDto, GetDeviceDto, GetDevicesDto, GetPairableDevicesDto } from './dto';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { DeviceConfigsService } from 'device-configs/device-configs.service';
+import { DeviceConfigItemType, DeviceConfigValidationPolicy } from 'device-configs/interfaces';
+import { DeviceConfigsChangedEvent } from 'device-configs/events';
 import { PairableDevice } from 'zigbee/interfaces';
 import { ZigbeePairableDevices } from 'zigbee/store';
 
@@ -21,6 +23,7 @@ describe('DevicesService', () => {
         findOne: jest.Mock;
         countDocuments: jest.Mock;
         deleteOne: jest.Mock;
+        bulkWrite: jest.Mock;
         new: jest.Mock;
     };
     let mockControlServiceFactory: { getControlService: jest.Mock };
@@ -51,7 +54,9 @@ describe('DevicesService', () => {
 
     const mockControlService = {
         mergeValidateControls: jest.fn(),
-        validateControls: jest.fn(),
+        mergeValidateMeasurements: jest.fn(),
+        validateCommand: jest.fn(),
+        applyConfigDefaults: jest.fn(),
         setControls: jest.fn(),
     };
 
@@ -67,11 +72,13 @@ describe('DevicesService', () => {
             findOne: jest.Mock;
             countDocuments: jest.Mock;
             deleteOne: jest.Mock;
+            bulkWrite: jest.Mock;
         };
         MockDeviceModel.find = jest.fn();
         MockDeviceModel.findOne = jest.fn();
         MockDeviceModel.countDocuments = jest.fn();
         MockDeviceModel.deleteOne = jest.fn();
+        MockDeviceModel.bulkWrite = jest.fn().mockResolvedValue({ modifiedCount: 1 });
 
         mockDeviceModel = MockDeviceModel as unknown as typeof mockDeviceModel;
         mockControlServiceFactory = { getControlService: jest.fn().mockReturnValue(mockControlService) };
@@ -116,6 +123,7 @@ describe('DevicesService', () => {
         }).compile();
 
         service = module.get<DevicesService>(DevicesService);
+        mockControlService.mergeValidateMeasurements.mockImplementation(measurements => Promise.resolve(measurements));
     });
 
     afterEach(() => {
@@ -143,7 +151,30 @@ describe('DevicesService', () => {
             await service.onDeviceUpdated(event);
 
             expect(mockDeviceModel.findOne).toHaveBeenCalledWith({ ip: '192.168.1.100' });
-            expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update);
+            expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update, {
+                propagateControls: event.propagate,
+                origin: DeviceUpdateOrigin.Api,
+            });
+        });
+
+        it('should forward the propagate flag from the event to the update', async () => {
+            const matchedDevice = { ...mockDevice } as Device;
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(matchedDevice),
+            });
+            const updateDeviceSpy = jest.spyOn(service, 'updateDevice').mockResolvedValue(matchedDevice);
+
+            const event = new DeviceUpdateRequestedEvent(
+                { externalId: mockDevice.externalId },
+                new UpdateDeviceDto({ controls: { on: true } }),
+                false,
+            );
+            await service.onDeviceUpdated(event);
+
+            expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update, {
+                propagateControls: false,
+                origin: DeviceUpdateOrigin.Api,
+            });
         });
 
         it('should resolve the device by its zigbee friendly name selector', async () => {
@@ -161,7 +192,10 @@ describe('DevicesService', () => {
             await service.onDeviceUpdated(event);
 
             expect(mockDeviceModel.findOne).toHaveBeenCalledWith({ zigbeeFriendlyName: 'old_name' });
-            expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update);
+            expect(updateDeviceSpy).toHaveBeenCalledWith(mockDevice.externalId, event.update, {
+                propagateControls: event.propagate,
+                origin: DeviceUpdateOrigin.Api,
+            });
         });
 
         it('should warn and not update when no device matches the selector', async () => {
@@ -502,6 +536,85 @@ describe('DevicesService', () => {
         });
     });
 
+    describe('addDevice defaults', () => {
+        beforeEach(() => {
+            mockDeviceModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+            mockControlService.mergeValidateControls.mockResolvedValue({ on: true });
+        });
+
+        it('should seed the new device with the controls declared in its device config', async () => {
+            await service.addDevice({ name: 'New Device', type: DeviceType.LED, brand: DeviceBrand.Shelly } as CreateDeviceDto);
+
+            expect(mockControlService.applyConfigDefaults).toHaveBeenCalled();
+        });
+
+        it('should validate a device originated create with the sanitize policy', async () => {
+            await service.addDevice(
+                { name: 'New Device', type: DeviceType.Fans, brand: DeviceBrand.ESP32, controls: { on: true } } as CreateDeviceDto,
+                { origin: DeviceUpdateOrigin.Device },
+            );
+
+            expect(mockControlService.mergeValidateControls).toHaveBeenCalledWith(
+                { on: true },
+                expect.anything(),
+                DeviceConfigValidationPolicy.Sanitize,
+            );
+        });
+    });
+
+    describe('onDeviceConfigsChanged', () => {
+        const changedConfig = {
+            brand: DeviceBrand.Shelly,
+            type: DeviceType.LED,
+            transportProtocol: TransportProtocol.Http,
+            controls: [
+                { label: 'On', name: 'on', type: DeviceConfigItemType.Boolean },
+                { label: 'Brightness', name: 'brightness', type: DeviceConfigItemType.Number, default: 50 },
+            ],
+            measurements: [],
+        };
+
+        const mockStoredDevices = (devices: Array<Partial<Device>>) => {
+            mockDeviceModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue(devices) });
+        };
+
+        it('should seed the newly declared items with their defaults', async () => {
+            mockStoredDevices([{ _id: 'mongo-id', controls: { on: true } } as unknown as Device]);
+
+            await service.onDeviceConfigsChanged(new DeviceConfigsChangedEvent([changedConfig]));
+
+            expect(mockDeviceModel.bulkWrite).toHaveBeenCalledWith([
+                { updateOne: { filter: { _id: 'mongo-id' }, update: { $set: { 'controls.brightness': 50 } } } },
+            ]);
+        });
+
+        it('should remove the stored items the config no longer declares', async () => {
+            mockStoredDevices([{ _id: 'mongo-id', controls: { on: true, brightness: 50, legacy: 'x' } } as unknown as Device]);
+
+            await service.onDeviceConfigsChanged(new DeviceConfigsChangedEvent([changedConfig]));
+
+            expect(mockDeviceModel.bulkWrite).toHaveBeenCalledWith([
+                { updateOne: { filter: { _id: 'mongo-id' }, update: { $unset: { 'controls.legacy': '' } } } },
+            ]);
+        });
+
+        it('should leave the stored payload untouched when the config does not describe the section', async () => {
+            mockStoredDevices([{ _id: 'mongo-id', controls: { on: true }, measurements: { power: 10 } } as unknown as Device]);
+
+            await service.onDeviceConfigsChanged(new DeviceConfigsChangedEvent([{ ...changedConfig, controls: [], measurements: [] }]));
+
+            expect(mockDeviceModel.bulkWrite).not.toHaveBeenCalled();
+        });
+
+        it('should not write anything when every device already matches the config', async () => {
+            mockStoredDevices([{ _id: 'mongo-id', controls: { on: true, brightness: 50 } } as unknown as Device]);
+
+            await service.onDeviceConfigsChanged(new DeviceConfigsChangedEvent([changedConfig]));
+
+            expect(mockDeviceModel.bulkWrite).not.toHaveBeenCalled();
+        });
+    });
+
     describe('addDevice', () => {
         it('should create new device when name does not exist', async () => {
             mockDeviceModel.findOne.mockReturnValue({
@@ -647,6 +760,28 @@ describe('DevicesService', () => {
             );
         });
 
+        it('should persist the controls without sending them back to the device when not propagating', async () => {
+            // Devices report the state they have already applied. Pushing it back would make every external
+            // change (a physical button press, the vendor app) bounce between the hub and the device.
+            const save = jest.fn().mockResolvedValue(undefined);
+            const deviceWithSave = { ...mockDevice, save };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithSave),
+            });
+            mockControlService.mergeValidateControls.mockResolvedValue({ on: true });
+            mockControlService.setControls.mockClear();
+            mockEventEmitter.emit.mockClear();
+
+            await service.updateDevice('device-uuid-123', new UpdateDeviceDto({ controls: { on: true } }), { propagateControls: false });
+
+            expect(mockControlService.setControls).not.toHaveBeenCalled();
+            expect(save).toHaveBeenCalledWith({ validateBeforeSave: true });
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                DeviceUpdateCompletedEvent.eventName,
+                expect.objectContaining({ deviceExternalId: 'device-uuid-123', controlsUpdated: true }),
+            );
+        });
+
         it('should not push controls to the device for measurement-only updates', async () => {
             const deviceWithSave = { ...mockDevice, save: jest.fn().mockResolvedValue(undefined) };
             mockDeviceModel.findOne.mockReturnValue({
@@ -657,6 +792,41 @@ describe('DevicesService', () => {
             await service.updateDevice('device-uuid-123', new UpdateDeviceDto({ measurements: { temperature: 25 } }));
 
             expect(mockControlService.setControls).not.toHaveBeenCalled();
+        });
+
+        it('should merge the measurements through the control service without touching the controls', async () => {
+            const deviceWithSave = { ...mockDevice, save: jest.fn().mockResolvedValue(undefined) };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithSave),
+            });
+            mockControlService.mergeValidateControls.mockClear();
+            mockControlService.mergeValidateMeasurements.mockResolvedValue({ power: 10, temperature: 25 });
+
+            await service.updateDevice('device-uuid-123', new UpdateDeviceDto({ room: Room.Bedroom, measurements: { temperature: 25 } }));
+
+            expect(mockControlService.mergeValidateMeasurements).toHaveBeenCalledWith(
+                { temperature: 25 },
+                mockDevice.measurements,
+                DeviceConfigValidationPolicy.Reject,
+            );
+            expect(deviceWithSave.measurements).toEqual({ power: 10, temperature: 25 });
+            expect(deviceWithSave.room).toBe(Room.Bedroom);
+            expect(deviceWithSave.controls).toEqual(mockDevice.controls);
+            expect(mockControlService.mergeValidateControls).not.toHaveBeenCalled();
+        });
+
+        it('should reject the update without saving when the measurements are invalid', async () => {
+            const save = jest.fn().mockResolvedValue(undefined);
+            const deviceWithSave = { ...mockDevice, save };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithSave),
+            });
+            mockControlService.mergeValidateMeasurements.mockRejectedValue(new Error('invalid measurements'));
+
+            await expect(
+                service.updateDevice('device-uuid-123', new UpdateDeviceDto({ measurements: { power: 'a lot' } })),
+            ).rejects.toThrow('invalid measurements');
+            expect(save).not.toHaveBeenCalled();
         });
 
         it('should emit DeviceUpdateCompletedEvent flagging measurements as updated', async () => {
@@ -720,6 +890,8 @@ describe('DevicesService', () => {
         it('should rename zigbee device when friendly name changes', async () => {
             const deviceWithSave = {
                 ...mockDevice,
+                brand: DeviceBrand.Philips,
+                transportProtocol: TransportProtocol.Zigbee,
                 zigbeeIeeeAddress: '0xpairable',
                 zigbeeFriendlyName: 'old_name',
                 save: jest.fn().mockResolvedValue({
@@ -745,9 +917,35 @@ describe('DevicesService', () => {
             expect(mockZigbeeService.renameDevice).toHaveBeenCalledWith('0xpairable', 'new_name');
         });
 
+        it('should validate the controls with the control service of the updated brand', async () => {
+            const deviceWithSave = { ...mockDevice, save: jest.fn().mockResolvedValue(undefined) };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithSave),
+            });
+            mockControlService.mergeValidateControls.mockResolvedValue({ on: true });
+            mockControlServiceFactory.getControlService.mockClear();
+
+            const updateDto = new UpdateDeviceDto({
+                brand: DeviceBrand.Shelly,
+                transportProtocol: TransportProtocol.Http,
+                controls: { on: true },
+            });
+            await service.updateDevice('device-uuid-123', updateDto);
+
+            // The brand/protocol of the update have to be applied before the control service is resolved
+            expect(mockControlServiceFactory.getControlService).toHaveBeenCalledWith(
+                expect.objectContaining({ brand: DeviceBrand.Shelly, transportProtocol: TransportProtocol.Http }),
+            );
+            expect(mockControlServiceFactory.getControlService).not.toHaveBeenCalledWith(
+                expect.objectContaining({ brand: DeviceBrand.Tuya }),
+            );
+        });
+
         it('should not rename zigbee device when friendly name is unchanged', async () => {
             const deviceWithSave = {
                 ...mockDevice,
+                brand: DeviceBrand.Philips,
+                transportProtocol: TransportProtocol.Zigbee,
                 zigbeeIeeeAddress: '0xpairable',
                 zigbeeFriendlyName: 'same_name',
                 save: jest.fn().mockResolvedValue({
@@ -779,13 +977,13 @@ describe('DevicesService', () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockDevice),
             });
-            mockControlService.validateControls.mockResolvedValue({ action: 'on_press' });
+            mockControlService.validateCommand.mockResolvedValue({ action: 'on_press' });
 
             const command = { action: 'on_press' };
             const result = await service.sendCommand('device-uuid-123', command);
 
             expect(result).toEqual(mockDevice);
-            expect(mockControlService.validateControls).toHaveBeenCalledWith(command);
+            expect(mockControlService.validateCommand).toHaveBeenCalledWith(command, DeviceConfigValidationPolicy.Reject);
             expect(mockControlService.setControls).toHaveBeenCalledWith({ action: 'on_press' });
         });
 
@@ -793,7 +991,7 @@ describe('DevicesService', () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockDevice),
             });
-            mockControlService.validateControls.mockResolvedValue({ action: 'on_press' });
+            mockControlService.validateCommand.mockResolvedValue({ action: 'on_press' });
 
             await service.sendCommand('device-uuid-123', { action: 'on_press' });
 
@@ -811,7 +1009,7 @@ describe('DevicesService', () => {
             mockDeviceModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockDevice),
             });
-            mockControlService.validateControls.mockResolvedValue({ action: 'on_press' });
+            mockControlService.validateCommand.mockResolvedValue({ action: 'on_press' });
 
             await service.sendCommand('device-uuid-123', { action: 'on_press' });
 

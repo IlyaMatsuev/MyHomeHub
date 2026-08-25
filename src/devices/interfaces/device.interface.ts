@@ -28,3 +28,20 @@ export type DeviceFilter = Partial<Device & { _id: string }>;
 export interface GetDeviceOptions {
     strict: boolean;
 }
+
+export enum DeviceUpdateOrigin {
+    // Update originated from API/Scenarios or other integrations
+    Api = 'api',
+    // Update originated from the device state update
+    Device = 'device',
+}
+
+export interface AddDeviceOptions {
+    origin?: DeviceUpdateOrigin;
+}
+
+export interface UpdateDeviceOptions {
+    // Set to "false" to prevent sending a device update state back to the device (repeated device state update)
+    propagateControls: boolean;
+    origin?: DeviceUpdateOrigin;
+}

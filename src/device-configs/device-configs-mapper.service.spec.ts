@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { DeviceConfigsMapperService } from './device-configs-mapper.service';
 import { DeviceConfigsService } from './device-configs.service';
 import { DeviceConfig, DeviceConfigItemType, DeviceConfigKey } from './interfaces';
@@ -7,6 +8,7 @@ import { TransportProtocol } from 'devices-control/interfaces';
 describe('DeviceConfigsMapperService', () => {
     let service: DeviceConfigsMapperService;
     let mockDeviceConfigsService: { getConfig: jest.Mock };
+    let debugSpy: jest.SpyInstance;
 
     const configKey: DeviceConfigKey = {
         brand: DeviceBrand.Philips,
@@ -67,12 +69,14 @@ describe('DeviceConfigsMapperService', () => {
     };
 
     beforeEach(() => {
+        debugSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined);
         mockDeviceConfigsService = { getConfig: jest.fn().mockResolvedValue(mockConfig) };
         service = new DeviceConfigsMapperService(mockDeviceConfigsService as unknown as DeviceConfigsService);
     });
 
     afterEach(() => {
         jest.clearAllMocks();
+        debugSpy.mockRestore();
     });
 
     describe('mapPayloadToDevice', () => {
@@ -306,6 +310,32 @@ describe('DeviceConfigsMapperService', () => {
             const result = await service.categorizeAndMapPayloadFromDevice(configKey, { operation_mode: 'AUTO_MODE' });
 
             expect(result).toEqual({ commands: {}, controls: { mode: 'auto' }, measurements: {} });
+        });
+
+        it('should log the dropped fields when they are not declared in the config', async () => {
+            await service.categorizeAndMapPayloadFromDevice(configKey, { battery: 95, unknown_field: 1, update: {} });
+
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('unknown_field, update'));
+        });
+
+        it('should log the dropped field when its value is not declared by the matching item', async () => {
+            await service.categorizeAndMapPayloadFromDevice(configKey, { action: 'unknown_action' });
+
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('action'));
+        });
+
+        it('should not log anything when every field is categorized', async () => {
+            await service.categorizeAndMapPayloadFromDevice(configKey, { action: 'on_press', battery: 95 });
+
+            expect(debugSpy).not.toHaveBeenCalled();
+        });
+
+        it('should log the missing config when there is no config for the device', async () => {
+            mockDeviceConfigsService.getConfig.mockResolvedValue(null);
+
+            await service.categorizeAndMapPayloadFromDevice(configKey, { battery: 95 });
+
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('No device config found'));
         });
     });
 });

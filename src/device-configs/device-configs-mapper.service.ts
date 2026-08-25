@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { DevicePayload } from 'devices/interfaces';
 import { DeviceConfigsService } from 'device-configs/device-configs.service';
 import {
@@ -13,6 +13,8 @@ import {
 
 @Injectable()
 export class DeviceConfigsMapperService {
+    private readonly logger = new Logger(DeviceConfigsMapperService.name);
+
     constructor(private readonly deviceConfigsService: DeviceConfigsService) {}
 
     /**
@@ -70,23 +72,37 @@ export class DeviceConfigsMapperService {
         const parsedPayload: ParsedDeviceConfigPayload = { commands: {}, controls: {}, measurements: {} };
         const config = await this.deviceConfigsService.getConfig(key);
         if (!config) {
+            this.logger.debug(`No device config found for ${this.formatConfigKey(key)}, dropping the payload`);
             return parsedPayload;
         }
 
+        const droppedNames: Array<string> = [];
         for (const [name, value] of Object.entries(payload)) {
-            this.assignToSection(config, parsedPayload, name, value);
+            if (!this.assignToSection(config, parsedPayload, name, value)) {
+                droppedNames.push(name);
+            }
+        }
+        if (droppedNames.length) {
+            this.logger.debug(
+                `Dropped payload fields that do not match the "${this.formatConfigKey(key)}" config: ${droppedNames.join(', ')}`,
+            );
         }
         return parsedPayload;
     }
 
-    private assignToSection(config: DeviceConfig, payload: ParsedDeviceConfigPayload, name: string, value: unknown): void {
+    private assignToSection(config: DeviceConfig, payload: ParsedDeviceConfigPayload, name: string, value: unknown): boolean {
         for (const section of DEVICE_CONFIG_SECTIONS) {
             const item = this.findConfigItem(config[section] ?? [], name, value);
             if (item) {
                 payload[section][item.name] = this.mapValueFromDevice(item, value);
-                return;
+                return true;
             }
         }
+        return false;
+    }
+
+    private formatConfigKey(key: DeviceConfigKey): string {
+        return `"${key.brand}/${key.type}/${key.transportProtocol}"`;
     }
 
     private findConfigItem(configs: Array<DeviceConfigItem>, name: string, value: unknown): DeviceConfigItem | undefined {

@@ -1,8 +1,9 @@
 import { existsSync, FSWatcher, watch } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import path, { extname, isAbsolute, join, resolve } from 'node:path';
-import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Model } from 'mongoose';
 import {
     DEFAULT_DEVICE_CONFIGS_DIR,
@@ -12,21 +13,28 @@ import {
 } from 'device-configs/device-configs.constants';
 import { DeviceConfig, DeviceConfigKey, ParsedDeviceConfig } from 'device-configs/interfaces';
 import { DeviceConfigsParserService } from 'device-configs/device-configs-parser.service';
+import { DeviceConfigsChangedEvent } from 'device-configs/events';
 
 @Injectable()
-export class DeviceConfigsService implements OnModuleInit, OnModuleDestroy {
+export class DeviceConfigsService implements OnApplicationBootstrap, OnModuleDestroy {
     private readonly logger = new Logger(DeviceConfigsService.name);
     private watcher: FSWatcher | null = null;
     private syncTimer: NodeJS.Timeout | null = null;
+    private readonly configsCache = new Map<string, DeviceConfig | null>();
 
     constructor(
         @Inject(DEVICE_CONFIG_MODEL_PROVIDER_NAME)
         private readonly deviceConfigModel: Model<DeviceConfig>,
         private readonly configService: ConfigService,
         private readonly parser: DeviceConfigsParserService,
+        private readonly eventEmitter: EventEmitter2,
     ) {}
 
-    async onModuleInit(): Promise<void> {
+    /*
+     * Initialize and sync device configs from files on app start.
+     * Using bootstrap phase instead of "onModuleInit" to have all event listeners registered
+     */
+    async onApplicationBootstrap(): Promise<void> {
         await this.syncFromDisk();
         this.startWatcher();
     }
@@ -44,8 +52,14 @@ export class DeviceConfigsService implements OnModuleInit, OnModuleDestroy {
         return isAbsolute(configured) ? configured : resolve(process.cwd(), configured);
     }
 
-    getConfig(key: DeviceConfigKey): Promise<DeviceConfig | null> {
-        return this.deviceConfigModel.findOne(this.toConfigFilter(key)).lean<DeviceConfig>().exec();
+    async getConfig(key: DeviceConfigKey): Promise<DeviceConfig | null> {
+        const cacheKey = this.hashConfigKey(key);
+        if (this.configsCache.has(cacheKey)) {
+            return this.configsCache.get(cacheKey);
+        }
+        const config = await this.deviceConfigModel.findOne(this.toConfigFilter(key)).lean<DeviceConfig>().exec();
+        this.configsCache.set(cacheKey, config);
+        return config;
     }
 
     async getConfigs(keys: Array<DeviceConfigKey>): Promise<Array<DeviceConfig>> {
@@ -96,6 +110,10 @@ export class DeviceConfigsService implements OnModuleInit, OnModuleDestroy {
         }
     }
 
+    private hashConfigKey(key: DeviceConfigKey): string {
+        return `${key.brand}:${key.type}:${key.transportProtocol}`;
+    }
+
     private toConfigFilter(key: DeviceConfigKey): DeviceConfigKey {
         return { brand: key.brand, type: key.type, transportProtocol: key.transportProtocol };
     }
@@ -103,7 +121,9 @@ export class DeviceConfigsService implements OnModuleInit, OnModuleDestroy {
     private async syncToDatabase(parsedConfigs: Array<ParsedDeviceConfig>): Promise<void> {
         const upsertedKeys = await Promise.all(parsedConfigs.map(config => this.upsertConfig(config)));
         const removed = await this.removeStaleConfigs(upsertedKeys);
+        this.configsCache.clear();
         this.logger.log(`Device configs sync completed: ${upsertedKeys.length} upserted, ${removed} removed`);
+        this.eventEmitter.emit(DeviceConfigsChangedEvent.eventName, new DeviceConfigsChangedEvent(parsedConfigs));
     }
 
     private async upsertConfig(config: ParsedDeviceConfig): Promise<DeviceConfigKey> {
@@ -117,6 +137,7 @@ export class DeviceConfigsService implements OnModuleInit, OnModuleDestroy {
                 key,
                 {
                     $set: {
+                        strict: config.strict !== false,
                         commands: config.commands,
                         controls: config.controls,
                         measurements: config.measurements,
