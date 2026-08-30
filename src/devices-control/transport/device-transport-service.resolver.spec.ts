@@ -10,6 +10,7 @@ describe('DeviceTransportServiceResolver', () => {
         mockHttpTransport = {
             protocol: TransportProtocol.Http,
             send: jest.fn().mockResolvedValue(undefined),
+            receive: jest.fn().mockResolvedValue({ result: { output: true } }),
         };
         mockMqttTransport = {
             protocol: TransportProtocol.Mqtt,
@@ -47,6 +48,29 @@ describe('DeviceTransportServiceResolver', () => {
 
             expect(() => resolver.send(TransportProtocol.Zigbee, message)).toThrow(
                 `No transport service registered for protocol "${TransportProtocol.Zigbee}"`,
+            );
+        });
+    });
+
+    describe('receive', () => {
+        it('should return the response of the transport matching the protocol', async () => {
+            const message: TransportMessage = { method: 'POST', url: 'http://device/rpc', payload: { id: 1 } };
+
+            const result = await resolver.receive(TransportProtocol.Http, message);
+
+            expect(result).toEqual({ result: { output: true } });
+            expect(mockHttpTransport.receive).toHaveBeenCalledWith(message);
+        });
+
+        it('should throw when no transport is registered for the protocol', () => {
+            expect(() => resolver.receive(TransportProtocol.Zigbee, { payload: {} })).toThrow(
+                `No transport service registered for protocol "${TransportProtocol.Zigbee}"`,
+            );
+        });
+
+        it('should throw when the transport cannot read a device state', () => {
+            expect(() => resolver.receive(TransportProtocol.Mqtt, { topic: 'devices/update' })).toThrow(
+                `Transport service for protocol "${TransportProtocol.Mqtt}" cannot read a device state`,
             );
         });
     });

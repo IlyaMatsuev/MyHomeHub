@@ -1,9 +1,16 @@
 import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { ShellyControlsDto } from './shelly-controls.dto';
-import { SHELLY_COMPONENT_CONTROLS, SHELLY_CONTROL_PARAMS, SHELLY_RPC_COMPONENT_ID, ShellyComponent } from './shelly.constants';
+import {
+    SHELLY_COMPONENT_CONTROLS,
+    SHELLY_CONTROL_PARAMS,
+    SHELLY_RPC_COMPONENT_ID,
+    SHELLY_STATUS_CONTROLS,
+    ShellyComponent,
+} from './shelly.constants';
 import { DeviceControls, DevicePayload } from 'devices/interfaces';
 import { DevicesControlService } from 'devices-control/devices-control.service';
 import { TransportMessage } from 'devices-control/interfaces';
+import { DeviceConfigPayloads } from 'device-configs/interfaces';
 
 export class ShellyControlService extends DevicesControlService {
     protected getServiceName(): string {
@@ -27,6 +34,29 @@ export class ShellyControlService extends DevicesControlService {
                 },
             },
         };
+    }
+
+    protected getStatePayload(): TransportMessage {
+        return {
+            url: `http://${this.getDeviceIP()}/rpc`,
+            method: 'POST',
+            payload: {
+                id: 1,
+                // The state is read from the primary component of the device, the one all its controls belong to
+                method: `${this.getComponents()[0]}.GetStatus`,
+                params: {
+                    id: SHELLY_RPC_COMPONENT_ID,
+                },
+            },
+        };
+    }
+
+    protected parseStatePayload(response: unknown): DeviceConfigPayloads | never {
+        const status = (response as { result?: DevicePayload })?.result;
+        if (!status || typeof status !== 'object') {
+            throw new Error(`The device "${this.device.externalId}" returned an unexpected status: ${JSON.stringify(response)}`);
+        }
+        return { controls: this.getStatusControls(status), measurements: this.getStatusMeasurements(status) };
     }
 
     // Components the device exposes over RPC, can be checked with:
@@ -64,6 +94,31 @@ export class ShellyControlService extends DevicesControlService {
             }
         }
         return params;
+    }
+
+    private getStatusControls(status: DevicePayload): DeviceControls {
+        const controls: DeviceControls = {};
+        for (const [name, param] of Object.entries(SHELLY_STATUS_CONTROLS)) {
+            const value = status[param.namePath];
+            if (value === undefined || value === null) {
+                continue;
+            }
+            controls[name] = param.transform ? param.transform(value) : value;
+        }
+        return controls;
+    }
+
+    // Every status field the controls do not consume is a measurement candidate. The nested objects (e.g. "aenergy") are skipped,
+    // and the names the device config does not declare are dropped by the device config validation later on
+    private getStatusMeasurements(status: DevicePayload): DevicePayload {
+        const controlPaths = new Set(Object.values(SHELLY_STATUS_CONTROLS).map(param => param.namePath));
+        const measurements: DevicePayload = {};
+        for (const [name, value] of Object.entries(status)) {
+            if (!controlPaths.has(name) && (value === null || typeof value !== 'object')) {
+                measurements[name] = value;
+            }
+        }
+        return measurements;
     }
 
     private getControlNames(controls: DeviceControls): Array<string> {

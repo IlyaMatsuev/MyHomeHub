@@ -84,6 +84,16 @@ describe('DevicesController', () => {
             expect(result).toEqual(mockDevice);
             expect(mockDevicesService.getDevice).toHaveBeenCalledWith('device-uuid-123', query);
         });
+
+        it('should forward the fresh flag to the service', async () => {
+            mockDevicesService.getDevice.mockResolvedValue(mockDevice);
+
+            const query = new GetDeviceDto();
+            query.fresh = true;
+            await controller.getDevice('device-uuid-123', query);
+
+            expect(mockDevicesService.getDevice).toHaveBeenCalledWith('device-uuid-123', expect.objectContaining({ fresh: true }));
+        });
     });
 
     describe('addDevice', () => {

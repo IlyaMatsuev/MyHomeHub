@@ -62,7 +62,12 @@ export class DevicesController {
     @Get('/:externalId')
     @ForRoles(UserRole.Resident, UserRole.Guest)
     @ApiParam({ name: 'externalId', description: 'External ID of the device to find', example: 'f3cec07c-9834-4a02-990d-28b0d99534ab' })
-    @ApiOperation({ summary: 'Get a specific device by the provided external ID' })
+    @ApiOperation({
+        summary: 'Get a specific device by the provided external ID',
+        description:
+            'Pass "fresh=true" to read the current state from the device before responding. ' +
+            'The refreshed controls/measurements are stored on the device document and returned to the caller',
+    })
     @ApiOkResponse({ type: DeviceResponseDto })
     async getDevice(@ExternalIdParam() externalId: string, @Query() query: GetDeviceDto): Promise<DeviceResponseDto> {
         return this.deviceService.getDevice(externalId, query);

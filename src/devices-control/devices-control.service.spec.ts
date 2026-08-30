@@ -4,7 +4,8 @@ import { ClassConstructor } from 'class-transformer/types/interfaces';
 import { DevicesControlService } from './devices-control.service';
 import { DeviceTransportServiceResolver } from 'devices-control/transport';
 import { TransportMessage, TransportProtocol } from 'devices-control/interfaces';
-import { Device, DeviceControls } from 'devices/interfaces';
+import { Device, DeviceControls, DevicePayload } from 'devices/interfaces';
+import { DeviceConfigPayloads } from 'device-configs/interfaces';
 import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
 import { DeviceConfigsValidatorService } from 'device-configs/device-configs-validator.service';
 import { CustomValidationException } from 'common/exceptions';
@@ -41,6 +42,25 @@ class TestControlService extends DevicesControlService {
     }
 }
 
+class TestUnparsedStateControlService extends TestControlService {
+    protected getStatePayload(): TransportMessage {
+        return { method: 'GET', url: 'http://device/status' };
+    }
+}
+
+class TestPollableControlService extends TestControlService {
+    statePayload: TransportMessage | null = { method: 'POST', url: 'http://device/rpc', payload: { id: 1 } };
+
+    protected getStatePayload(): TransportMessage | null {
+        return this.statePayload;
+    }
+
+    protected parseStatePayload(response: unknown): DeviceConfigPayloads {
+        const status = (response ?? {}) as DevicePayload;
+        return { controls: { output: status.output }, measurements: { apower: status.apower } };
+    }
+}
+
 class TestTypedMeasurementsControlService extends TestControlService {
     protected getMeasurementsDtoType<T extends object>(): ClassConstructor<T> {
         return TestMeasurementsDto as ClassConstructor<T>;
@@ -49,8 +69,8 @@ class TestTypedMeasurementsControlService extends TestControlService {
 
 describe('DevicesControlService', () => {
     let service: TestControlService;
-    let mockResolver: { send: jest.Mock };
-    let mockDeviceConfigsMapper: { mapPayloadToDevice: jest.Mock };
+    let mockResolver: { send: jest.Mock; receive: jest.Mock };
+    let mockDeviceConfigsMapper: { mapPayloadToDevice: jest.Mock; mapPayloadFromDevice: jest.Mock };
     let mockDeviceConfigsValidator: {
         validateSection: jest.Mock;
         buildDefaultPayloads: jest.Mock;
@@ -64,8 +84,14 @@ describe('DevicesControlService', () => {
             externalId: 'device-uuid-123',
             transportProtocol: TransportProtocol.Http,
         };
-        mockResolver = { send: jest.fn().mockResolvedValue(undefined) };
-        mockDeviceConfigsMapper = { mapPayloadToDevice: jest.fn((_key, payload) => Promise.resolve(payload)) };
+        mockResolver = {
+            send: jest.fn().mockResolvedValue(undefined),
+            receive: jest.fn().mockResolvedValue({ output: true, apower: 4.5 }),
+        };
+        mockDeviceConfigsMapper = {
+            mapPayloadToDevice: jest.fn((_key, payload) => Promise.resolve(payload)),
+            mapPayloadFromDevice: jest.fn((_key, _section, payload) => Promise.resolve(payload)),
+        };
         mockDeviceConfigsValidator = {
             validateSection: jest.fn((_key, _section, payload) => Promise.resolve(payload)),
             buildDefaultPayloads: jest.fn().mockResolvedValue({ controls: {}, measurements: {} }),
@@ -83,6 +109,75 @@ describe('DevicesControlService', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+    });
+
+    describe('getState', () => {
+        let pollableService: TestPollableControlService;
+
+        beforeEach(() => {
+            pollableService = new TestPollableControlService(
+                mockDevice as Device,
+                mockResolver as unknown as DeviceTransportServiceResolver,
+                {} as ConfigService,
+                mockDeviceConfigsMapper as unknown as DeviceConfigsMapperService,
+                mockDeviceConfigsValidator as unknown as DeviceConfigsValidatorService,
+            );
+            jest.spyOn(pollableService['logger'], 'debug').mockImplementation();
+            jest.spyOn(service['logger'], 'debug').mockImplementation();
+        });
+
+        it('should return null for a device that cannot be polled', async () => {
+            await expect(service.getState()).resolves.toBeNull();
+            expect(mockResolver.receive).not.toHaveBeenCalled();
+        });
+
+        it('should return null when the brand declares no state payload', async () => {
+            pollableService.statePayload = null;
+
+            await expect(pollableService.getState()).resolves.toBeNull();
+            expect(mockResolver.receive).not.toHaveBeenCalled();
+        });
+
+        it('should read the state using the device transport protocol', async () => {
+            await pollableService.getState();
+
+            expect(mockResolver.receive).toHaveBeenCalledWith(TransportProtocol.Http, {
+                method: 'POST',
+                url: 'http://device/rpc',
+                payload: { id: 1 },
+            });
+        });
+
+        it('should translate the parsed state into the internal names', async () => {
+            mockDeviceConfigsMapper.mapPayloadFromDevice.mockImplementation((_key, section, payload) => {
+                return Promise.resolve(section === 'controls' ? { on: payload.output } : { power: payload.apower });
+            });
+
+            const state = await pollableService.getState();
+
+            expect(state).toEqual({ controls: { on: true }, measurements: { power: 4.5 } });
+            expect(mockDeviceConfigsMapper.mapPayloadFromDevice).toHaveBeenCalledWith(mockDevice, 'controls', { output: true });
+            expect(mockDeviceConfigsMapper.mapPayloadFromDevice).toHaveBeenCalledWith(mockDevice, 'measurements', { apower: 4.5 });
+        });
+
+        it('should report an empty state when the brand does not parse the device response', async () => {
+            const unparsedService = new TestUnparsedStateControlService(
+                mockDevice as Device,
+                mockResolver as unknown as DeviceTransportServiceResolver,
+                {} as ConfigService,
+                mockDeviceConfigsMapper as unknown as DeviceConfigsMapperService,
+                mockDeviceConfigsValidator as unknown as DeviceConfigsValidatorService,
+            );
+            jest.spyOn(unparsedService['logger'], 'debug').mockImplementation();
+
+            await expect(unparsedService.getState()).resolves.toEqual({ controls: {}, measurements: {} });
+        });
+
+        it('should propagate the transport errors, so the caller can keep the stored state', async () => {
+            mockResolver.receive.mockRejectedValue(new Error('device is offline'));
+
+            await expect(pollableService.getState()).rejects.toThrow('device is offline');
+        });
     });
 
     describe('mergeValidateControls', () => {
