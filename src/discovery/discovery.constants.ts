@@ -1,2 +1,2 @@
-export const DEFAULT_UDP_PORT = 5353;
-export const DEFAULT_DISCOVERY_MESSAGE = 'MY_HOME_HUB_DISCOVER';
+export const DEFAULT_SERVER_MDNS_SERVICE_TYPE = 'myhomehub';
+export const MDNS_SERVICE_PROTOCOL = 'tcp' as const;

@@ -1,24 +1,25 @@
-import { createSocket, RemoteInfo, Socket } from 'node:dgram';
 import { networkInterfaces } from 'node:os';
+import { Bonjour, Service } from 'bonjour-service';
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DEFAULT_PORT, DEFAULT_SERVER_LABEL } from 'common/common.constants';
 import { ServerDto } from 'discovery/dto';
-import { DEFAULT_DISCOVERY_MESSAGE, DEFAULT_UDP_PORT } from 'discovery/discovery.constants';
+import { DEFAULT_SERVER_MDNS_SERVICE_TYPE, MDNS_SERVICE_PROTOCOL } from 'discovery/discovery.constants';
 
 @Injectable()
 export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(DiscoveryService.name);
-    private socket: Socket;
+    private bonjour: Bonjour;
+    private service: Service;
 
     constructor(private readonly configService: ConfigService) {}
 
     onModuleInit(): void {
-        this.startUdpListener();
+        this.startMdnsAdvertisement();
     }
 
-    onModuleDestroy(): void {
-        this.stopUdpListener();
+    onModuleDestroy(): Promise<void> {
+        return this.stopMdnsAdvertisement();
     }
 
     getServerInfo(): ServerDto {
@@ -29,54 +30,53 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
         };
     }
 
-    // TODO: Move this to mDNS instead. Docker container runs in host mode anyway
-    private startUdpListener(): void {
-        const udpPort = this.getUdpPort();
-        const discoveryMessage = this.getDiscoveryMessage();
-
-        this.socket = createSocket({ type: 'udp4', reuseAddr: true });
-
-        this.socket.on('error', err => {
-            this.logger.error(`UDP socket error: ${err.message}`);
-            this.socket.close();
-        });
-
-        this.socket.on('message', (msg: Buffer, remoteInfo: RemoteInfo) => {
-            const message = msg.toString().trim();
-            this.logger.debug(`Received discovery message "${message} from "${remoteInfo.address}:${remoteInfo.port}"`);
-            if (message === discoveryMessage) {
-                this.logger.debug(`Discovery request from ${remoteInfo.address}:${remoteInfo.port}`);
-                this.sendDiscoveryResponse(remoteInfo);
-            }
-        });
-
-        this.socket.on('listening', () => {
-            const address = this.socket.address();
-            this.logger.log(`UDP discovery listener started on port ${address.port}`);
-        });
-
-        this.socket.bind(udpPort, () => {
-            this.socket.setBroadcast(true);
-        });
-    }
-
-    private stopUdpListener(): void {
-        if (this.socket) {
-            this.socket.close();
-            this.logger.log('UDP discovery listener stopped');
+    private startMdnsAdvertisement(): void {
+        if (!this.isServerDiscoverable()) {
+            this.logger.log('mDNS advertisement is disabled');
+            return;
         }
+
+        const serverInfo = this.getServerInfo();
+
+        this.bonjour = new Bonjour(undefined, (err: Error) => {
+            this.logger.error(`mDNS responder error: ${err.message}`);
+        });
+
+        this.service = this.bonjour.publish({
+            name: this.getServerLabel(),
+            type: this.getServerMdnsServiceType(),
+            protocol: MDNS_SERVICE_PROTOCOL,
+            port: serverInfo.port,
+            txt: {
+                label: serverInfo.label,
+                address: serverInfo.address,
+                port: String(serverInfo.port),
+            },
+        });
+
+        this.service.on('error', (err: Error) => {
+            this.logger.error(`Failed to advertise the mDNS service: ${err.message}`);
+        });
+
+        this.service.on('up', () => {
+            this.logger.log(`mDNS advertisement started for "${this.service.fqdn}" on port ${serverInfo.port}`);
+        });
     }
 
-    private sendDiscoveryResponse(remoteInfo: RemoteInfo): void {
-        const response = JSON.stringify(this.getServerInfo());
-        const responseBuffer = Buffer.from(response);
+    private stopMdnsAdvertisement(): Promise<void> {
+        if (!this.bonjour) {
+            return Promise.resolve();
+        }
 
-        this.socket.send(responseBuffer, 0, responseBuffer.length, remoteInfo.port, remoteInfo.address, err => {
-            if (err) {
-                this.logger.error(`Failed to send discovery response: ${err.message}`);
-            } else {
-                this.logger.debug(`Discovery response sent to ${remoteInfo.address}:${remoteInfo.port}`);
-            }
+        return new Promise<void>(resolve => {
+            this.bonjour.unpublishAll(() => {
+                this.bonjour.destroy(() => {
+                    this.bonjour = undefined;
+                    this.service = undefined;
+                    this.logger.log('mDNS advertisement stopped');
+                    resolve();
+                });
+            });
         });
     }
 
@@ -108,11 +108,11 @@ export class DiscoveryService implements OnModuleInit, OnModuleDestroy {
         return Number(this.configService.get<string>('PORT') ?? DEFAULT_PORT);
     }
 
-    private getUdpPort(): number {
-        return Number(this.configService.get<string>('UDP_PORT') ?? DEFAULT_UDP_PORT);
+    private isServerDiscoverable(): boolean {
+        return this.configService.get<string>('SERVER_DISCOVERY_ENABLED') === 'true';
     }
 
-    private getDiscoveryMessage(): string {
-        return this.configService.get<string>('DISCOVERY_MESSAGE') ?? DEFAULT_DISCOVERY_MESSAGE;
+    private getServerMdnsServiceType(): string {
+        return this.configService.get<string>('SERVER_MDNS_SERVICE_TYPE') ?? DEFAULT_SERVER_MDNS_SERVICE_TYPE;
     }
 }

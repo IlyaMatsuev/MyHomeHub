@@ -14,7 +14,7 @@ A home-running server that controls, stores, and provides information about IoT 
 - **Automation Scenarios**: Create automation rules with cron schedules and device state triggers
 - **Secure Authentication**: JWT-based authentication with TOTP for user registration and Google sign-in support
 - **REST API**: Full device management through REST endpoints with Swagger documentation
-- **Discoverable**: The hub can be discovered in the Wi-Fi network by sending a UDP request
+- **Discoverable**: The hub advertises itself in the Wi-Fi network over mDNS (Bonjour/DNS-SD) as `_myhomehub._tcp`
 
 ## Prerequisites
 

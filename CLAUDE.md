@@ -72,7 +72,7 @@ AppModule
 ├── ScenariosModule       # Automation scenarios with triggers and actions
 │   └── SchedulerModule   # Cron-based scenario scheduling
 ├── MqttModule            # MQTT broker communication
-├── DiscoveryModule       # UDP broadcast discovery and GET /info endpoint
+├── DiscoveryModule       # mDNS (Bonjour/DNS-SD) advertisement and GET /info endpoint
 └── ThrottlerModule       # Rate limiting with Redis storage (short/medium/long tiers)
 ```
 
@@ -153,6 +153,16 @@ Currently applied to `GET/POST/DELETE /auth/register/requests` (the public ones)
 
 The client IP comes from `request.ip`, which honors the express `trust proxy` setting, so the restriction works behind a reverse proxy. `TRUST_PROXY` accepts `false`, `true`, a number of proxy hops, or a comma-separated list of trusted proxies/subnets - `true` trusts `X-Forwarded-For` from any client and therefore allows spoofing the client IP, so a hop count or a proxy list should be preferred (the server logs a warning on startup when `TRUST_PROXY=true`).
 
+### Server Discovery
+
+`DiscoveryService` advertises the hub on the local network over **mDNS/DNS-SD** with `bonjour-service`, so clients find it with the platform Bonjour APIs (iOS `NWBrowser`, Android NSD, `dns-sd`, avahi) instead of a custom protocol. The advertised record is `_<SERVER_MDNS_SERVICE_TYPE>._tcp.local` (default type `myhomehub`), the instance name is `SERVER_LABEL`, the SRV port is the externally reachable HTTP port, and the TXT record carries `label`/`address`/`port` - the same fields `GET /info` returns, so resolving the service is enough to reach the hub.
+
+This replaced a UDP broadcast listener that answered a magic `DISCOVERY_MESSAGE` string on `UDP_PORT`; both variables are gone. Clients still on that protocol have to switch to mDNS.
+
+The responder is created with an explicit error callback because the `bonjour-service` default one **rethrows**, which would take the whole app down when something else (a host avahi/mDNSResponder) already holds UDP/5353. Advertisement failures are logged instead, and `SERVER_DISCOVERY_ENABLED=false` turns the advertisement off entirely - it defaults to **on** (only the literal `false` disables it), unlike the opt-in `THROTTLE_ENABLED`/`ENABLE_LOCAL_AUTH` flags, since discovery worked without any configuration before.
+
+mDNS needs multicast on the LAN, which is why the Docker service keeps `network_mode: host`.
+
 ### Path Aliases (tsconfig.json)
 
 ```
@@ -178,7 +188,7 @@ Key variables:
 
 - `SERVER_LABEL` - Human-readable server name (used in Swagger and discovery)
 - `PORT`, `TZ_LATITUDE`, `TZ_LONGITUDE` - Server config
-- `UDP_PORT`, `DISCOVERY_MESSAGE` - UDP broadcast discovery settings
+- `SERVER_DISCOVERY_ENABLED`, `SERVER_MDNS_SERVICE_TYPE` - mDNS advertisement settings
 - `JWT_SECRET`, `JWT_EXPIRATION_TIMEOUT` - Access token signing secret and lifetime
 - `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRATION_TIMEOUT` - Refresh token signing secret and lifetime
 - `PASSWORD_RESET_TOKEN_TTL_SEC` - Password reset token lifetime in seconds (opaque Redis-backed token)

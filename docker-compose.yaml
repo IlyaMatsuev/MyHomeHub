@@ -7,7 +7,6 @@ services:
     # Don't remove port mappings - "network_mode: host" works only for Linux
     ports:
       - "${PORT}:${PORT}"
-      - "${UDP_PORT}:${UDP_PORT}"
     volumes:
       - ./.env:/usr/src/app/.env
       - ./public:/usr/src/app/public
@@ -19,7 +18,7 @@ services:
       - mqtt-broker
       # redis should not be part of dependencies because it can be started from another my-home related project
       # - redis
-    # Host mode is required to allow proper UDP packets exchange
+    # Host mode is required for the mDNS advertisement to reach the local network
     network_mode: host
 
   mongodb:

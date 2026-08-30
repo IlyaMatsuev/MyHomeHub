@@ -1,24 +1,43 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { Bonjour } from 'bonjour-service';
 import { DiscoveryService } from 'discovery/discovery.service';
-import * as dgram from 'node:dgram';
 import * as os from 'node:os';
 
-jest.mock('node:dgram');
 jest.mock('node:os');
+jest.mock('bonjour-service', () => ({
+    Bonjour: jest.fn(),
+}));
 
 describe('DiscoveryService', () => {
     let service: DiscoveryService;
     let mockConfigService: {
         get: jest.Mock;
     };
-    let mockSocket: {
+    let mockPublishedService: {
         on: jest.Mock;
-        bind: jest.Mock;
-        close: jest.Mock;
-        send: jest.Mock;
-        setBroadcast: jest.Mock;
-        address: jest.Mock;
+        fqdn: string;
+    };
+    let mockBonjour: {
+        publish: jest.Mock;
+        unpublishAll: jest.Mock;
+        destroy: jest.Mock;
+    };
+
+    const withConfig = (config: Record<string, string>): void => {
+        mockConfigService.get.mockImplementation((key: string) => config[key]);
+    };
+
+    const withDiscoveryEnabled = (config: Record<string, string> = {}): void => {
+        withConfig({ SERVER_DISCOVERY_ENABLED: 'true', ...config });
+    };
+
+    const getServiceHandler = (event: string): ((arg?: Error) => void) => {
+        return mockPublishedService.on.mock.calls.find(([name]) => name === event)?.[1];
+    };
+
+    const getResponderErrorCallback = (): ((err: Error) => void) => {
+        return (Bonjour as unknown as jest.Mock).mock.calls[0]?.[1];
     };
 
     beforeEach(async () => {
@@ -26,16 +45,18 @@ describe('DiscoveryService', () => {
             get: jest.fn(),
         };
 
-        mockSocket = {
+        mockPublishedService = {
             on: jest.fn(),
-            bind: jest.fn(),
-            close: jest.fn(),
-            send: jest.fn(),
-            setBroadcast: jest.fn(),
-            address: jest.fn().mockReturnValue({ port: 5353 }),
+            fqdn: 'Test Hub._myhomehub._tcp.local',
         };
 
-        (dgram.createSocket as jest.Mock).mockReturnValue(mockSocket);
+        mockBonjour = {
+            publish: jest.fn().mockReturnValue(mockPublishedService),
+            unpublishAll: jest.fn((callback?: () => void) => callback?.()),
+            destroy: jest.fn((callback?: () => void) => callback?.()),
+        };
+
+        (Bonjour as unknown as jest.Mock).mockImplementation(() => mockBonjour);
         (os.networkInterfaces as jest.Mock).mockReturnValue({
             eth0: [
                 { family: 'IPv4', address: '192.168.1.100', internal: false },
@@ -63,13 +84,7 @@ describe('DiscoveryService', () => {
 
     describe('getServerInfo', () => {
         it('should return server info with configured values', () => {
-            mockConfigService.get.mockImplementation((key: string) => {
-                const config: Record<string, string> = {
-                    SERVER_LABEL: 'My Smart Home',
-                    PORT: '3000',
-                };
-                return config[key];
-            });
+            withConfig({ SERVER_LABEL: 'My Smart Home', PORT: '3000' });
 
             const result = service.getServerInfo();
 
@@ -81,12 +96,7 @@ describe('DiscoveryService', () => {
         });
 
         it('should return default label when SERVER_LABEL not configured', () => {
-            mockConfigService.get.mockImplementation((key: string) => {
-                const config: Record<string, string> = {
-                    PORT: '3000',
-                };
-                return config[key];
-            });
+            withConfig({ PORT: '3000' });
 
             const result = service.getServerInfo();
 
@@ -102,13 +112,7 @@ describe('DiscoveryService', () => {
         });
 
         it('should use SERVER_EXTERNAL_ADDRESS when configured', () => {
-            mockConfigService.get.mockImplementation((key: string) => {
-                const config: Record<string, string> = {
-                    SERVER_EXTERNAL_ADDRESS: 'hub.local',
-                    PORT: '3000',
-                };
-                return config[key];
-            });
+            withConfig({ SERVER_EXTERNAL_ADDRESS: 'hub.local', PORT: '3000' });
 
             const result = service.getServerInfo();
 
@@ -116,13 +120,7 @@ describe('DiscoveryService', () => {
         });
 
         it('should use SERVER_EXTERNAL_PORT when configured', () => {
-            mockConfigService.get.mockImplementation((key: string) => {
-                const config: Record<string, string> = {
-                    SERVER_EXTERNAL_PORT: '443',
-                    PORT: '3000',
-                };
-                return config[key];
-            });
+            withConfig({ SERVER_EXTERNAL_PORT: '443', PORT: '3000' });
 
             const result = service.getServerInfo();
 
@@ -130,13 +128,7 @@ describe('DiscoveryService', () => {
         });
 
         it('should prefer SERVER_EXTERNAL_PORT over PORT', () => {
-            mockConfigService.get.mockImplementation((key: string) => {
-                const config: Record<string, string> = {
-                    SERVER_EXTERNAL_PORT: '8080',
-                    PORT: '3000',
-                };
-                return config[key];
-            });
+            withConfig({ SERVER_EXTERNAL_PORT: '8080', PORT: '3000' });
 
             const result = service.getServerInfo();
 
@@ -144,12 +136,7 @@ describe('DiscoveryService', () => {
         });
 
         it('should fall back to auto-detected IP when SERVER_EXTERNAL_ADDRESS not configured', () => {
-            mockConfigService.get.mockImplementation((key: string) => {
-                const config: Record<string, string> = {
-                    PORT: '3000',
-                };
-                return config[key];
-            });
+            withConfig({ PORT: '3000' });
 
             const result = service.getServerInfo();
 
@@ -169,185 +156,142 @@ describe('DiscoveryService', () => {
     });
 
     describe('onModuleInit', () => {
-        it('should create and bind UDP socket on init', () => {
-            mockConfigService.get.mockImplementation((key: string) => {
-                const config: Record<string, string> = {
-                    UDP_PORT: '5353',
-                    DISCOVERY_MESSAGE: 'MY_HOME_HUB_DISCOVER',
-                };
-                return config[key];
-            });
-
-            mockSocket.bind.mockImplementation((port, callback) => {
-                callback?.();
-            });
+        it('should publish the mDNS service with the server info on init', () => {
+            withDiscoveryEnabled({ SERVER_LABEL: 'Test Hub', PORT: '3000' });
 
             service.onModuleInit();
 
-            expect(dgram.createSocket).toHaveBeenCalledWith({ type: 'udp4', reuseAddr: true });
-            expect(mockSocket.on).toHaveBeenCalledWith('error', expect.any(Function));
-            expect(mockSocket.on).toHaveBeenCalledWith('message', expect.any(Function));
-            expect(mockSocket.on).toHaveBeenCalledWith('listening', expect.any(Function));
-            expect(mockSocket.bind).toHaveBeenCalledWith(5353, expect.any(Function));
-            expect(mockSocket.setBroadcast).toHaveBeenCalledWith(true);
-        });
-
-        it('should use default UDP port when not configured', () => {
-            mockConfigService.get.mockReturnValue(undefined);
-
-            mockSocket.bind.mockImplementation((port, callback) => {
-                callback?.();
-            });
-
-            service.onModuleInit();
-
-            expect(mockSocket.bind).toHaveBeenCalledWith(5353, expect.any(Function));
-        });
-    });
-
-    describe('onModuleDestroy', () => {
-        it('should close socket on destroy', () => {
-            mockConfigService.get.mockReturnValue(undefined);
-            mockSocket.bind.mockImplementation((port, callback) => {
-                callback?.();
-            });
-
-            service.onModuleInit();
-            service.onModuleDestroy();
-
-            expect(mockSocket.close).toHaveBeenCalled();
-        });
-    });
-
-    describe('UDP message handling', () => {
-        it('should respond to valid discovery message', () => {
-            mockConfigService.get.mockImplementation((key: string) => {
-                const config: Record<string, string> = {
-                    DISCOVERY_MESSAGE: 'MY_HOME_HUB_DISCOVER',
-                    SERVER_LABEL: 'Test Hub',
-                    PORT: '3000',
-                };
-                return config[key];
-            });
-
-            let messageHandler: (msg: Buffer, rinfo: dgram.RemoteInfo) => void;
-            mockSocket.on.mockImplementation((event, handler) => {
-                if (event === 'message') {
-                    messageHandler = handler;
-                }
-            });
-            mockSocket.bind.mockImplementation((port, callback) => {
-                callback?.();
-            });
-            mockSocket.send.mockImplementation((...args: Array<unknown>) => {
-                const callback = args[5] as () => void;
-                callback?.();
-            });
-
-            service.onModuleInit();
-
-            const rinfo: dgram.RemoteInfo = {
-                address: '192.168.1.50',
-                port: 12345,
-                family: 'IPv4',
-                size: 18,
-            };
-            messageHandler(Buffer.from('MY_HOME_HUB_DISCOVER'), rinfo);
-
-            expect(mockSocket.send).toHaveBeenCalled();
-            const sendCall = mockSocket.send.mock.calls[0];
-            const responseBuffer = sendCall[0] as Buffer;
-            const response = JSON.parse(responseBuffer.toString());
-            expect(response).toEqual({
-                label: 'Test Hub',
-                address: '192.168.1.100',
+            expect(mockBonjour.publish).toHaveBeenCalledWith({
+                name: 'Test Hub',
+                type: 'myhomehub',
+                protocol: 'tcp',
                 port: 3000,
+                txt: {
+                    label: 'Test Hub',
+                    address: '192.168.1.100',
+                    port: '3000',
+                },
             });
-            expect(sendCall[3]).toBe(12345);
-            expect(sendCall[4]).toBe('192.168.1.50');
         });
 
-        it('should ignore invalid discovery message', () => {
-            mockConfigService.get.mockImplementation((key: string) => {
-                const config: Record<string, string> = {
-                    DISCOVERY_MESSAGE: 'MY_HOME_HUB_DISCOVER',
-                };
-                return config[key];
-            });
-
-            let messageHandler: (msg: Buffer, rinfo: dgram.RemoteInfo) => void;
-            mockSocket.on.mockImplementation((event, handler) => {
-                if (event === 'message') {
-                    messageHandler = handler;
-                }
-            });
-            mockSocket.bind.mockImplementation((port, callback) => {
-                callback?.();
-            });
+        it('should publish under the configured service type', () => {
+            withDiscoveryEnabled({ SERVER_LABEL: 'Test Hub', PORT: '3000', SERVER_MDNS_SERVICE_TYPE: 'customhub' });
 
             service.onModuleInit();
 
-            const rinfo: dgram.RemoteInfo = {
-                address: '192.168.1.50',
-                port: 12345,
-                family: 'IPv4',
-                size: 10,
-            };
-            messageHandler(Buffer.from('WRONG_MESSAGE'), rinfo);
-
-            expect(mockSocket.send).not.toHaveBeenCalled();
+            expect(mockBonjour.publish).toHaveBeenCalledWith(expect.objectContaining({ type: 'customhub' }));
         });
 
-        it('should use default discovery message when not configured', () => {
-            mockConfigService.get.mockReturnValue(undefined);
-
-            let messageHandler: (msg: Buffer, rinfo: dgram.RemoteInfo) => void;
-            mockSocket.on.mockImplementation((event, handler) => {
-                if (event === 'message') {
-                    messageHandler = handler;
-                }
-            });
-            mockSocket.bind.mockImplementation((port, callback) => {
-                callback?.();
-            });
-            mockSocket.send.mockImplementation((...args: Array<unknown>) => {
-                const callback = args[5] as () => void;
-                callback?.();
-            });
+        it('should advertise the external port and address when configured', () => {
+            withDiscoveryEnabled({ PORT: '3000', SERVER_EXTERNAL_PORT: '443', SERVER_EXTERNAL_ADDRESS: 'hub.example.com' });
 
             service.onModuleInit();
 
-            const rinfo: dgram.RemoteInfo = {
-                address: '192.168.1.50',
-                port: 12345,
-                family: 'IPv4',
-                size: 18,
-            };
-            messageHandler(Buffer.from('MY_HOME_HUB_DISCOVER'), rinfo);
+            expect(mockBonjour.publish).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    port: 443,
+                    txt: expect.objectContaining({ address: 'hub.example.com', port: '443' }),
+                }),
+            );
+        });
 
-            expect(mockSocket.send).toHaveBeenCalled();
+        it('should not advertise anything when SERVER_DISCOVERY_ENABLED is "false"', () => {
+            withConfig({ SERVER_DISCOVERY_ENABLED: 'false', PORT: '3000' });
+
+            service.onModuleInit();
+
+            expect(Bonjour).not.toHaveBeenCalled();
+            expect(mockBonjour.publish).not.toHaveBeenCalled();
+        });
+
+        it('should use the server label as the mDNS instance name', () => {
+            withDiscoveryEnabled({ PORT: '3000' });
+
+            service.onModuleInit();
+
+            expect(mockBonjour.publish).toHaveBeenCalledWith(expect.objectContaining({ name: 'My Home Hub' }));
+        });
+
+        it('should not advertise anything when SERVER_DISCOVERY_ENABLED is not configured', () => {
+            withConfig({ PORT: '3000' });
+
+            service.onModuleInit();
+
+            expect(Bonjour).not.toHaveBeenCalled();
+            expect(mockBonjour.publish).not.toHaveBeenCalled();
+        });
+
+        it('should not advertise anything when SERVER_DISCOVERY_ENABLED is not exactly "true"', () => {
+            withConfig({ SERVER_DISCOVERY_ENABLED: 'TRUE', PORT: '3000' });
+
+            service.onModuleInit();
+
+            expect(Bonjour).not.toHaveBeenCalled();
+            expect(mockBonjour.publish).not.toHaveBeenCalled();
         });
     });
 
     describe('error handling', () => {
-        it('should close socket on error', () => {
-            mockConfigService.get.mockReturnValue(undefined);
-
-            let errorHandler: (err: Error) => void;
-            mockSocket.on.mockImplementation((event, handler) => {
-                if (event === 'error') {
-                    errorHandler = handler;
-                }
-            });
-            mockSocket.bind.mockImplementation((port, callback) => {
-                callback?.();
-            });
+        it('should log responder errors instead of rethrowing them', () => {
+            withDiscoveryEnabled({ PORT: '3000' });
 
             service.onModuleInit();
+            const errorCallback = getResponderErrorCallback();
 
-            errorHandler(new Error('Socket error'));
+            expect(errorCallback).toBeDefined();
+            expect(() => errorCallback(new Error('Port 5353 is already in use'))).not.toThrow();
+        });
 
-            expect(mockSocket.close).toHaveBeenCalled();
+        it('should handle the service error event without rethrowing', () => {
+            withDiscoveryEnabled({ PORT: '3000' });
+
+            service.onModuleInit();
+            const errorHandler = getServiceHandler('error');
+
+            expect(errorHandler).toBeDefined();
+            expect(() => errorHandler(new Error('Advertisement failed'))).not.toThrow();
+        });
+
+        it('should log the advertisement once the service is up', () => {
+            withDiscoveryEnabled({ PORT: '3000' });
+
+            service.onModuleInit();
+            const upHandler = getServiceHandler('up');
+
+            expect(upHandler).toBeDefined();
+            expect(() => upHandler()).not.toThrow();
+        });
+    });
+
+    describe('onModuleDestroy', () => {
+        it('should unpublish the service and destroy the responder', async () => {
+            withDiscoveryEnabled({ PORT: '3000' });
+
+            service.onModuleInit();
+            await service.onModuleDestroy();
+
+            expect(mockBonjour.unpublishAll).toHaveBeenCalled();
+            expect(mockBonjour.destroy).toHaveBeenCalled();
+        });
+
+        it('should do nothing when the advertisement was never started', async () => {
+            withConfig({ SERVER_DISCOVERY_ENABLED: 'false', PORT: '3000' });
+
+            service.onModuleInit();
+            await service.onModuleDestroy();
+
+            expect(mockBonjour.unpublishAll).not.toHaveBeenCalled();
+            expect(mockBonjour.destroy).not.toHaveBeenCalled();
+        });
+
+        it('should be safe to call twice', async () => {
+            withDiscoveryEnabled({ PORT: '3000' });
+
+            service.onModuleInit();
+            await service.onModuleDestroy();
+            await service.onModuleDestroy();
+
+            expect(mockBonjour.destroy).toHaveBeenCalledTimes(1);
         });
     });
 });
