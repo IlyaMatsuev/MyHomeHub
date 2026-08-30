@@ -14,7 +14,6 @@ import { AuthConfigService } from 'auth/auth-config.service';
 import { CookiesConfigService } from 'auth/cookies/cookies-config.service';
 import { PasswordResetTokensService } from 'auth/password-reset-tokens.service';
 import { GoogleAuthService } from 'auth/google-auth.service';
-import { GoogleTokenVerifierService } from 'auth/google-token-verifier.service';
 import { authProviders } from 'auth/auth.providers';
 
 @Module({
@@ -37,7 +36,6 @@ import { authProviders } from 'auth/auth.providers';
         AuthService,
         PasswordResetTokensService,
         GoogleAuthService,
-        GoogleTokenVerifierService,
         JwtStrategy,
         {
             provide: APP_GUARD,
