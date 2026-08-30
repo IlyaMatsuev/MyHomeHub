@@ -112,13 +112,13 @@ export class ScenariosExecutionService {
     }
 
     private async executeScenario(scenario: Scenario): Promise<void> {
-        for (const deviceAction of scenario.devices) {
-            if (deviceAction.set.controls) {
+        for (const action of scenario.actions) {
+            if (action.set.controls) {
                 this.eventEmitter.emit(
                     DeviceUpdateRequestedEvent.eventName,
                     new DeviceUpdateRequestedEvent(
-                        { externalId: deviceAction.externalId },
-                        new UpdateDeviceDto({ controls: deviceAction.set.controls }),
+                        { externalId: action.externalId },
+                        new UpdateDeviceDto({ controls: action.set.controls }),
                     ),
                 );
             }

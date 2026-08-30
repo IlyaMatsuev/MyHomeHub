@@ -102,7 +102,7 @@ Scenarios define automation rules with:
 
 - **Triggers**: Cron schedules or device state changes
 - **Logic**: Conditions evaluated by `ConditionsEvaluatorService`
-- **Actions**: Set device controls/measurements
+- **Actions**: The `actions` array (`ScenarioAction`) - each entry names a device by `externalId` and the controls/measurements to `set` on it when the scenario executes.
 
 ### Authentication & Authorization
 

@@ -64,6 +64,6 @@ export function validateTriggerLogic(value: string): boolean | never {
     return true;
 }
 
-export function validateScenarioDeviceAction(): boolean | never {
+export function validateScenarioAction(): boolean | never {
     return !this.set || !objectIsEmpty(this.set.controls) || !objectIsEmpty(this.set.measurements);
 }

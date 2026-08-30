@@ -48,7 +48,7 @@ describe('ScenariosExecutionService', () => {
             sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 8 * * *' } as ScenarioCronTriggerSource],
             logic: '1',
         },
-        devices: [{ externalId: 'device-1', set: { controls: { on: true } as unknown as Record<string, object> } }],
+        actions: [{ externalId: 'device-1', set: { controls: { on: true } as unknown as Record<string, object> } }],
     };
 
     const deviceTriggeredScenario = (device: Record<string, unknown>): Scenario => {
@@ -284,16 +284,16 @@ describe('ScenariosExecutionService', () => {
         });
 
         it('should execute multiple device actions', async () => {
-            const scenarioWithMultipleDevices = {
+            const scenarioWithMultipleActions = {
                 ...mockScenario,
-                devices: [
+                actions: [
                     { externalId: 'device-1', set: { controls: { on: true } } },
                     { externalId: 'device-2', set: { controls: { brightness: 50 } } },
                 ],
             } as unknown as Scenario;
             mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
 
-            await service.execute(scenarioWithMultipleDevices, { scheduled: true });
+            await service.execute(scenarioWithMultipleActions, { scheduled: true });
 
             const events = emittedDeviceUpdates();
             expect(events).toHaveLength(2);
@@ -306,7 +306,7 @@ describe('ScenariosExecutionService', () => {
         it('should skip device actions without controls', async () => {
             const scenarioWithoutControls = {
                 ...mockScenario,
-                devices: [{ externalId: 'device-1', set: {} }],
+                actions: [{ externalId: 'device-1', set: {} }],
             } as unknown as Scenario;
             mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
 
@@ -319,7 +319,7 @@ describe('ScenariosExecutionService', () => {
             const scenarioWithoutControls = {
                 ...mockScenario,
                 repeatTimes: 2,
-                devices: [{ externalId: 'device-1', set: {} }],
+                actions: [{ externalId: 'device-1', set: {} }],
             } as unknown as Scenario;
             mockConditionsEvaluatorService.evaluateTriggerExpression.mockReturnValue(true);
 

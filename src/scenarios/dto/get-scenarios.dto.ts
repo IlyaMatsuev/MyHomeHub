@@ -34,7 +34,7 @@ export class GetScenariosDto extends PaginationDto {
     @IsEnum(Room)
     @ApiProperty({
         required: false,
-        description: 'Filter scenarios by the room of devices in the scenario devices array',
+        description: 'Filter scenarios by the room of devices in the scenario actions array',
         enum: Room,
     })
     room?: Room;

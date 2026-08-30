@@ -45,7 +45,7 @@ describe('ScenariosService', () => {
             sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 8 * * *' } as ScenarioCronTriggerSource],
             logic: '1',
         },
-        devices: [{ externalId: 'device-1', set: { controls: { on: true } as unknown as Record<string, object> } }],
+        actions: [{ externalId: 'device-1', set: { controls: { on: true } as unknown as Record<string, object> } }],
         toObject: jest.fn().mockReturnValue({
             name: 'Test Scenario',
             active: true,
@@ -53,7 +53,7 @@ describe('ScenariosService', () => {
                 sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 8 * * *' }],
                 logic: '1',
             },
-            devices: [],
+            actions: [],
         }),
         save: jest.fn(),
     };
@@ -251,7 +251,7 @@ describe('ScenariosService', () => {
             expect(mockDevicesService.getAllDevices).toHaveBeenCalledWith({ room: Room.LivingRoom });
             expect(mockScenarioModel.find).toHaveBeenCalledWith({
                 active: true,
-                'devices.externalId': { $in: ['device-1', 'device-2'] },
+                'actions.externalId': { $in: ['device-1', 'device-2'] },
             });
         });
 
@@ -280,7 +280,7 @@ describe('ScenariosService', () => {
             expect(mockDevicesService.getAllDevices).toHaveBeenCalledWith({ room: Room.None });
             expect(mockScenarioModel.find).toHaveBeenCalledWith({
                 active: true,
-                'devices.externalId': { $in: ['device-no-room'] },
+                'actions.externalId': { $in: ['device-no-room'] },
             });
         });
     });
@@ -371,7 +371,7 @@ describe('ScenariosService', () => {
                     sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 9 * * *' }],
                     logic: '1',
                 },
-                devices: [],
+                actions: [],
             } as unknown as CreateScenarioDto;
 
             const result = await service.addScenario(createDto);
@@ -392,7 +392,7 @@ describe('ScenariosService', () => {
                     sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 9 * * *' }],
                     logic: '1',
                 },
-                devices: [],
+                actions: [],
             } as unknown as CreateScenarioDto;
 
             await service.addScenario(createDto);
@@ -408,7 +408,7 @@ describe('ScenariosService', () => {
             const createDto: CreateScenarioDto = {
                 name: 'Test Scenario',
                 trigger: { sources: [], logic: '1' },
-                devices: [],
+                actions: [],
             } as unknown as CreateScenarioDto;
 
             await expect(service.addScenario(createDto)).rejects.toThrow(FieldValidationException);
@@ -431,7 +431,7 @@ describe('ScenariosService', () => {
                     sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 0 * * *', adjustTo: 'sunrise' }],
                     logic: '1',
                 },
-                devices: [],
+                actions: [],
             } as unknown as CreateScenarioDto;
 
             await service.addScenario(createDto);
@@ -462,7 +462,7 @@ describe('ScenariosService', () => {
                     sources: [{ type: ScenarioTriggerSourceType.Cron, cron: 'invalid-cron' }],
                     logic: '1',
                 },
-                devices: [],
+                actions: [],
             } as unknown as CreateScenarioDto;
 
             await expect(service.addScenario(createDto)).rejects.toThrow(InternalServerErrorException);
@@ -498,7 +498,7 @@ describe('ScenariosService', () => {
                         sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 8 * * *' }],
                         logic: '1',
                     },
-                    devices: [],
+                    actions: [],
                 }),
                 save: jest.fn().mockResolvedValue({ ...mockScenario, group: 'new_group' }),
             };

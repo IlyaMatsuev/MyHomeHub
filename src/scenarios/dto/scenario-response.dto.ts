@@ -1,5 +1,5 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { ScenarioDeviceDto, ScenarioTriggerDto } from 'scenarios/dto/common.dto';
+import { ScenarioActionDto, ScenarioTriggerDto } from 'scenarios/dto/common.dto';
 import { Scenario } from 'scenarios/interfaces';
 
 @ApiSchema({ name: 'Scenarios.ScenarioResponse', description: 'Scenario entity returned in API responses' })
@@ -25,8 +25,8 @@ export class ScenarioResponseDto implements Scenario {
     @ApiProperty({ description: 'Scenario trigger configuration', type: ScenarioTriggerDto })
     trigger: ScenarioTriggerDto;
 
-    @ApiProperty({ description: 'Devices affected by this scenario', type: ScenarioDeviceDto, isArray: true })
-    devices: Array<ScenarioDeviceDto>;
+    @ApiProperty({ description: 'Actions performed on the devices by this scenario', type: ScenarioActionDto, isArray: true })
+    actions: Array<ScenarioActionDto>;
 
     @ApiProperty({ description: 'Record creation timestamp' })
     createdAt: Date;

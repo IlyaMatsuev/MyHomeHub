@@ -1,5 +1,5 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { ScenarioDeviceDto, ScenarioTriggerDto } from 'scenarios/dto/common.dto';
+import { ScenarioActionDto, ScenarioTriggerDto } from 'scenarios/dto/common.dto';
 import {
     ArrayNotEmpty,
     IsArray,
@@ -27,7 +27,7 @@ import {
 } from 'scenarios/scenarios.constants';
 import { Type } from 'class-transformer';
 
-@ApiSchema({ name: 'Scenarios.UpdateScenario', description: 'DTO used to update an existing scenario information or devices' })
+@ApiSchema({ name: 'Scenarios.UpdateScenario', description: 'DTO used to update an existing scenario information or actions' })
 export class UpdateScenarioDto {
     @IsOptional()
     @IsString()
@@ -95,12 +95,12 @@ export class UpdateScenarioDto {
     @IsArray()
     @ArrayNotEmpty()
     @ValidateNested({ each: true })
-    @Type(() => ScenarioDeviceDto)
+    @Type(() => ScenarioActionDto)
     @ApiProperty({
-        type: ScenarioDeviceDto,
+        type: ScenarioActionDto,
         isArray: true,
         required: false,
-        description: 'The new set of triggered devices for the scenario',
+        description: 'The new set of actions performed on the devices for the scenario',
     })
-    devices?: Array<ScenarioDeviceDto>;
+    actions?: Array<ScenarioActionDto>;
 }

@@ -39,7 +39,7 @@ export class ScenariosService implements OnModuleInit {
         if (options.room) {
             const allDevices = await this.devicesService.getAllDevices({ room: options.room });
             const deviceExternalIds = allDevices.items.map(d => d.externalId);
-            conditions['devices.externalId'] = { $in: deviceExternalIds };
+            conditions['actions.externalId'] = { $in: deviceExternalIds };
         }
         const [scenarios, total] = await Promise.all([
             this.scenarioModel.find(conditions).skip(options.skipRecords).limit(options.pageSize).lean(),
@@ -115,7 +115,7 @@ export class ScenariosService implements OnModuleInit {
         scenario.active = scenarioDto.active ?? scenario.active;
         scenario.repeatTimes = scenarioDto.repeatTimes || scenarioDto.repeatTimes === null ? scenarioDto.repeatTimes : scenario.repeatTimes;
         scenario.trigger = scenarioDto.trigger ?? scenario.trigger;
-        scenario.devices = scenarioDto.devices ?? scenario.devices;
+        scenario.actions = scenarioDto.actions ?? scenario.actions;
 
         const cronSource = this.findScenarioCronSource(scenario);
         if (cronSource && cronSource.adjustTo && scenarioDto.trigger) {

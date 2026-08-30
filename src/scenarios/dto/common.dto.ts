@@ -1,6 +1,6 @@
 import {
     ScenarioCronTriggerSource,
-    ScenarioDevice,
+    ScenarioAction,
     ScenarioDeviceTriggerSource,
     ScenarioDeviceTriggerSourceConditions,
     ScenarioTrigger,
@@ -122,8 +122,8 @@ export class ScenarioTriggerDto implements ScenarioTrigger {
     logic: string;
 }
 
-@ApiSchema({ name: 'Scenarios.ScenarioDeviceSetting' })
-export class ScenarioDeviceSettingDto {
+@ApiSchema({ name: 'Scenarios.ScenarioActionSetting' })
+export class ScenarioActionSettingDto {
     @IsOptional()
     @IsObject()
     @IsNotEmptyObject()
@@ -145,8 +145,8 @@ export class ScenarioDeviceSettingDto {
     measurements?: Record<string, object>;
 }
 
-@ApiSchema({ name: 'Scenarios.ScenarioDevice' })
-export class ScenarioDeviceDto implements ScenarioDevice {
+@ApiSchema({ name: 'Scenarios.ScenarioAction' })
+export class ScenarioActionDto implements ScenarioAction {
     @IsNotEmpty()
     @IsUUID(EXTERNAL_ID_UUID_VERSION)
     @ApiProperty({
@@ -161,5 +161,5 @@ export class ScenarioDeviceDto implements ScenarioDevice {
         required: true,
         description: 'The set of device controls or measurements to be changed on scenario execution',
     })
-    set: ScenarioDeviceSettingDto;
+    set: ScenarioActionSettingDto;
 }

@@ -29,7 +29,7 @@ describe('ScenariosController', () => {
             sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 8 * * *' } as ScenarioCronTriggerSource],
             logic: '1',
         },
-        devices: [],
+        actions: [],
     };
 
     const mockGroup: Partial<ScenarioGroup> = {
@@ -112,7 +112,7 @@ describe('ScenariosController', () => {
                     sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 8 * * *' } as ScenarioCronTriggerSource],
                     logic: '1',
                 },
-                devices: [],
+                actions: [],
             } as unknown as CreateScenarioDto;
 
             const result = await controller.addScenario(createDto);

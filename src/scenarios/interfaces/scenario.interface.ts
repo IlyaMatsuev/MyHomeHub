@@ -33,7 +33,7 @@ export interface ScenarioTrigger {
     logic: string;
 }
 
-export interface ScenarioDevice {
+export interface ScenarioAction {
     externalId: string;
     set: {
         controls?: Record<string, object>;
@@ -49,7 +49,7 @@ export interface Scenario extends Document {
     active: boolean;
     repeatTimes?: number;
     trigger: ScenarioTrigger;
-    devices: Array<ScenarioDevice>;
+    actions: Array<ScenarioAction>;
     createdAt: Date;
     updatedAt: Date;
 }
