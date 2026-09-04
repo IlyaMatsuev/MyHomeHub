@@ -12,6 +12,7 @@ import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper
 import { DeviceConfigsValidatorService } from 'device-configs/device-configs-validator.service';
 import { DeviceConfigValidationPolicy } from 'device-configs/interfaces';
 import { stripEmptyValues } from 'devices-control/utils';
+import { DEVICE_PAYLOAD_OVERRIDE_KEY } from 'devices/devices.constants';
 
 export abstract class DevicesControlService {
     protected readonly logger: Logger;
@@ -103,10 +104,10 @@ export abstract class DevicesControlService {
         return plainToInstance(this.getControlsDtoType<T>(), controls);
     }
 
-    // "$override" replaces the stored payload instead of merging into it, and is never persisted itself
     private mergePayload<T extends DevicePayload>(payload: T, oldPayload?: T): T {
-        const { $override, ...otherFields } = payload ?? ({} as T);
-        return ($override ? { ...otherFields } : { ...oldPayload, ...otherFields }) as T;
+        const override = !!payload[DEVICE_PAYLOAD_OVERRIDE_KEY];
+        delete payload[DEVICE_PAYLOAD_OVERRIDE_KEY];
+        return (override ? { ...payload } : { ...oldPayload, ...payload }) as T;
     }
 
     private async validatePayload<T extends DevicePayload>(payload: T, dtoType: ClassConstructor<T>): Promise<T | never> {

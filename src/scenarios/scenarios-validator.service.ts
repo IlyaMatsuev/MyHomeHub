@@ -19,12 +19,8 @@ export class ScenariosValidatorService {
     ) {}
 
     /**
-     * Rejects a scenario that refers to a device, a section or an item name the device does not have.
-     * Such a scenario is stored happily, but its trigger can never be met and its actions always fail,
-     * which is only visible in the debug logs of every evaluation.
-     *
-     * Only the submitted trigger and actions are validated, never the stored ones,
-     * so that an existing scenario stays editable the same way a device payload update stays partial
+     * Rejects a scenario that refers to a device or unknown control names.
+     * Only the submitted trigger and actions are validated, never the stored ones.
      */
     async validateScenario(scenario: ScenarioPayload): Promise<void | never> {
         const devices = await this.resolveDevices(scenario);

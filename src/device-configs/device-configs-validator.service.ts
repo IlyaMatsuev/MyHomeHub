@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ValidationError } from 'common/interfaces';
 import { CustomValidationException } from 'common/exceptions';
 import { DevicePayload } from 'devices/interfaces';
+import { DEVICE_PAYLOAD_OVERRIDE_KEY } from 'devices/devices.constants';
 import { DeviceConfigsService } from 'device-configs/device-configs.service';
 import { getItemDefaultValue, isEmptyValue, validateItemValue } from 'device-configs/validators';
 import {
@@ -128,7 +129,7 @@ export class DeviceConfigsValidatorService {
         const sanitized: DevicePayload = {};
 
         for (const [name, value] of Object.entries(payload)) {
-            if (name === '$override') {
+            if (name === DEVICE_PAYLOAD_OVERRIDE_KEY) {
                 continue;
             }
             if (this.validateField(options, name, value)) {
@@ -144,12 +145,11 @@ export class DeviceConfigsValidatorService {
         return this.normalizeOverride(sanitized, payload);
     }
 
-    // "$override" is a flag of the payload rather than an item of the device config, so it is never validated
     private normalizeOverride(payload: DevicePayload, source: DevicePayload = payload): DevicePayload {
         const normalized = { ...payload };
-        if ('$override' in source) {
-            const flag: unknown = source.$override;
-            normalized.$override = flag === true || flag === 'true';
+        if (DEVICE_PAYLOAD_OVERRIDE_KEY in source) {
+            const flag: unknown = source[DEVICE_PAYLOAD_OVERRIDE_KEY];
+            normalized[DEVICE_PAYLOAD_OVERRIDE_KEY] = flag === true || flag === 'true';
         }
         return normalized;
     }
@@ -157,7 +157,7 @@ export class DeviceConfigsValidatorService {
     private collectErrors(payload: DevicePayload, options: PayloadValidationOptions): Array<ValidationError> {
         const errors: Array<ValidationError> = [];
         for (const [name, value] of Object.entries(payload)) {
-            if (name === '$override') {
+            if (name === DEVICE_PAYLOAD_OVERRIDE_KEY) {
                 continue;
             }
             const message = this.validateField(options, name, value);
