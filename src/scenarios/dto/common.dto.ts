@@ -84,6 +84,13 @@ export class ScenarioDeviceTriggerSourceDto implements ScenarioDeviceTriggerSour
                 description: 'The device measurements conditions which trigger the scenario',
                 default: { are: {} },
             },
+            commands: {
+                type: ScenarioDeviceTriggerSourceConditionsDto,
+                required: false,
+                description:
+                    'The device commands conditions which trigger the scenario. Commands are not stored on the device, so the conditions are matched against the command that has just been executed - e.g. a button press of a remote',
+                default: { are: {} },
+            },
         },
         description: 'The triggering device details',
     })
@@ -91,6 +98,7 @@ export class ScenarioDeviceTriggerSourceDto implements ScenarioDeviceTriggerSour
         externalId: string;
         controls?: ScenarioDeviceTriggerSourceConditionsDto;
         measurements?: ScenarioDeviceTriggerSourceConditionsDto;
+        commands?: ScenarioDeviceTriggerSourceConditionsDto;
     };
 }
 

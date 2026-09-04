@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { FieldValidationException } from 'common/exceptions';
+import { CustomValidationException, FieldValidationException } from 'common/exceptions';
 import { ScenariosService } from './scenarios.service';
 import { ScenarioGroupsService } from './scenario-groups.service';
 import { SCENARIO_MODEL_PROVIDER_NAME } from './scenarios.constants';
 import { SchedulerService } from 'scheduler/scheduler.service';
 import { ScenariosExecutionService } from './scenarios-execution.service';
+import { ScenariosValidatorService } from './scenarios-validator.service';
 import { DevicesService } from 'devices/devices.service';
 import { Scenario, ScenarioCronTriggerSource, ScenarioTriggerSourceType } from './interfaces';
 import { CreateScenarioDto, GetScenariosDto, UpdateScenarioDto } from './dto';
@@ -33,6 +34,7 @@ describe('ScenariosService', () => {
         syncGroupOnDelete: jest.Mock;
     };
     let mockDevicesService: { getAllDevices: jest.Mock };
+    let mockScenariosValidatorService: { validateScenario: jest.Mock };
 
     const mockScenario: Partial<Scenario> = {
         _id: 'mongo-id-123',
@@ -93,6 +95,7 @@ describe('ScenariosService', () => {
         mockDevicesService = {
             getAllDevices: jest.fn().mockResolvedValue({ items: [], page: 1, pageSize: 0, totalPages: 0, totalItems: 0 }),
         };
+        mockScenariosValidatorService = { validateScenario: jest.fn().mockResolvedValue(undefined) };
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -112,6 +115,10 @@ describe('ScenariosService', () => {
                 {
                     provide: ScenarioGroupsService,
                     useValue: mockScenarioGroupsService,
+                },
+                {
+                    provide: ScenariosValidatorService,
+                    useValue: mockScenariosValidatorService,
                 },
                 {
                     provide: DevicesService,
@@ -400,6 +407,47 @@ describe('ScenariosService', () => {
             expect(mockScenarioGroupsService.syncGroupOnCreate).toHaveBeenCalledWith('test_group');
         });
 
+        it('should validate the scenario against the referenced devices', async () => {
+            mockScenarioModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            const createDto: CreateScenarioDto = {
+                name: 'New Scenario',
+                trigger: {
+                    sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 9 * * *' }],
+                    logic: '1',
+                },
+                actions: [],
+            } as unknown as CreateScenarioDto;
+
+            await service.addScenario(createDto);
+
+            expect(mockScenariosValidatorService.validateScenario).toHaveBeenCalledWith(createDto);
+        });
+
+        it('should not create a scenario whose trigger sources or actions do not match the devices', async () => {
+            mockScenarioModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+            mockScenariosValidatorService.validateScenario.mockRejectedValue(
+                new CustomValidationException({ message: 'nope', path: 'actions.0.externalId', value: 'gone' }),
+            );
+
+            const createDto: CreateScenarioDto = {
+                name: 'New Scenario',
+                trigger: {
+                    sources: [{ type: ScenarioTriggerSourceType.Cron, cron: '0 9 * * *' }],
+                    logic: '1',
+                },
+                actions: [],
+            } as unknown as CreateScenarioDto;
+
+            await expect(service.addScenario(createDto)).rejects.toThrow(CustomValidationException);
+            expect(mockScenarioGroupsService.syncGroupOnCreate).not.toHaveBeenCalled();
+            expect(mockSchedulerService.scheduleJob).not.toHaveBeenCalled();
+        });
+
         it('should throw FieldValidationException when scenario with same name exists', async () => {
             mockScenarioModel.findOne.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockScenario),
@@ -484,6 +532,25 @@ describe('ScenariosService', () => {
             await service.updateScenario('scenario-uuid-123', updateDto);
 
             expect(scenarioWithSave.save).toHaveBeenCalled();
+        });
+
+        it('should validate the submitted trigger and actions before saving', async () => {
+            const scenarioWithSave = {
+                ...mockScenario,
+                save: jest.fn().mockResolvedValue(mockScenario),
+            };
+            mockScenarioModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(scenarioWithSave),
+            });
+            mockScenariosValidatorService.validateScenario.mockRejectedValue(
+                new CustomValidationException({ message: 'nope', path: 'trigger.sources.0.device.controls.are.on', value: true }),
+            );
+
+            const updateDto: UpdateScenarioDto = { name: 'Updated Name' };
+
+            await expect(service.updateScenario('scenario-uuid-123', updateDto)).rejects.toThrow(CustomValidationException);
+            expect(mockScenariosValidatorService.validateScenario).toHaveBeenCalledWith(updateDto);
+            expect(scenarioWithSave.save).not.toHaveBeenCalled();
         });
 
         it('should sync group on update when group changes', async () => {
