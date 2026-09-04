@@ -372,4 +372,118 @@ describe('DeviceConfigsValidatorService', () => {
             await expect(service.buildDefaultPayloads(configKey)).resolves.toEqual({ controls: {}, measurements: {} });
         });
     });
+    describe('collectConditionErrors', () => {
+        it('should report nothing when every condition matches a declared item', async () => {
+            mockConfig({ controls: [item({ name: 'on', type: DeviceConfigItemType.Boolean })] });
+
+            await expect(service.collectConditionErrors(configKey, 'controls', { on: true })).resolves.toEqual([]);
+        });
+
+        it('should report a condition on a section the config does not declare at all', async () => {
+            mockConfig({ commands: [item({ name: 'on', type: DeviceConfigItemType.Boolean })] });
+
+            const errors = await service.collectConditionErrors(configKey, 'controls', { on: true });
+
+            expect(errors).toEqual([{ message: '"on" is not a known controls item of the device', path: 'controls.on', value: true }]);
+        });
+
+        it('should report a name the device does not know at all', async () => {
+            mockConfig({ controls: [item({ name: 'on', type: DeviceConfigItemType.Boolean })] });
+
+            const errors = await service.collectConditionErrors(configKey, 'controls', { onn: true });
+
+            expect(errors).toEqual([{ message: '"onn" is not a known controls item of the device', path: 'controls.onn', value: true }]);
+        });
+
+        it('should report a value the item can never take', async () => {
+            mockConfig({
+                controls: [item({ name: 'brightness', type: DeviceConfigItemType.Number, constraints: { min: 0, max: 100 } })],
+            });
+
+            const errors = await service.collectConditionErrors(configKey, 'controls', { brightness: 200 });
+
+            expect(errors).toHaveLength(1);
+            expect(errors[0].path).toBe('controls.brightness');
+        });
+
+        it('should report every violating condition at once', async () => {
+            mockConfig({ controls: [item({ name: 'on', type: DeviceConfigItemType.Boolean })] });
+
+            const errors = await service.collectConditionErrors(configKey, 'controls', { first: 1, second: 2 });
+
+            expect(errors.map(error => error.path)).toEqual(['controls.first', 'controls.second']);
+        });
+
+        it('should not require the items declared as required', async () => {
+            mockConfig({
+                controls: [
+                    item({ name: 'on', type: DeviceConfigItemType.Boolean }),
+                    item({ name: 'mandatory', type: DeviceConfigItemType.String, required: true }),
+                ],
+            });
+
+            await expect(service.collectConditionErrors(configKey, 'controls', { on: true })).resolves.toEqual([]);
+        });
+
+        it('should accept any condition of a device without a config', async () => {
+            await expect(service.collectConditionErrors(configKey, 'controls', { whatever: 'anything' })).resolves.toEqual([]);
+        });
+
+        it('should keep accepting undeclared names when the config is not strict', async () => {
+            mockConfig({ strict: false, controls: [item({ name: 'on', type: DeviceConfigItemType.Boolean })] });
+
+            await expect(service.collectConditionErrors(configKey, 'controls', { custom: 'value' })).resolves.toEqual([]);
+        });
+    });
+
+    describe('collectPayloadErrors', () => {
+        it('should report nothing when the payload matches the declared items', async () => {
+            mockConfig({ controls: [item({ name: 'on', type: DeviceConfigItemType.Boolean })] });
+
+            await expect(service.collectPayloadErrors(configKey, 'controls', { on: true })).resolves.toEqual([]);
+        });
+
+        it('should report an undeclared name', async () => {
+            mockConfig({ controls: [item({ name: 'on', type: DeviceConfigItemType.Boolean })] });
+
+            const errors = await service.collectPayloadErrors(configKey, 'controls', { on: true, junk: 1 });
+
+            expect(errors).toEqual([{ message: '"junk" is not a known controls item of the device', path: 'controls.junk', value: 1 }]);
+        });
+
+        it('should report a missing required item, the way the device update does', async () => {
+            mockConfig({
+                controls: [
+                    item({ name: 'on', type: DeviceConfigItemType.Boolean }),
+                    item({ name: 'mandatory', type: DeviceConfigItemType.String, required: true }),
+                ],
+            });
+
+            const errors = await service.collectPayloadErrors(configKey, 'controls', { on: true });
+
+            expect(errors).toEqual([
+                {
+                    message: '"mandatory" is required and must be provided with every controls update',
+                    path: 'controls.mandatory',
+                    value: undefined,
+                },
+            ]);
+        });
+
+        it('should skip a section the config does not declare, the way the device update does', async () => {
+            mockConfig({ commands: [item({ name: 'on', type: DeviceConfigItemType.Boolean })] });
+
+            await expect(service.collectPayloadErrors(configKey, 'controls', { anything: true })).resolves.toEqual([]);
+        });
+
+        it('should accept any payload of a device without a config', async () => {
+            await expect(service.collectPayloadErrors(configKey, 'controls', { whatever: 'anything' })).resolves.toEqual([]);
+        });
+
+        it('should never report the "$override" flag', async () => {
+            mockConfig({ controls: [item({ name: 'on', type: DeviceConfigItemType.Boolean })] });
+
+            await expect(service.collectPayloadErrors(configKey, 'controls', { on: true, $override: true })).resolves.toEqual([]);
+        });
+    });
 });

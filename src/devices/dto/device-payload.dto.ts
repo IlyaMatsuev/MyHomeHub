@@ -1,6 +1,7 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import { IsBoolean, IsOptional } from 'class-validator';
 import { DeviceControls, DevicePayload } from 'devices/interfaces';
+import { DEVICE_PAYLOAD_OVERRIDE_KEY } from 'devices/devices.constants';
 
 @ApiSchema({ name: 'Devices.DevicePayload', description: 'DTO describing the structure of controls or measurements payloads' })
 export class DevicePayloadDto implements DevicePayload {
@@ -10,7 +11,7 @@ export class DevicePayloadDto implements DevicePayload {
         required: false,
         description: `Determines if the provided payload should override the existing device's value`,
     })
-    $override?: boolean;
+    [DEVICE_PAYLOAD_OVERRIDE_KEY]?: boolean;
 
     [key: string]: unknown;
 }

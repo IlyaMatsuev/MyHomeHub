@@ -4,6 +4,7 @@ import { SHELLY_COMPONENT_CONTROLS, SHELLY_CONTROL_PARAMS, SHELLY_RPC_COMPONENT_
 import { DeviceControls, DevicePayload } from 'devices/interfaces';
 import { DevicesControlService } from 'devices-control/devices-control.service';
 import { TransportMessage } from 'devices-control/interfaces';
+import { DEVICE_PAYLOAD_OVERRIDE_KEY } from 'devices/devices.constants';
 
 export class ShellyControlService extends DevicesControlService {
     protected getServiceName(): string {
@@ -67,6 +68,8 @@ export class ShellyControlService extends DevicesControlService {
     }
 
     private getControlNames(controls: DeviceControls): Array<string> {
-        return Object.keys(controls).filter(name => name !== '$override' && controls[name] !== undefined && controls[name] !== null);
+        return Object.keys(controls).filter(
+            name => name !== DEVICE_PAYLOAD_OVERRIDE_KEY && controls[name] !== undefined && controls[name] !== null,
+        );
     }
 }

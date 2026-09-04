@@ -7,6 +7,7 @@ import { SCENARIO_MODEL_PROVIDER_NAME } from 'scenarios/scenarios.constants';
 import { SchedulerService } from 'scheduler/scheduler.service';
 import { ScenariosExecutionService } from 'scenarios/scenarios-execution.service';
 import { ScenarioGroupsService } from 'scenarios/scenario-groups.service';
+import { ScenariosValidatorService } from 'scenarios/scenarios-validator.service';
 import { PaginationResponseDto } from 'common/dto';
 import { FieldValidationException } from 'common/exceptions';
 
@@ -20,6 +21,7 @@ export class ScenariosService implements OnModuleInit {
         private readonly schedulerService: SchedulerService,
         private readonly scenariosExecutionService: ScenariosExecutionService,
         private readonly scenarioGroupsService: ScenarioGroupsService,
+        private readonly scenariosValidatorService: ScenariosValidatorService,
         @Inject(forwardRef(() => DevicesService))
         private readonly devicesService: DevicesService,
     ) {}
@@ -93,6 +95,7 @@ export class ScenariosService implements OnModuleInit {
         if (existingScenario) {
             throw new FieldValidationException(`Scenario with the same name ('${scenarioDto.name}') already exists`, 'name');
         }
+        await this.scenariosValidatorService.validateScenario(scenarioDto);
         const cronSource = this.findScenarioCronSource(scenarioDto);
         if (cronSource && cronSource.adjustTo) {
             cronSource.cron = this.schedulerService.adjustScenarioDayTimeCron(cronSource);
@@ -107,6 +110,7 @@ export class ScenariosService implements OnModuleInit {
 
     async updateScenario(externalId: string, scenarioDto: UpdateScenarioDto): Promise<Scenario> {
         const scenario = await this.getScenarioByExternalId(externalId);
+        await this.scenariosValidatorService.validateScenario(scenarioDto);
         const oldScenario: Scenario = scenario.toObject();
 
         scenario.name = scenarioDto.name ?? scenario.name;

@@ -25,6 +25,7 @@ import {
     DEVICE_DEFAULT_UPDATE_INTERVAL,
     DEVICE_NAME_MAX_LENGTH,
     DEVICE_NAME_MIN_LENGTH,
+    DEVICE_PAYLOAD_OVERRIDE_KEY,
 } from 'devices/devices.constants';
 import { DeviceControlsDto, DevicePayloadDto } from 'devices/dto';
 import { TransportProtocol } from 'devices-control/interfaces';
@@ -136,7 +137,7 @@ export class UpdateDeviceDto {
     @ValidateNested()
     @ApiProperty({
         required: false,
-        description: 'Updated set of controls for the device. Merged into the stored ones unless "$override" is set',
+        description: `Updated set of controls for the device. Merged into the stored ones unless "${DEVICE_PAYLOAD_OVERRIDE_KEY}" is set`,
         default: {},
     })
     controls?: DeviceControlsDto;
@@ -146,7 +147,7 @@ export class UpdateDeviceDto {
     @ValidateNested()
     @ApiProperty({
         required: false,
-        description: 'Updated set of measurements for the device. Merged into the stored ones unless "$override" is set',
+        description: `Updated set of measurements for the device. Merged into the stored ones unless "${DEVICE_PAYLOAD_OVERRIDE_KEY}" is set`,
         default: {},
     })
     measurements?: DevicePayloadDto;

@@ -1,6 +1,8 @@
 export const DEVICE_MODEL_PROVIDER_NAME = 'DEVICE_MODEL';
 export const DEVICE_SCHEMA_NAME = 'Device';
 
+export const DEVICE_PAYLOAD_OVERRIDE_KEY = '$override';
+
 export const DEVICE_NAME_MIN_LENGTH = 3;
 export const DEVICE_NAME_MAX_LENGTH = 40;
 export const DEVICE_DEFAULT_UPDATE_INTERVAL = 0;

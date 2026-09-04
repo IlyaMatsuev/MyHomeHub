@@ -104,6 +104,23 @@ Scenarios define automation rules with:
 - **Logic**: Conditions evaluated by `ConditionsEvaluatorService`
 - **Actions**: The `actions` array (`ScenarioAction`) - each entry names a device by `externalId` and the controls/measurements to `set` on it when the scenario executes.
 
+A device trigger source can put conditions on any of the three sections - `controls`, `measurements` **and `commands`** - and the section has to be the one the device's config declares the item in. A remote's button, for instance, is a **command** (`commands.are`), not a control: it is not stored on the device, so `ScenariosExecutionService` matches it against the command carried by the `DeviceCommandExecutedEvent` that has just been executed, while controls/measurements conditions are matched against what the device document holds.
+
+#### Trigger and action validation
+
+`ScenariosValidatorService` validates a scenario against the referenced devices on `POST /scenarios` and `PUT /scenarios/{externalId}`, rejecting it with a `CustomValidationException` (400) that lists every violation, pathed to its place in the scenario (`trigger.sources.1.device.controls.are.on`, `actions.0.set.controls.brightness`).
+
+This exists because nothing else catches these: a scenario naming an unknown device, section or item is stored happily and then silently never fires - the only trace is a debug line on every evaluation. Both `are` conditions and `set` payloads are checked, together with the existence of every referenced device.
+
+The two are validated with different rules, which is why `DeviceConfigsValidatorService` exposes `collectConditionErrors` and `collectPayloadErrors` (both return the errors instead of throwing, so one scenario reports all of them at once):
+
+- **Trigger conditions** answer _"can this ever be true?"_. A device only ever holds the items its config declares (`applyConfigDefaults` seeds them, `reconcileDevicePayloads` prunes the rest), so a section the config does not declare counts as empty - this is what catches a `controls` condition on a remote that only declares `commands`. `required` items are not enforced: a condition is a partial match by nature.
+- **Actions** answer _"will this update be accepted?"_, so they are validated exactly like the device update they perform - `required` items enforced, and a section the config does not declare skipped (the same escape hatch `validateSection` gives a brand like the Google speaker, whose YAML declares no `controls`).
+
+Only the **submitted** trigger/actions are validated, never the stored ones, so that an existing scenario stays editable and the internal `repeatTimes` update does not trip over a legacy one.
+
+A name used in the wrong section is reported as unknown for that section (`"on" is not a known controls item of the device`) rather than pointed at the section that does declare it - naming the item and the section it was rejected from is enough for the author to spot a controls/commands mix-up, and it keeps `DeviceConfigsValidatorService` from searching the whole config on every violation.
+
 ### Authentication & Authorization
 
 Authentication uses **Passport.js** with a `passport-jwt` strategy (`src/auth/strategies/jwt.strategy.ts`):
