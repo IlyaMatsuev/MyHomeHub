@@ -6,7 +6,6 @@ import { DEVICE_PAYLOAD_OVERRIDE_KEY } from 'devices/devices.constants';
 import { DeviceConfigsService } from 'device-configs/device-configs.service';
 import { getItemDefaultValue, isEmptyValue, validateItemValue } from 'device-configs/validators';
 import {
-    DEVICE_CONFIG_SECTIONS,
     DeviceConfig,
     DeviceConfigPayloads,
     DeviceConfigItem,
@@ -18,13 +17,11 @@ import {
 interface PayloadValidationOptions {
     config: DeviceConfig;
     section: DeviceConfigSection;
+    // Apply rules from the device config
     strict: boolean;
     policy: DeviceConfigValidationPolicy;
-    /**
-     * Trigger conditions are matched field by field against whatever the device reports,
-     * so an item the condition does not mention is not a missing required item
-     */
-    requirePresence: boolean;
+    // Enforce the items the config declares as "required"
+    strictPresence: boolean;
 }
 
 @Injectable()
@@ -83,7 +80,7 @@ export class DeviceConfigsValidatorService {
             return [];
         }
         const options = this.buildOptions(config, section, DeviceConfigValidationPolicy.Reject);
-        return this.collectErrors(payload, { ...options, requirePresence: false });
+        return this.collectErrors(payload, { ...options, strictPresence: false });
     }
 
     /**
@@ -110,7 +107,7 @@ export class DeviceConfigsValidatorService {
         section: DeviceConfigSection,
         policy: DeviceConfigValidationPolicy,
     ): PayloadValidationOptions {
-        return { config, section, strict: config.strict !== false, policy, requirePresence: true };
+        return { config, section, strict: config.strict !== false, policy, strictPresence: true };
     }
 
     private validatePayload(payload: DevicePayload, options: PayloadValidationOptions): DevicePayload | never {
@@ -166,9 +163,7 @@ export class DeviceConfigsValidatorService {
             }
         }
 
-        // A required item must be present in every payload update,
-        // Except when the update comes from devices - they should be able to update the payload partially
-        if (options.requirePresence) {
+        if (options.strictPresence) {
             errors.push(...this.validateRequiredItems(payload, options));
         }
         return errors;
@@ -176,26 +171,10 @@ export class DeviceConfigsValidatorService {
 
     private validateField(options: PayloadValidationOptions, name: string, value: unknown): string | null {
         const item = this.getItems(options).find(configItem => configItem.name === name);
-        if (item) {
-            return validateItemValue(item, value);
+        if (!item) {
+            return options.strict ? `"${name}" is not a known ${options.section} item of the device` : null;
         }
-        if (!options.strict) {
-            return null;
-        }
-        const declaredIn = this.findDeclaringSection(options, name);
-        return declaredIn
-            ? `"${name}" is declared as a "${declaredIn}" item of the device, not "${options.section}"`
-            : `"${name}" is not a known ${options.section} item of the device`;
-    }
-
-    /**
-     * Tells a name that belongs to another section apart from a name the device does not know at all,
-     * so that e.g. a control used as a command is not reported as a typo
-     */
-    private findDeclaringSection(options: PayloadValidationOptions, name: string): DeviceConfigSection | undefined {
-        return DEVICE_CONFIG_SECTIONS.find(
-            section => section !== options.section && (options.config[section] ?? []).some(item => item.name === name),
-        );
+        return validateItemValue(item, value);
     }
 
     private getItems(options: PayloadValidationOptions): Array<DeviceConfigItem> {

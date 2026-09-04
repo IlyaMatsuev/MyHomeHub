@@ -285,15 +285,13 @@ describe('DeviceConfigsValidatorService', () => {
             await expect(validateCommand({ text: 'hello' })).resolves.toEqual({ text: 'hello' });
         });
 
-        it('should reject a declared control sent as a command and point at its actual section', async () => {
+        it('should reject a declared control sent as a command', async () => {
             mockConfig({
                 commands: [item({ name: 'text', type: DeviceConfigItemType.String })],
                 controls: [item({ name: 'on', type: DeviceConfigItemType.Boolean })],
             });
 
-            await expect(validateCommand({ on: true })).rejects.toThrow(
-                '"on" is declared as a "controls" item of the device, not "commands"',
-            );
+            await expect(validateCommand({ on: true })).rejects.toThrow('"on" is not a known commands item of the device');
         });
 
         it('should reject a command that is neither a declared command nor control', async () => {
@@ -326,9 +324,7 @@ describe('DeviceConfigsValidatorService', () => {
         it('should reject every command when the config declares none', async () => {
             mockConfig({ commands: [], controls: [item({ name: 'on', type: DeviceConfigItemType.Boolean })] });
 
-            await expect(validateCommand({ on: true })).rejects.toThrow(
-                '"on" is declared as a "controls" item of the device, not "commands"',
-            );
+            await expect(validateCommand({ on: true })).rejects.toThrow('"on" is not a known commands item of the device');
         });
 
         it('should reject every command when the config declares no items at all', async () => {
@@ -388,13 +384,7 @@ describe('DeviceConfigsValidatorService', () => {
 
             const errors = await service.collectConditionErrors(configKey, 'controls', { on: true });
 
-            expect(errors).toEqual([
-                {
-                    message: '"on" is declared as a "commands" item of the device, not "controls"',
-                    path: 'controls.on',
-                    value: true,
-                },
-            ]);
+            expect(errors).toEqual([{ message: '"on" is not a known controls item of the device', path: 'controls.on', value: true }]);
         });
 
         it('should report a name the device does not know at all', async () => {

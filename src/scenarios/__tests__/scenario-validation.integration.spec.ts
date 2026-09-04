@@ -94,11 +94,7 @@ describe('Scenario validation against the shipped device configs', () => {
         const error = await catchValidationError(service.validateScenario(payload));
 
         expect(error.getErrors()).toEqual([
-            {
-                message: '"on" is declared as a "commands" item of the device, not "controls"',
-                path: 'trigger.sources.0.device.controls.are.on',
-                value: true,
-            },
+            { message: '"on" is not a known controls item of the device', path: 'trigger.sources.0.device.controls.are.on', value: true },
         ]);
     });
 

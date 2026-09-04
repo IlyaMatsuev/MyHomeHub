@@ -119,7 +119,7 @@ The two are validated with different rules, which is why `DeviceConfigsValidator
 
 Only the **submitted** trigger/actions are validated, never the stored ones, so that an existing scenario stays editable and the internal `repeatTimes` update does not trip over a legacy one.
 
-When a name is declared in a different section than the one it was used in, the error says so (`"on" is declared as a "commands" item of the device, not "controls"`) instead of reporting it as unknown. That message comes from `DeviceConfigsValidatorService`, so device command/controls endpoints get it too.
+A name used in the wrong section is reported as unknown for that section (`"on" is not a known controls item of the device`) rather than pointed at the section that does declare it - naming the item and the section it was rejected from is enough for the author to spot a controls/commands mix-up, and it keeps `DeviceConfigsValidatorService` from searching the whole config on every violation.
 
 ### Authentication & Authorization
 

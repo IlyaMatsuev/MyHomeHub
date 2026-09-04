@@ -130,7 +130,7 @@ describe('ScenariosValidatorService', () => {
 
         it('should report a trigger condition put on the wrong section under its place in the scenario', async () => {
             deviceConfigsValidator.collectConditionErrors.mockResolvedValue([
-                { message: '"on" is declared as a "commands" item of the device, not "controls"', path: 'controls.on', value: true },
+                { message: '"on" is not a known controls item of the device', path: 'controls.on', value: true },
             ]);
             const payload = scenario({
                 trigger: {
@@ -149,7 +149,7 @@ describe('ScenariosValidatorService', () => {
 
             expect(error.getErrors()).toEqual([
                 {
-                    message: '"on" is declared as a "commands" item of the device, not "controls"',
+                    message: '"on" is not a known controls item of the device',
                     path: 'trigger.sources.1.device.controls.are.on',
                     value: true,
                 },
