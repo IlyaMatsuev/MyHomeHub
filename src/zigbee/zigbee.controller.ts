@@ -31,9 +31,11 @@ export class ZigbeeController {
     }
 
     @MessagePattern(ZIGBEE_BRIDGE_DEVICES_TOPIC)
-    onConnectedDevicesListChange(@Ctx() context: MqttContext, @Payload() devices: Array<ZigbeeDevice>): void {
+    async onConnectedDevicesListChange(@Ctx() context: MqttContext, @Payload() devices: Array<ZigbeeDevice>): Promise<void> {
         this.logger.debug(`[${context.getTopic()}]: Update ZigBee devices list: ${JSON.stringify(devices)}`);
+        // Save cache first to avoid potential double renaming in DevicesService.updateDevice()
         ZigbeePairableDevices.save(devices ?? []);
+        await this.zigbeeService.syncFriendlyNames(devices ?? []);
     }
 
     @MessagePattern(ZIGBEE_DEVICE_STATE_TOPIC)

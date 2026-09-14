@@ -13,6 +13,7 @@ describe('ZigbeeController', () => {
     let mockZigbeeService: {
         handleDeviceStateUpdate: jest.Mock;
         handleDeviceExternalRename: jest.Mock;
+        syncFriendlyNames: jest.Mock;
     };
     let mockMqttService: { extractTopicWildcards: jest.Mock };
     let saveSpy: jest.SpyInstance;
@@ -39,6 +40,7 @@ describe('ZigbeeController', () => {
         mockZigbeeService = {
             handleDeviceStateUpdate: jest.fn().mockResolvedValue(undefined),
             handleDeviceExternalRename: jest.fn().mockResolvedValue(undefined),
+            syncFriendlyNames: jest.fn().mockResolvedValue(undefined),
         };
         mockMqttService = { extractTopicWildcards: jest.fn() };
         saveSpy = jest.spyOn(ZigbeePairableDevices, 'save').mockImplementation(() => undefined);
@@ -70,18 +72,39 @@ describe('ZigbeeController', () => {
     });
 
     describe('onConnectedDevicesListChange', () => {
-        it('should forward the device list to ZigbeePairableDevices.save', () => {
+        it('should forward the device list to ZigbeePairableDevices.save', async () => {
             const devices = [sampleZigbeeDevice];
 
-            controller.onConnectedDevicesListChange(makeContext('zigbee2mqtt/bridge/devices'), devices);
+            await controller.onConnectedDevicesListChange(makeContext('zigbee2mqtt/bridge/devices'), devices);
 
             expect(saveSpy).toHaveBeenCalledWith(devices);
         });
 
-        it('should default to an empty array when no payload is provided', () => {
-            controller.onConnectedDevicesListChange(makeContext('zigbee2mqtt/bridge/devices'), null as unknown as Array<ZigbeeDevice>);
+        it('should sync the stored friendly names after the cache is updated', async () => {
+            // The cache must already hold the bridge names when the stored ones are updated, otherwise the update
+            // sees a mismatch and echoes a rename request back to the bridge
+            const devices = [sampleZigbeeDevice];
+            const callOrder: Array<string> = [];
+            saveSpy.mockImplementation(() => callOrder.push('save'));
+            mockZigbeeService.syncFriendlyNames.mockImplementation(() => {
+                callOrder.push('sync');
+                return Promise.resolve();
+            });
+
+            await controller.onConnectedDevicesListChange(makeContext('zigbee2mqtt/bridge/devices'), devices);
+
+            expect(mockZigbeeService.syncFriendlyNames).toHaveBeenCalledWith(devices);
+            expect(callOrder).toEqual(['save', 'sync']);
+        });
+
+        it('should default to an empty array when no payload is provided', async () => {
+            await controller.onConnectedDevicesListChange(
+                makeContext('zigbee2mqtt/bridge/devices'),
+                null as unknown as Array<ZigbeeDevice>,
+            );
 
             expect(saveSpy).toHaveBeenCalledWith([]);
+            expect(mockZigbeeService.syncFriendlyNames).toHaveBeenCalledWith([]);
         });
     });
 

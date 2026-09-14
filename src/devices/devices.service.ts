@@ -130,6 +130,13 @@ export class DevicesService {
         return this.findDevice({ zigbeeFriendlyName: friendlyName }, { strict: false });
     }
 
+    async getDevicesByZigbeeIeeeAddresses(ieeeAddresses: Array<string>): Promise<Array<Device>> {
+        if (!ieeeAddresses.length) {
+            return [];
+        }
+        return this.deviceModel.find({ zigbeeIeeeAddress: { $in: ieeeAddresses } }).lean<Array<Device>>();
+    }
+
     async addDevice(
         deviceDto: CreateDeviceDto,
         options: AddDeviceOptions = { origin: DeviceUpdateOrigin.Api },

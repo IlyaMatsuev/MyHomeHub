@@ -174,8 +174,6 @@ The client IP comes from `request.ip`, which honors the express `trust proxy` se
 
 `DiscoveryService` advertises the hub on the local network over **mDNS/DNS-SD** with `bonjour-service`, so clients find it with the platform Bonjour APIs (iOS `NWBrowser`, Android NSD, `dns-sd`, avahi) instead of a custom protocol. The advertised record is `_<SERVER_MDNS_SERVICE_TYPE>._tcp.local` (default type `myhomehub`), the instance name is `SERVER_LABEL`, the SRV port is the externally reachable HTTP port, and the TXT record carries `label`/`address`/`port` - the same fields `GET /info` returns, so resolving the service is enough to reach the hub.
 
-This replaced a UDP broadcast listener that answered a magic `DISCOVERY_MESSAGE` string on `UDP_PORT`; both variables are gone. Clients still on that protocol have to switch to mDNS.
-
 The responder is created with an explicit error callback because the `bonjour-service` default one **rethrows**, which would take the whole app down when something else (a host avahi/mDNSResponder) already holds UDP/5353. Advertisement failures are logged instead, and `SERVER_DISCOVERY_ENABLED=false` turns the advertisement off entirely - it defaults to **on** (only the literal `false` disables it), unlike the opt-in `THROTTLE_ENABLED`/`ENABLE_LOCAL_AUTH` flags, since discovery worked without any configuration before.
 
 mDNS needs multicast on the LAN, which is why the Docker service keeps `network_mode: host`.

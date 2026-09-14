@@ -3,6 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MqttService } from 'mqtt/mqtt.service';
 import { UpdateDeviceDto } from 'devices/dto';
 import { DevicesService } from 'devices/devices.service';
+import { ZigbeeDevice } from 'zigbee/interfaces';
 import {
     ZIGBEE_BRIDGE_DEVICE_REMOVE_TOPIC,
     ZIGBEE_BRIDGE_DEVICE_RENAME_TOPIC,
@@ -56,6 +57,34 @@ export class ZigbeeService {
                 new DeviceUpdateRequestedEvent(
                     { zigbeeFriendlyName: oldFriendlyName },
                     new UpdateDeviceDto({ zigbeeFriendlyName: newFriendlyName }),
+                ),
+            );
+        }
+    }
+
+    /**
+     * The z2m bridge is the source of truth for "friendlyName".
+     * Need to make sure the Hub receives updates for these devices when the friendly name is reset (for any reason) on the bridge side.
+     */
+    async syncFriendlyNames(zigbeeDevices: Array<ZigbeeDevice>): Promise<void> {
+        const friendlyNames = new Map(zigbeeDevices.map(zd => [zd.ieee_address, zd.friendly_name]));
+        const devices = await this.devicesService.getDevicesByZigbeeIeeeAddresses([...friendlyNames.keys()]);
+
+        for (const device of devices) {
+            const friendlyName = friendlyNames.get(device.zigbeeIeeeAddress);
+            if (!friendlyName || friendlyName === device.zigbeeFriendlyName) {
+                continue;
+            }
+
+            this.logger.warn(
+                `Zigbee friendly name of device "${device.externalId}" drifted from "${device.zigbeeFriendlyName}" to "${friendlyName}", renaming...`,
+            );
+            this.eventEmitter.emit(
+                DeviceUpdateRequestedEvent.eventName,
+                new DeviceUpdateRequestedEvent(
+                    { externalId: device.externalId },
+                    new UpdateDeviceDto({ zigbeeFriendlyName: friendlyName }),
+                    false,
                 ),
             );
         }

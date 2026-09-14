@@ -4,9 +4,8 @@
  * Prepares Zigbee2MQTT to run against the local MQTT broker:
  *   - validates required Z2M_* / MQTT_* variables in .env
  *   - generates network_key, pan_id, and ext_pan_id when their value is `GENERATE`, then writing the generated values back to .env;
- *   - renders configs/zigbee2mqtt/configuration.example.yaml into configs/zigbee2mqtt/configuration.yaml with the resolved values;
+ *   - renders configs/zigbee2mqtt/configuration.example.yaml into configs/zigbee2mqtt/configuration.yaml with the resolved values.
  *   - ensures Z2M_MQTT_USERNAME has an entry in configs/mqtt/pwfile by invoking `npm run mqtt:user:new` when it does not.
- *
  * Invoked by the `zigbee:start` / `zigbee:restart` npm scripts.
  */
 
@@ -14,6 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const child_process = require('child_process');
+const yaml = require('js-yaml');
 
 const ROOT = path.resolve(__dirname, '..');
 const ENV_FILE = path.join(ROOT, '.env');
@@ -87,10 +87,11 @@ function main() {
         substitutions[name] = STRING_VARS.has(name) ? yamlString(resolved[name]) : resolved[name];
     }
 
-    const rendered = renderTemplate(fs.readFileSync(Z2M_TEMPLATE_FILE, 'utf8'), substitutions);
+    const renderedConfig = renderTemplate(fs.readFileSync(Z2M_TEMPLATE_FILE, 'utf8'), substitutions);
+    const config = mergeConfigs(readCurrentConfig(), renderedConfig);
 
     fs.mkdirSync(path.dirname(Z2M_CONFIG_FILE), { recursive: true });
-    fs.writeFileSync(Z2M_CONFIG_FILE, rendered);
+    fs.writeFileSync(Z2M_CONFIG_FILE, yaml.dump(config));
 
     console.log(`Rendered ${path.relative(ROOT, Z2M_CONFIG_FILE)} from ${path.relative(ROOT, Z2M_TEMPLATE_FILE)}`);
     if (Object.keys(envUpdates).length) {
@@ -138,17 +139,46 @@ function randomPanId() {
     }
 }
 
+function readCurrentConfig() {
+    if (!fs.existsSync(Z2M_CONFIG_FILE)) {
+        return {};
+    }
+
+    const config = yaml.load(fs.readFileSync(Z2M_CONFIG_FILE, 'utf8'));
+    if (config === null || config === undefined) {
+        return {};
+    }
+    if (!isPlainObject(config)) {
+        fail(`existing ${path.relative(ROOT, Z2M_CONFIG_FILE)} is not a YAML mapping, remove it to render a fresh one`);
+    }
+    return config;
+}
+
+function mergeConfigs(existing, rendered) {
+    const merged = { ...existing };
+    for (const [key, value] of Object.entries(rendered)) {
+        merged[key] = isPlainObject(value) && isPlainObject(existing[key]) ? mergeConfigs(existing[key], value) : value;
+    }
+    return merged;
+}
+
+function isPlainObject(value) {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function yamlString(value) {
     return `'${value.replace(/'/g, "''")}'`;
 }
 
 function renderTemplate(template, substitutions) {
-    return template.replace(/__([A-Z0-9_]+?)__/g, (_, name) => {
-        if (!(name in substitutions)) {
-            fail(`template references unknown placeholder '${name}'`);
-        }
-        return substitutions[name];
-    });
+    return yaml.load(
+        template.replace(/__([A-Z0-9_]+?)__/g, (_, name) => {
+            if (!(name in substitutions)) {
+                fail(`template references unknown placeholder '${name}'`);
+            }
+            return substitutions[name];
+        }),
+    );
 }
 
 function ensureMqttUser(username, password) {

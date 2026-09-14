@@ -8,6 +8,7 @@ import { DeviceUpdateRequestedEvent } from 'devices/events';
 import { DeviceBrand, DeviceType, DeviceUpdateOrigin, Room, Device } from 'devices/interfaces';
 import { ZIGBEE_BRIDGE_DEVICE_REMOVE_TOPIC, ZIGBEE_BRIDGE_DEVICE_RENAME_TOPIC, ZIGBEE_BRIDGE_PERMIT_JOIN_TOPIC } from './zigbee.constants';
 import { ZigbeeBridge } from './store/zigbee-bridge';
+import { ZigbeeDevice } from './interfaces';
 import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
 
 describe('ZigbeeService', () => {
@@ -16,6 +17,7 @@ describe('ZigbeeService', () => {
     let mockDevicesService: {
         getDevice: jest.Mock;
         getDeviceByZigbeeFriendlyName: jest.Mock;
+        getDevicesByZigbeeIeeeAddresses: jest.Mock;
         sendCommand: jest.Mock;
     };
     let mockDeviceConfigsMapper: { categorizeAndMapPayloadFromDevice: jest.Mock };
@@ -47,6 +49,7 @@ describe('ZigbeeService', () => {
         mockDevicesService = {
             getDevice: jest.fn(),
             getDeviceByZigbeeFriendlyName: jest.fn(),
+            getDevicesByZigbeeIeeeAddresses: jest.fn().mockResolvedValue([]),
             sendCommand: jest.fn(),
         };
         mockDeviceConfigsMapper = {
@@ -262,6 +265,94 @@ describe('ZigbeeService', () => {
             mockDevicesService.sendCommand.mockRejectedValue(new Error('Control service failure'));
 
             await expect(service.handleDeviceStateUpdate('living_room_bulb', { action: 'on' })).resolves.toBeUndefined();
+            expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('syncFriendlyNames', () => {
+        const makeZigbeeDevice = (overrides: Partial<ZigbeeDevice> = {}): ZigbeeDevice => ({
+            ieee_address: '0x001',
+            friendly_name: 'living_room_bulb',
+            type: 'EndDevice',
+            supported: true,
+            disabled: false,
+            interview_completed: true,
+            interview_state: 'SUCCESSFUL',
+            definition: { model: 'M1', vendor: 'V', description: 'D' },
+            ...overrides,
+        });
+
+        it('should look the stored devices up by the ieee addresses the bridge reports', async () => {
+            await service.syncFriendlyNames([makeZigbeeDevice(), makeZigbeeDevice({ ieee_address: '0x002', friendly_name: 'other' })]);
+
+            expect(mockDevicesService.getDevicesByZigbeeIeeeAddresses).toHaveBeenCalledWith(['0x001', '0x002']);
+        });
+
+        it('should request an update with the bridge name when the stored one differs', async () => {
+            // Zigbee2MQTT lost its config and fell back to the ieee address as the friendly name
+            mockDevicesService.getDevicesByZigbeeIeeeAddresses.mockResolvedValue([mockDevice]);
+
+            await service.syncFriendlyNames([makeZigbeeDevice({ friendly_name: '0x001' })]);
+
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                DeviceUpdateRequestedEvent.eventName,
+                expect.objectContaining({
+                    selector: { externalId: 'device-uuid-123' },
+                    update: expect.objectContaining({ zigbeeFriendlyName: '0x001' }),
+                    propagate: false,
+                }),
+            );
+            const [event] = emittedDeviceUpdates();
+            expect(event).toBeInstanceOf(DeviceUpdateRequestedEvent);
+            expect(event.update).toBeInstanceOf(UpdateDeviceDto);
+        });
+
+        it('should not request an update when the stored name matches the bridge one', async () => {
+            mockDevicesService.getDevicesByZigbeeIeeeAddresses.mockResolvedValue([mockDevice]);
+
+            await service.syncFriendlyNames([makeZigbeeDevice()]);
+
+            expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+        });
+
+        it('should only update the devices whose names drifted', async () => {
+            const otherDevice: Partial<Device> = {
+                ...mockDevice,
+                externalId: 'device-uuid-456',
+                zigbeeIeeeAddress: '0x002',
+                zigbeeFriendlyName: 'kitchen_remote',
+            };
+            mockDevicesService.getDevicesByZigbeeIeeeAddresses.mockResolvedValue([mockDevice, otherDevice]);
+
+            await service.syncFriendlyNames([makeZigbeeDevice(), makeZigbeeDevice({ ieee_address: '0x002', friendly_name: '0x002' })]);
+
+            const events = emittedDeviceUpdates();
+            expect(events).toHaveLength(1);
+            expect(events[0].selector).toEqual({ externalId: 'device-uuid-456' });
+            expect(events[0].update.zigbeeFriendlyName).toBe('0x002');
+        });
+
+        it('should skip a bridge entry without a friendly name', async () => {
+            // A blank name would fail the device validation and can never be a state topic anyway
+            mockDevicesService.getDevicesByZigbeeIeeeAddresses.mockResolvedValue([mockDevice]);
+
+            await service.syncFriendlyNames([makeZigbeeDevice({ friendly_name: '' })]);
+
+            expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+        });
+
+        it('should not touch the stored devices the bridge no longer reports', async () => {
+            mockDevicesService.getDevicesByZigbeeIeeeAddresses.mockResolvedValue([mockDevice]);
+
+            await service.syncFriendlyNames([makeZigbeeDevice({ ieee_address: '0x002', friendly_name: 'other' })]);
+
+            expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+        });
+
+        it('should do nothing for an empty bridge list', async () => {
+            await service.syncFriendlyNames([]);
+
+            expect(mockDevicesService.getDevicesByZigbeeIeeeAddresses).toHaveBeenCalledWith([]);
             expect(mockEventEmitter.emit).not.toHaveBeenCalled();
         });
     });

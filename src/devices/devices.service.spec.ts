@@ -536,6 +536,24 @@ describe('DevicesService', () => {
         });
     });
 
+    describe('getDevicesByZigbeeIeeeAddresses', () => {
+        it('should return the devices matching any of the ieee addresses', async () => {
+            const lean = jest.fn().mockResolvedValue([mockDevice]);
+            mockDeviceModel.find.mockReturnValue({ lean });
+
+            const result = await service.getDevicesByZigbeeIeeeAddresses(['0x001', '0x002']);
+
+            expect(result).toEqual([mockDevice]);
+            expect(mockDeviceModel.find).toHaveBeenCalledWith({ zigbeeIeeeAddress: { $in: ['0x001', '0x002'] } });
+        });
+
+        it('should not query the database for an empty address list', async () => {
+            await expect(service.getDevicesByZigbeeIeeeAddresses([])).resolves.toEqual([]);
+
+            expect(mockDeviceModel.find).not.toHaveBeenCalled();
+        });
+    });
+
     describe('addDevice defaults', () => {
         beforeEach(() => {
             mockDeviceModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
@@ -939,6 +957,33 @@ describe('DevicesService', () => {
             expect(mockControlServiceFactory.getControlService).not.toHaveBeenCalledWith(
                 expect.objectContaining({ brand: DeviceBrand.Tuya }),
             );
+        });
+
+        it('should not echo a rename to the bridge when the update aligns the stored name with the cached bridge one', async () => {
+            // ZigbeeService.syncFriendlyNames updates the stored name to the one the bridge already holds (and the
+            // cache was refreshed with first), so publishing a rename back would be a pointless round trip
+            const deviceWithSave = {
+                ...mockDevice,
+                brand: DeviceBrand.Philips,
+                transportProtocol: TransportProtocol.Zigbee,
+                zigbeeIeeeAddress: '0xpairable',
+                zigbeeFriendlyName: 'stale_name',
+                save: jest.fn().mockResolvedValue(undefined),
+            };
+            mockDeviceModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(deviceWithSave),
+            });
+            getSpy.mockReturnValue({
+                zigbeeIeeeAddress: '0xpairable',
+                zigbeeFriendlyName: '0xpairable',
+            });
+
+            await service.updateDevice('device-uuid-123', new UpdateDeviceDto({ zigbeeFriendlyName: '0xpairable' }), {
+                propagateControls: false,
+            });
+
+            expect(deviceWithSave.save).toHaveBeenCalled();
+            expect(mockZigbeeService.renameDevice).not.toHaveBeenCalled();
         });
 
         it('should not rename zigbee device when friendly name is unchanged', async () => {
