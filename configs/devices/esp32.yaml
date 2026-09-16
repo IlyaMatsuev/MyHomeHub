@@ -21,3 +21,24 @@ fans:
         constraints:
           min: 0
           max: 100
+
+lock:
+  mqtt:
+    controls:
+      - label: "On"
+        name: "on"
+        type: boolean
+        description: "Switch on/off state"
+      - label: "Is unlocked?"
+        name: "unlocked"
+        type: boolean
+        description: "When set to true, the lock becomes unlocked for the time specified in the unlock timeout"
+        default: false
+      - label: "Unlock timeout (ms)"
+        name: "unlockTimeoutMs"
+        type: number
+        description: "Determines the amount of time (in milliseconds) the lock remains unlocked"
+        default: 5000
+        constraints:
+          min: 1000
+          max: 60000

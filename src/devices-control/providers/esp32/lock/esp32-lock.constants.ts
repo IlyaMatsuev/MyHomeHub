@@ -1,0 +1,2 @@
+export const MIN_UNLOCK_TIMEOUT_MS = 1000;
+export const MAX_UNLOCK_TIMEOUT_MS = 60000;

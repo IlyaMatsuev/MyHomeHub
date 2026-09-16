@@ -19,6 +19,7 @@ export enum DeviceType {
     Fans = 'fans',
     MotionSensor = 'motion-sensor',
     Remote = 'remote',
+    Lock = 'lock',
 }
 
 export enum DeviceBrand {
