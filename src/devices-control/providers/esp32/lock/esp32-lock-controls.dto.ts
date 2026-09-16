@@ -1,4 +1,4 @@
-import { Esp32ControlsDto } from 'devices-control/providers';
+import { Esp32ControlsDto } from '../esp32-controls.dto';
 import { IsBoolean, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { MAX_UNLOCK_TIMEOUT_MS, MIN_UNLOCK_TIMEOUT_MS } from './esp32-lock.constants';
 

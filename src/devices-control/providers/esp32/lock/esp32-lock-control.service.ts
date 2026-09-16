@@ -1,5 +1,5 @@
 import { ClassConstructor } from 'class-transformer/types/interfaces';
-import { Esp32ControlService } from 'devices-control/providers';
+import { Esp32ControlService } from '../esp32-control.service';
 import { Esp32LockControlsDto } from './esp32-lock-controls.dto';
 
 export class Esp32LockControlService extends Esp32ControlService {
