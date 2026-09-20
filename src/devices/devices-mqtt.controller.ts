@@ -8,7 +8,7 @@ import {
     ESP32_DEVICE_PAIR_REQUEST_TOPIC,
 } from 'devices/devices.constants';
 import { DevicesMqttService } from 'devices/devices-mqtt.service';
-import { DeviceControlsDto, DevicePayloadDto, PairRequestDto } from 'devices/dto';
+import { DeviceControlsDto, DevicePayloadDto, MqttPairRequestDto } from 'devices/dto';
 import { MqttService } from 'mqtt/mqtt.service';
 
 /*
@@ -27,9 +27,9 @@ export class DevicesMqttController {
     ) {}
 
     @MessagePattern(ESP32_DEVICE_PAIR_REQUEST_TOPIC)
-    async onEsp32DevicePairRequest(@Ctx() context: MqttContext, @Payload() pairRequest: PairRequestDto): Promise<void> {
+    async onEsp32DevicePairRequest(@Ctx() context: MqttContext, @Payload() pairRequest: MqttPairRequestDto): Promise<void> {
         this.logger.debug(`[${context.getTopic()}]: Pair request: ${JSON.stringify(pairRequest)}`);
-        await this.deviceMqttService.handleEsp32DevicePairRequest(plainToInstance(PairRequestDto, pairRequest));
+        await this.deviceMqttService.handleEsp32DevicePairRequest(plainToInstance(MqttPairRequestDto, pairRequest));
     }
 
     @MessagePattern(ESP32_DEVICE_CONTROLS_SYNC_TOPIC)

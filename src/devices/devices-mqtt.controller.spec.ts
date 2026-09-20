@@ -3,7 +3,7 @@ import { MqttContext } from '@nestjs/microservices';
 import { DevicesMqttController } from './devices-mqtt.controller';
 import { DevicesMqttService } from './devices-mqtt.service';
 import { MqttService } from 'mqtt/mqtt.service';
-import { PairRequestDto } from './dto';
+import { MqttPairRequestDto } from './dto';
 import {
     ESP32_DEVICE_CONTROLS_SYNC_TOPIC,
     ESP32_DEVICE_MEASUREMENTS_UPDATE_TOPIC,
@@ -53,11 +53,11 @@ describe('DevicesMqttController', () => {
             const pairRequest = {
                 deviceIp: '192.168.1.100',
                 deviceName: 'ESP32 Device',
-            } as PairRequestDto;
+            } as MqttPairRequestDto;
 
             await controller.onEsp32DevicePairRequest(makeContext(ESP32_DEVICE_PAIR_REQUEST_TOPIC), pairRequest);
 
-            expect(mockDeviceMqttService.handleEsp32DevicePairRequest).toHaveBeenCalledWith(expect.any(PairRequestDto));
+            expect(mockDeviceMqttService.handleEsp32DevicePairRequest).toHaveBeenCalledWith(expect.any(MqttPairRequestDto));
             const forwarded = mockDeviceMqttService.handleEsp32DevicePairRequest.mock.calls[0][0];
             expect(forwarded).toMatchObject({ deviceIp: '192.168.1.100', deviceName: 'ESP32 Device' });
         });

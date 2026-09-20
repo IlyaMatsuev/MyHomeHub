@@ -4,7 +4,7 @@ export * from './get-devices.dto';
 export * from './create-device.dto';
 export * from './update-device.dto';
 export * from './device-response.dto';
-export * from './pairing/pair-request.dto';
+export * from './pairing/mqtt-pair-request.dto';
 export * from './pairing/pair-accept.dto';
 export * from './pairing/toggle-devices-pairing-mode.dto';
 export * from './pairing/pairing-mode-status-response.dto';

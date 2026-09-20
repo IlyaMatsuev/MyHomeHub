@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DevicesMqttService } from './devices-mqtt.service';
 import { DevicesService } from './devices.service';
 import { MqttService } from 'mqtt/mqtt.service';
-import { PairAcceptDto, PairRequestDto, UpdateDeviceDto } from './dto';
+import { PairAcceptDto, MqttPairRequestDto, UpdateDeviceDto } from './dto';
 import { Device, DeviceBrand, DeviceType, DeviceUpdateOrigin, Room } from './interfaces';
 import { ESP32_DEVICE_PAIR_REQUEST_REPLY_TOPIC } from './devices.constants';
 import { DeviceConfigsMapperService } from 'device-configs/device-configs-mapper.service';
@@ -72,7 +72,7 @@ describe('DevicesMqttService', () => {
                     brand: DeviceBrand.ESP32,
                     ip: '192.168.1.100',
                 }),
-            } as unknown as PairRequestDto;
+            } as unknown as MqttPairRequestDto;
 
             mockDevicesService.getDeviceByIp.mockResolvedValue(null);
             mockDevicesService.addDevice.mockResolvedValue(mockDevice);
@@ -97,7 +97,7 @@ describe('DevicesMqttService', () => {
                 deviceIp: '192.168.1.100',
                 deviceName: 'New ESP32 Device',
                 toCreateDevice: jest.fn().mockReturnValue({ name: 'New ESP32 Device' }),
-            } as unknown as PairRequestDto;
+            } as unknown as MqttPairRequestDto;
 
             mockDevicesService.getDeviceByIp.mockResolvedValue(null);
             mockDevicesService.addDevice.mockResolvedValue(mockDevice);
@@ -112,7 +112,7 @@ describe('DevicesMqttService', () => {
                 deviceIp: '192.168.1.100',
                 deviceName: 'New ESP32 Device',
                 toCreateDevice: jest.fn().mockReturnValue({ name: 'New ESP32 Device' }),
-            } as unknown as PairRequestDto;
+            } as unknown as MqttPairRequestDto;
 
             mockDevicesService.getDeviceByIp.mockResolvedValue(null);
             mockDevicesService.addDevice.mockResolvedValue({
@@ -135,7 +135,7 @@ describe('DevicesMqttService', () => {
                 controls: { on: true },
                 measurements: { temperature: 25 },
                 toCreateDevice: jest.fn(),
-            } as unknown as PairRequestDto;
+            } as unknown as MqttPairRequestDto;
 
             mockDevicesService.getDeviceByIp.mockResolvedValue(mockDevice);
             mockDevicesService.updateDevice.mockResolvedValue(mockDevice);
@@ -158,7 +158,7 @@ describe('DevicesMqttService', () => {
                 deviceIp: '192.168.1.100',
                 deviceName: 'Failing Device',
                 toCreateDevice: jest.fn(),
-            } as unknown as PairRequestDto;
+            } as unknown as MqttPairRequestDto;
 
             mockDevicesService.getDeviceByIp.mockRejectedValue(new Error('Database error'));
 
@@ -177,7 +177,7 @@ describe('DevicesMqttService', () => {
             const pairRequest = {
                 deviceIp: null,
                 deviceName: null,
-            } as unknown as PairRequestDto;
+            } as unknown as MqttPairRequestDto;
 
             await service.handleEsp32DevicePairRequest(pairRequest);
 

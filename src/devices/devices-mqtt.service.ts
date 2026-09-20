@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PairAcceptDto, PairRequestDto, DeviceControlsDto, DevicePayloadDto, UpdateDeviceDto } from 'devices/dto';
+import { PairAcceptDto, MqttPairRequestDto, DeviceControlsDto, DevicePayloadDto, UpdateDeviceDto } from 'devices/dto';
 import { DevicesService } from 'devices/devices.service';
 import { Device, DeviceUpdateOrigin } from 'devices/interfaces';
 import { MqttService } from 'mqtt/mqtt.service';
@@ -17,7 +17,7 @@ export class DevicesMqttService {
         private readonly deviceConfigsMapper: DeviceConfigsMapperService,
     ) {}
 
-    async handleEsp32DevicePairRequest(pairRequest: PairRequestDto): Promise<void> {
+    async handleEsp32DevicePairRequest(pairRequest: MqttPairRequestDto): Promise<void> {
         try {
             this.logger.log(`Received a device (${pairRequest?.deviceName}) pairing request with IP "${pairRequest?.deviceIp}"`);
 
