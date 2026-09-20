@@ -5,6 +5,7 @@ fans:
         name: "on"
         type: boolean
         description: "Switch on/off state"
+        default: true
       - label: "Speed levels"
         name: "speedLevels"
         type: object
@@ -29,6 +30,7 @@ lock:
         name: "on"
         type: boolean
         description: "Switch on/off state"
+        default: true
       - label: "Is unlocked?"
         name: "unlocked"
         type: boolean
