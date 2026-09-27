@@ -86,4 +86,4 @@ Please make sure to update tests as appropriate.
 
 ## 🎫 License
 
-[MIT](LICENSE)
+[PolyForm Noncommercial 1.0.0](LICENSE): free for personal and other noncommercial use. Contact me for commercial use.
