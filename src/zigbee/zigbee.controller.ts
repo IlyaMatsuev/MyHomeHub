@@ -4,9 +4,10 @@ import {
     ZIGBEE_BRIDGE_DEVICE_RENAME_RESPONSE_TOPIC,
     ZIGBEE_BRIDGE_DEVICES_TOPIC,
     ZIGBEE_BRIDGE_HEALTH,
+    ZIGBEE_BRIDGE_STATE_TOPIC,
     ZIGBEE_DEVICE_STATE_TOPIC,
 } from 'zigbee/zigbee.constants';
-import { ZigbeeBridgeHealth, ZigbeeDevice } from 'zigbee/interfaces';
+import { ZigbeeBridgeHealth, ZigbeeBridgeState, ZigbeeBridgeStatePayload, ZigbeeDevice } from 'zigbee/interfaces';
 import { ZigbeePairableDevices } from 'zigbee/store';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { MqttService } from 'mqtt/mqtt.service';
@@ -30,6 +31,12 @@ export class ZigbeeController {
         ZigbeeBridge.save(health);
     }
 
+    @MessagePattern(ZIGBEE_BRIDGE_STATE_TOPIC)
+    onBridgeAvailabilityChange(@Ctx() context: MqttContext, @Payload() payload: ZigbeeBridgeStatePayload): void {
+        this.logger.debug(`[${context.getTopic()}]: Update bridge availability: ${JSON.stringify(payload)}`);
+        ZigbeeBridge.saveState(this.extractBridgeState(payload));
+    }
+
     @MessagePattern(ZIGBEE_BRIDGE_DEVICES_TOPIC)
     async onConnectedDevicesListChange(@Ctx() context: MqttContext, @Payload() devices: Array<ZigbeeDevice>): Promise<void> {
         this.logger.debug(`[${context.getTopic()}]: Update ZigBee devices list: ${JSON.stringify(devices)}`);
@@ -44,6 +51,8 @@ export class ZigbeeController {
 
         const friendlyName = this.extractFriendlyName(ZIGBEE_DEVICE_STATE_TOPIC, context.getTopic());
         if (friendlyName) {
+            // The only proof the hub has that the Zigbee dongle is still receiving, see ZigbeeHealthMonitorService
+            ZigbeeBridge.trackDeviceMessage();
             await this.zigbeeService.handleDeviceStateUpdate(friendlyName, state);
         }
     }
@@ -58,6 +67,15 @@ export class ZigbeeController {
         } else {
             this.logger.warn(`Failed to rename a Zigbee device from "${from}" to "${to}"`);
         }
+    }
+
+    private extractBridgeState(payload: ZigbeeBridgeStatePayload): ZigbeeBridgeState {
+        const state = typeof payload === 'string' ? payload : payload?.state;
+        if (state !== ZigbeeBridgeState.Online && state !== ZigbeeBridgeState.Offline) {
+            this.logger.warn(`Unknown Zigbee2Mqtt bridge state received: ${JSON.stringify(payload)}`);
+            return null;
+        }
+        return state;
     }
 
     private extractFriendlyName(topicPattern: string, topic: string): string | null {

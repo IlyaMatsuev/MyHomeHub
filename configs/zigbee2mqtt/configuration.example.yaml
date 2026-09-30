@@ -9,6 +9,12 @@ mqtt:
   user: __Z2M_MQTT_USERNAME__
   password: __Z2M_MQTT_PASSWORD__
 
+# Published to "zigbee2mqtt/bridge/health" and watched by the hub to detect a dead bridge or dongle.
+# Keep the interval (in minutes) below ZIGBEE_HEALTH_TIMEOUT_SEC in the .env file
+health:
+  interval: 10
+  reset_on_check: false
+
 serial:
   adapter: ember
   port: /dev/ttyACM0
