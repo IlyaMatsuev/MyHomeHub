@@ -72,6 +72,7 @@ AppModule
 ├── ScenariosModule       # Automation scenarios with triggers and actions
 │   └── SchedulerModule   # Cron-based scenario scheduling
 ├── MqttModule            # MQTT broker communication
+├── ZigbeeModule          # zigbee2mqtt bridge integration and its health monitoring
 ├── DiscoveryModule       # mDNS (Bonjour/DNS-SD) advertisement and GET /info endpoint
 └── ThrottlerModule       # Rate limiting with Redis storage (short/medium/long tiers)
 ```
@@ -178,6 +179,20 @@ The responder is created with an explicit error callback because the `bonjour-se
 
 mDNS needs multicast on the LAN, which is why the Docker service keeps `network_mode: host`.
 
+### Zigbee Bridge Monitoring
+
+Zigbee devices reach the hub through **zigbee2mqtt** (z2m), which talks to a USB Zigbee dongle. When that dongle stops working the failure is **silent**: no exception is thrown anywhere, the hub simply stops receiving device updates, which looks exactly like a quiet home. `ZigbeeHealthMonitorService` (`zigbee/zigbee-health-monitor.service.ts`) exists to make that failure visible - it re-evaluates three **independent** signals every minute (`@Interval`) and logs an **error** when one breaks, plus a `log` line when it recovers:
+
+- **Bridge availability** - z2m registers `{"state":"offline"}` on `zigbee2mqtt/bridge/state` as its MQTT last will, so the broker announces the outage on its behalf when the z2m process dies. The topic is retained, so the hub also learns the current state right after connecting. Older z2m versions publish the bare state string instead of an object, which is why `ZigbeeController.onBridgeAvailabilityChange` accepts both.
+- **Health report freshness** - z2m publishes `zigbee2mqtt/bridge/health` every `health.interval` minutes (10 by default, set explicitly in `configs/zigbee2mqtt/configuration.example.yaml`). A report that stops arriving means z2m hung or lost the broker connection - neither of which produces a last will.
+- **Zigbee traffic silence** - the time since the last message on `zigbee2mqtt/<friendlyName>`. This is the only signal that catches a **dead dongle behind a healthy z2m**: the bridge keeps reporting itself fine while nothing reaches it over the air. It is skipped while one of the two signals above is already reporting an outage (that would be the same failure logged three times), and on a hub with no Zigbee devices in `ZigbeePairableDevices` (nothing to go silent).
+
+Each signal is reported **once per outage**, not on every tick, so a dongle that stays dead overnight does not flood the log.
+
+The state the checks read lives in the `ZigbeeBridge` store, written by `ZigbeeController` as the messages arrive. `ZigbeeBridge.connected()` - the guard every outgoing bridge request goes through - now also returns `false` when the bridge announced itself offline or when the monitor flagged its health reports as stale, so a permit-join/rename/remove request is no longer published into the void once the bridge is known to be gone. Only the monitor sets the stale flag, so disabling it with `ZIGBEE_MONITOR_ENABLED=false` leaves `connected()` behaving exactly as before.
+
+Timeouts default to values derived from the z2m health interval and are deliberately generous - a Zigbee network can be legitimately quiet for a long time, and a false alarm every few hours would train the reader to ignore the log.
+
 ### Path Aliases (tsconfig.json)
 
 ```
@@ -193,6 +208,7 @@ scheduler/*     → src/scheduler/*
 db/*            → src/db/*
 discovery/*     → src/discovery/*
 throttler/*     → src/throttler/*
+zigbee/*        → src/zigbee/*
 ```
 
 ## Environment Configuration
@@ -216,6 +232,9 @@ Key variables:
 - `THROTTLE_*` - Rate limiting configuration (enabled, TTL/limit for short/medium/long tiers)
 - `TRUST_PROXY` - Reverse proxy support used to resolve the real client IP (`false`, `true`, a hops count, or a list of trusted proxies/subnets)
 - `DEVICE_CONFIGS_DIR` - Directory with YAML device config files (default `configs/devices`)
+- `ZIGBEE_MONITOR_ENABLED` - Zigbee bridge/dongle monitoring, on unless set to the literal `false`
+- `ZIGBEE_HEALTH_TIMEOUT_SEC` - Report an error when no z2m health report arrives within this many seconds (default 1800, must stay above the z2m `health.interval`)
+- `ZIGBEE_SILENCE_TIMEOUT_SEC` - Report an error when no Zigbee device reports to the hub within this many seconds while z2m looks healthy (default 3600)
 
 ### Device Configs
 
