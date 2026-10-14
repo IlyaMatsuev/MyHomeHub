@@ -36,3 +36,11 @@ export interface ZigbeeBridgeHealth {
     mqtt: ZigbeeBridgeMqttHealth;
     devices: ZigbeeBridgeDevicesHealth;
 }
+
+export enum ZigbeeBridgeState {
+    Online = 'online',
+    Offline = 'offline',
+}
+
+// Published (retained) on "zigbee2mqtt/bridge/state". When the bridge dies, it sends "offline" state
+export type ZigbeeBridgeStatePayload = { state: ZigbeeBridgeState };

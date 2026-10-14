@@ -9,9 +9,15 @@ mqtt:
   user: __Z2M_MQTT_USERNAME__
   password: __Z2M_MQTT_PASSWORD__
 
+# z2m publishes a health report to "zigbee2mqtt/bridge/health" every `interval` minutes.
+# The hub watches it to detect a dead bridge.
+# Keep it well below ZIGBEE_HEALTH_TIMEOUT_MS (30 min) in src/zigbee/zigbee.constants.ts
+health:
+  interval: 10
+
 serial:
   adapter: ember
-  port: /dev/ttyACM0
+  port: __Z2M_COORDINATOR_URL__
 
 advanced:
   # debug | info | warning | error

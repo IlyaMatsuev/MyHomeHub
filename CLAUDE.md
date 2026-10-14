@@ -72,6 +72,7 @@ AppModule
 ├── ScenariosModule       # Automation scenarios with triggers and actions
 │   └── SchedulerModule   # Cron-based scenario scheduling
 ├── MqttModule            # MQTT broker communication
+├── ZigbeeModule          # zigbee2mqtt bridge integration and its health monitoring
 ├── DiscoveryModule       # mDNS (Bonjour/DNS-SD) advertisement and GET /info endpoint
 └── ThrottlerModule       # Rate limiting with Redis storage (short/medium/long tiers)
 ```
@@ -178,6 +179,19 @@ The responder is created with an explicit error callback because the `bonjour-se
 
 mDNS needs multicast on the LAN, which is why the Docker service keeps `network_mode: host`.
 
+### Zigbee Bridge Monitoring
+
+Zigbee devices reach the hub through **zigbee2mqtt** (z2m), which talks to the Zigbee coordinator - a network (Ethernet/PoE) one reached over TCP at `Z2M_COORDINATOR_URL`, since the USB stick it replaced died and took its serial port down with it. When the coordinator dies, z2m stops (`Adapter disconnected, stopping`) and the hub simply stops receiving device updates - no exception anywhere, which looks exactly like a quiet home. `ZigbeeHealthMonitorService` (`zigbee/zigbee-health-monitor.service.ts`) makes that visible: every minute (`@Interval`) it checks two signals and logs an **error** when one breaks, plus a `log` line when it recovers. Each is reported **once per outage**, not on every tick.
+
+- **Bridge availability** - z2m publishes a retained `{"state":"offline"}` on `zigbee2mqtt/bridge/state` when it stops, and registers the same payload as its MQTT last will, so the broker announces a crash or hang (missed keepalives) on its behalf too. This is the signal that fires for a dead coordinator.
+- **Health report freshness** - z2m publishes `zigbee2mqtt/bridge/health` every `health.interval` minutes (10, set in `configs/zigbee2mqtt/configuration.example.yaml`); no report for `ZIGBEE_HEALTH_TIMEOUT_MS` (30 min) is an error. It covers the case availability cannot: mosquitto runs without persistence, so after a broker/server restart no retained state exists, and a z2m container that never comes back up announces nothing at all. Missing reports are measured from the hub startup for the same reason.
+
+There is deliberately **no check for Zigbee traffic silence** (time since the last device message). It was meant to catch a dead radio behind a healthy z2m, but z2m does not stay healthy without its adapter, and battery devices such as remotes only report when used, so a quiet night raised a false "dongle dead" error.
+
+Outgoing bridge requests (permit-join/rename/remove) are only guarded by `ZigbeeBridge.connected()` looking at the last health report, not by these signals: they are QoS 0 publishes, so one sent while z2m is down is simply dropped either way.
+
+The monitor is opt-in (`ZIGBEE_MONITOR_ENABLED=true`), like `THROTTLE_ENABLED`, so a hub that runs without zigbee2mqtt does not log a "no health report" error 30 minutes after every start.
+
 ### Path Aliases (tsconfig.json)
 
 ```
@@ -193,6 +207,7 @@ scheduler/*     → src/scheduler/*
 db/*            → src/db/*
 discovery/*     → src/discovery/*
 throttler/*     → src/throttler/*
+zigbee/*        → src/zigbee/*
 ```
 
 ## Environment Configuration
@@ -216,6 +231,7 @@ Key variables:
 - `THROTTLE_*` - Rate limiting configuration (enabled, TTL/limit for short/medium/long tiers)
 - `TRUST_PROXY` - Reverse proxy support used to resolve the real client IP (`false`, `true`, a hops count, or a list of trusted proxies/subnets)
 - `DEVICE_CONFIGS_DIR` - Directory with YAML device config files (default `configs/devices`)
+- `ZIGBEE_MONITOR_ENABLED` - Zigbee bridge monitoring, off unless set to the literal `true`
 
 ### Device Configs
 

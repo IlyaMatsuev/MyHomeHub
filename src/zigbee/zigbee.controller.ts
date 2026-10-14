@@ -4,9 +4,10 @@ import {
     ZIGBEE_BRIDGE_DEVICE_RENAME_RESPONSE_TOPIC,
     ZIGBEE_BRIDGE_DEVICES_TOPIC,
     ZIGBEE_BRIDGE_HEALTH,
+    ZIGBEE_BRIDGE_STATE_TOPIC,
     ZIGBEE_DEVICE_STATE_TOPIC,
 } from 'zigbee/zigbee.constants';
-import { ZigbeeBridgeHealth, ZigbeeDevice } from 'zigbee/interfaces';
+import { ZigbeeBridgeHealth, ZigbeeBridgeStatePayload, ZigbeeDevice } from 'zigbee/interfaces';
 import { ZigbeePairableDevices } from 'zigbee/store';
 import { ZigbeeService } from 'zigbee/zigbee.service';
 import { MqttService } from 'mqtt/mqtt.service';
@@ -27,7 +28,13 @@ export class ZigbeeController {
     @MessagePattern(ZIGBEE_BRIDGE_HEALTH)
     onBridgeHealthCheck(@Ctx() context: MqttContext, @Payload() health: ZigbeeBridgeHealth): void {
         this.logger.debug(`[${context.getTopic()}]: Update bridge health details: ${JSON.stringify(health)}`);
-        ZigbeeBridge.save(health);
+        ZigbeeBridge.saveHealth(health);
+    }
+
+    @MessagePattern(ZIGBEE_BRIDGE_STATE_TOPIC)
+    onBridgeAvailabilityChange(@Ctx() context: MqttContext, @Payload() payload: ZigbeeBridgeStatePayload): void {
+        this.logger.debug(`[${context.getTopic()}]: Update bridge availability: ${JSON.stringify(payload)}`);
+        ZigbeeBridge.saveState(payload?.state);
     }
 
     @MessagePattern(ZIGBEE_BRIDGE_DEVICES_TOPIC)

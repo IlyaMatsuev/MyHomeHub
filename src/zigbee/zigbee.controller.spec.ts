@@ -1,10 +1,11 @@
+import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MqttContext } from '@nestjs/microservices';
 import { ZigbeeController } from './zigbee.controller';
 import { ZigbeeService } from './zigbee.service';
 import { MqttService } from 'mqtt/mqtt.service';
 import { ZIGBEE_DEVICE_STATE_TOPIC } from './zigbee.constants';
-import { ZigbeeBridgeHealth, ZigbeeDevice } from './interfaces';
+import { ZigbeeBridgeHealth, ZigbeeBridgeState, ZigbeeDevice } from './interfaces';
 import { ZigbeePairableDevices } from './store';
 import { ZigbeeBridge } from './store/zigbee-bridge';
 
@@ -18,6 +19,7 @@ describe('ZigbeeController', () => {
     let mockMqttService: { extractTopicWildcards: jest.Mock };
     let saveSpy: jest.SpyInstance;
     let bridgeSaveSpy: jest.SpyInstance;
+    let bridgeSaveStateSpy: jest.SpyInstance;
 
     const makeContext = (topic: string): MqttContext =>
         ({
@@ -44,7 +46,9 @@ describe('ZigbeeController', () => {
         };
         mockMqttService = { extractTopicWildcards: jest.fn() };
         saveSpy = jest.spyOn(ZigbeePairableDevices, 'save').mockImplementation(() => undefined);
-        bridgeSaveSpy = jest.spyOn(ZigbeeBridge, 'save').mockImplementation(() => undefined);
+        bridgeSaveSpy = jest.spyOn(ZigbeeBridge, 'saveHealth').mockImplementation(() => undefined);
+        bridgeSaveStateSpy = jest.spyOn(ZigbeeBridge, 'saveState').mockImplementation(() => undefined);
+        jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
 
         const module: TestingModule = await Test.createTestingModule({
             controllers: [ZigbeeController],
@@ -62,12 +66,26 @@ describe('ZigbeeController', () => {
     });
 
     describe('onBridgeHealthCheck', () => {
-        it('should forward the health report to ZigbeeBridge.save', () => {
+        it('should forward the health report to ZigbeeBridge.saveHealth', () => {
             const health = { mqtt: { connected: true } } as ZigbeeBridgeHealth;
 
             controller.onBridgeHealthCheck(makeContext('zigbee2mqtt/bridge/health'), health);
 
             expect(bridgeSaveSpy).toHaveBeenCalledWith(health);
+        });
+    });
+
+    describe('onBridgeAvailabilityChange', () => {
+        it('should store the state carried by the availability payload', () => {
+            controller.onBridgeAvailabilityChange(makeContext('zigbee2mqtt/bridge/state'), { state: ZigbeeBridgeState.Offline });
+
+            expect(bridgeSaveStateSpy).toHaveBeenCalledWith(ZigbeeBridgeState.Offline);
+        });
+
+        it('should not fail on a missing payload', () => {
+            controller.onBridgeAvailabilityChange(makeContext('zigbee2mqtt/bridge/state'), null as never);
+
+            expect(bridgeSaveStateSpy).toHaveBeenCalledWith(undefined);
         });
     });
 
