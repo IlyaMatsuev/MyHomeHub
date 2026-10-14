@@ -6,8 +6,6 @@ type ZigbeeBridgeInternals = {
     health: ZigbeeBridgeHealth | null;
     state: ZigbeeBridgeState | null;
     lastHealthAt: number | null;
-    lastDeviceMessageAt: number | null;
-    healthReportsStale: boolean;
 };
 
 describe('ZigbeeBridge', () => {
@@ -30,8 +28,6 @@ describe('ZigbeeBridge', () => {
             health: null,
             state: null,
             lastHealthAt: null,
-            lastDeviceMessageAt: null,
-            healthReportsStale: false,
         });
     });
 
@@ -40,70 +36,67 @@ describe('ZigbeeBridge', () => {
         jest.useRealTimers();
     });
 
-    describe('save', () => {
+    describe('saveHealth', () => {
         it('should store the latest health report', () => {
             const health = makeHealth();
 
-            ZigbeeBridge.save(health);
+            ZigbeeBridge.saveHealth(health);
 
             expect(internals().health).toEqual(health);
         });
 
         it('should normalize a missing report to null', () => {
-            ZigbeeBridge.save(undefined as unknown as ZigbeeBridgeHealth);
+            ZigbeeBridge.saveHealth(undefined as unknown as ZigbeeBridgeHealth);
 
             expect(internals().health).toBeNull();
         });
 
-        it('should stamp the report arrival time and clear the stale flag', () => {
+        it('should stamp the report arrival time', () => {
             const now = new Date('2026-01-01T12:00:00.000Z').getTime();
             jest.useFakeTimers().setSystemTime(now);
-            ZigbeeBridge.markHealthReportsStale(true);
 
-            ZigbeeBridge.save(makeHealth());
+            ZigbeeBridge.saveHealth(makeHealth());
 
             expect(ZigbeeBridge.getLastHealthAt()).toBe(now);
-            expect(internals().healthReportsStale).toBe(false);
         });
 
         it('should keep the previous arrival time when no report is provided', () => {
-            ZigbeeBridge.save(makeHealth());
+            ZigbeeBridge.saveHealth(makeHealth());
             const lastHealthAt = ZigbeeBridge.getLastHealthAt();
 
-            ZigbeeBridge.save(null as unknown as ZigbeeBridgeHealth);
+            ZigbeeBridge.saveHealth(null as unknown as ZigbeeBridgeHealth);
 
             expect(ZigbeeBridge.getLastHealthAt()).toBe(lastHealthAt);
         });
     });
 
     describe('saveState', () => {
-        it('should store the reported bridge state', () => {
+        it('should report the bridge offline', () => {
             ZigbeeBridge.saveState(ZigbeeBridgeState.Offline);
 
-            expect(ZigbeeBridge.getState()).toBe(ZigbeeBridgeState.Offline);
+            expect(ZigbeeBridge.isOffline()).toBe(true);
+            expect(ZigbeeBridge.isOnline()).toBe(false);
         });
 
-        it('should normalize a missing state to null', () => {
+        it('should report the bridge online', () => {
+            ZigbeeBridge.saveState(ZigbeeBridgeState.Online);
+
+            expect(ZigbeeBridge.isOnline()).toBe(true);
+            expect(ZigbeeBridge.isOffline()).toBe(false);
+        });
+
+        it('should treat a missing state as neither online nor offline', () => {
             ZigbeeBridge.saveState(undefined as unknown as ZigbeeBridgeState);
 
-            expect(ZigbeeBridge.getState()).toBeNull();
-        });
-    });
-
-    describe('trackDeviceMessage', () => {
-        it('should stamp the time of the last device message', () => {
-            const now = new Date('2026-01-01T12:00:00.000Z').getTime();
-            jest.useFakeTimers().setSystemTime(now);
-
-            ZigbeeBridge.trackDeviceMessage();
-
-            expect(ZigbeeBridge.getLastDeviceMessageAt()).toBe(now);
+            expect(internals().state).toBeNull();
+            expect(ZigbeeBridge.isOnline()).toBe(false);
+            expect(ZigbeeBridge.isOffline()).toBe(false);
         });
     });
 
     describe('connected', () => {
         it('should return true when a health report shows the MQTT broker connected', () => {
-            ZigbeeBridge.save(makeHealth({ mqtt: { connected: true, queued: 0, published: 1, received: 1 } }));
+            ZigbeeBridge.saveHealth(makeHealth({ mqtt: { connected: true, queued: 0, published: 1, received: 1 } }));
 
             expect(ZigbeeBridge.connected()).toBe(true);
         });
@@ -116,32 +109,9 @@ describe('ZigbeeBridge', () => {
         });
 
         it('should return false when the MQTT broker is not connected', () => {
-            ZigbeeBridge.save(makeHealth({ mqtt: { connected: false, queued: 0, published: 0, received: 0 } }));
+            ZigbeeBridge.saveHealth(makeHealth({ mqtt: { connected: false, queued: 0, published: 0, received: 0 } }));
 
             expect(ZigbeeBridge.connected()).toBe(false);
-        });
-
-        it('should return false when the bridge announced itself offline', () => {
-            ZigbeeBridge.save(makeHealth());
-            ZigbeeBridge.saveState(ZigbeeBridgeState.Offline);
-
-            expect(ZigbeeBridge.connected()).toBe(false);
-        });
-
-        it('should return false when the health reports went stale', () => {
-            ZigbeeBridge.save(makeHealth());
-            ZigbeeBridge.markHealthReportsStale(true);
-
-            expect(ZigbeeBridge.connected()).toBe(false);
-        });
-
-        it('should return true again once a fresh health report arrives', () => {
-            ZigbeeBridge.save(makeHealth());
-            ZigbeeBridge.markHealthReportsStale(true);
-
-            ZigbeeBridge.save(makeHealth());
-
-            expect(ZigbeeBridge.connected()).toBe(true);
         });
     });
 });

@@ -181,17 +181,16 @@ mDNS needs multicast on the LAN, which is why the Docker service keeps `network_
 
 ### Zigbee Bridge Monitoring
 
-Zigbee devices reach the hub through **zigbee2mqtt** (z2m), which talks to the Zigbee coordinator - a network (Ethernet/PoE) one reached over TCP at `Z2M_COORDINATOR_URL`, since the USB stick it replaced died and took its serial port down with it. When that dongle stops working the failure is **silent**: no exception is thrown anywhere, the hub simply stops receiving device updates, which looks exactly like a quiet home. `ZigbeeHealthMonitorService` (`zigbee/zigbee-health-monitor.service.ts`) exists to make that failure visible - it re-evaluates three **independent** signals every minute (`@Interval`) and logs an **error** when one breaks, plus a `log` line when it recovers:
+Zigbee devices reach the hub through **zigbee2mqtt** (z2m), which talks to the Zigbee coordinator - a network (Ethernet/PoE) one reached over TCP at `Z2M_COORDINATOR_URL`, since the USB stick it replaced died and took its serial port down with it. When the coordinator dies, z2m stops (`Adapter disconnected, stopping`) and the hub simply stops receiving device updates - no exception anywhere, which looks exactly like a quiet home. `ZigbeeHealthMonitorService` (`zigbee/zigbee-health-monitor.service.ts`) makes that visible: every minute (`@Interval`) it checks two signals and logs an **error** when one breaks, plus a `log` line when it recovers. Each is reported **once per outage**, not on every tick.
 
-- **Bridge availability** - z2m registers `{"state":"offline"}` on `zigbee2mqtt/bridge/state` as its MQTT last will, so the broker announces the outage on its behalf when the z2m process dies. The topic is retained, so the hub also learns the current state right after connecting. Older z2m versions publish the bare state string instead of an object, which is why `ZigbeeController.onBridgeAvailabilityChange` accepts both.
-- **Health report freshness** - z2m publishes `zigbee2mqtt/bridge/health` every `health.interval` minutes (10 by default, set explicitly in `configs/zigbee2mqtt/configuration.example.yaml`). A report that stops arriving means z2m hung or lost the broker connection - neither of which produces a last will.
-- **Zigbee traffic silence** - the time since the last message on `zigbee2mqtt/<friendlyName>`. This is the only signal that catches a **dead dongle behind a healthy z2m**: the bridge keeps reporting itself fine while nothing reaches it over the air. It is skipped while one of the two signals above is already reporting an outage (that would be the same failure logged three times), and on a hub with no Zigbee devices in `ZigbeePairableDevices` (nothing to go silent).
+- **Bridge availability** - z2m publishes a retained `{"state":"offline"}` on `zigbee2mqtt/bridge/state` when it stops, and registers the same payload as its MQTT last will, so the broker announces a crash or hang (missed keepalives) on its behalf too. This is the signal that fires for a dead coordinator.
+- **Health report freshness** - z2m publishes `zigbee2mqtt/bridge/health` every `health.interval` minutes (10, set in `configs/zigbee2mqtt/configuration.example.yaml`); no report for `ZIGBEE_HEALTH_TIMEOUT_MS` (30 min) is an error. It covers the case availability cannot: mosquitto runs without persistence, so after a broker/server restart no retained state exists, and a z2m container that never comes back up announces nothing at all. Missing reports are measured from the hub startup for the same reason.
 
-Each signal is reported **once per outage**, not on every tick, so a dongle that stays dead overnight does not flood the log.
+There is deliberately **no check for Zigbee traffic silence** (time since the last device message). It was meant to catch a dead radio behind a healthy z2m, but z2m does not stay healthy without its adapter, and battery devices such as remotes only report when used, so a quiet night raised a false "dongle dead" error.
 
-The state the checks read lives in the `ZigbeeBridge` store, written by `ZigbeeController` as the messages arrive. `ZigbeeBridge.connected()` - the guard every outgoing bridge request goes through - now also returns `false` when the bridge announced itself offline or when the monitor flagged its health reports as stale, so a permit-join/rename/remove request is no longer published into the void once the bridge is known to be gone. Only the monitor sets the stale flag, so disabling it with `ZIGBEE_MONITOR_ENABLED=false` leaves `connected()` behaving exactly as before.
+Outgoing bridge requests (permit-join/rename/remove) are only guarded by `ZigbeeBridge.connected()` looking at the last health report, not by these signals: they are QoS 0 publishes, so one sent while z2m is down is simply dropped either way.
 
-Timeouts default to values derived from the z2m health interval and are deliberately generous - a Zigbee network can be legitimately quiet for a long time, and a false alarm every few hours would train the reader to ignore the log.
+The monitor is opt-in (`ZIGBEE_MONITOR_ENABLED=true`), like `THROTTLE_ENABLED`, so a hub that runs without zigbee2mqtt does not log a "no health report" error 30 minutes after every start.
 
 ### Path Aliases (tsconfig.json)
 
@@ -232,9 +231,7 @@ Key variables:
 - `THROTTLE_*` - Rate limiting configuration (enabled, TTL/limit for short/medium/long tiers)
 - `TRUST_PROXY` - Reverse proxy support used to resolve the real client IP (`false`, `true`, a hops count, or a list of trusted proxies/subnets)
 - `DEVICE_CONFIGS_DIR` - Directory with YAML device config files (default `configs/devices`)
-- `ZIGBEE_MONITOR_ENABLED` - Zigbee bridge/dongle monitoring, on unless set to the literal `false`
-- `ZIGBEE_HEALTH_TIMEOUT_SEC` - Report an error when no z2m health report arrives within this many seconds (default 1800, must stay above the z2m `health.interval`)
-- `ZIGBEE_SILENCE_TIMEOUT_SEC` - Report an error when no Zigbee device reports to the hub within this many seconds while z2m looks healthy (default 3600)
+- `ZIGBEE_MONITOR_ENABLED` - Zigbee bridge monitoring, off unless set to the literal `true`
 
 ### Device Configs
 

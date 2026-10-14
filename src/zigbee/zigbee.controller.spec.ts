@@ -20,7 +20,6 @@ describe('ZigbeeController', () => {
     let saveSpy: jest.SpyInstance;
     let bridgeSaveSpy: jest.SpyInstance;
     let bridgeSaveStateSpy: jest.SpyInstance;
-    let trackDeviceMessageSpy: jest.SpyInstance;
 
     const makeContext = (topic: string): MqttContext =>
         ({
@@ -47,9 +46,8 @@ describe('ZigbeeController', () => {
         };
         mockMqttService = { extractTopicWildcards: jest.fn() };
         saveSpy = jest.spyOn(ZigbeePairableDevices, 'save').mockImplementation(() => undefined);
-        bridgeSaveSpy = jest.spyOn(ZigbeeBridge, 'save').mockImplementation(() => undefined);
+        bridgeSaveSpy = jest.spyOn(ZigbeeBridge, 'saveHealth').mockImplementation(() => undefined);
         bridgeSaveStateSpy = jest.spyOn(ZigbeeBridge, 'saveState').mockImplementation(() => undefined);
-        trackDeviceMessageSpy = jest.spyOn(ZigbeeBridge, 'trackDeviceMessage').mockImplementation(() => undefined);
         jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
 
         const module: TestingModule = await Test.createTestingModule({
@@ -68,7 +66,7 @@ describe('ZigbeeController', () => {
     });
 
     describe('onBridgeHealthCheck', () => {
-        it('should forward the health report to ZigbeeBridge.save', () => {
+        it('should forward the health report to ZigbeeBridge.saveHealth', () => {
             const health = { mqtt: { connected: true } } as ZigbeeBridgeHealth;
 
             controller.onBridgeHealthCheck(makeContext('zigbee2mqtt/bridge/health'), health);
@@ -84,25 +82,10 @@ describe('ZigbeeController', () => {
             expect(bridgeSaveStateSpy).toHaveBeenCalledWith(ZigbeeBridgeState.Offline);
         });
 
-        it('should store the state published as a bare string by the older bridge versions', () => {
-            controller.onBridgeAvailabilityChange(makeContext('zigbee2mqtt/bridge/state'), ZigbeeBridgeState.Online);
-
-            expect(bridgeSaveStateSpy).toHaveBeenCalledWith(ZigbeeBridgeState.Online);
-        });
-
-        it('should store an unrecognized state as unknown and warn about it', () => {
-            const warnSpy = jest.spyOn(Logger.prototype, 'warn');
-
-            controller.onBridgeAvailabilityChange(makeContext('zigbee2mqtt/bridge/state'), { state: 'rebooting' } as never);
-
-            expect(bridgeSaveStateSpy).toHaveBeenCalledWith(null);
-            expect(warnSpy).toHaveBeenCalled();
-        });
-
-        it('should store a missing payload as unknown', () => {
+        it('should not fail on a missing payload', () => {
             controller.onBridgeAvailabilityChange(makeContext('zigbee2mqtt/bridge/state'), null as never);
 
-            expect(bridgeSaveStateSpy).toHaveBeenCalledWith(null);
+            expect(bridgeSaveStateSpy).toHaveBeenCalledWith(undefined);
         });
     });
 
@@ -152,7 +135,6 @@ describe('ZigbeeController', () => {
 
             expect(mockMqttService.extractTopicWildcards).toHaveBeenCalledWith(ZIGBEE_DEVICE_STATE_TOPIC, 'zigbee2mqtt/living_room_bulb');
             expect(mockZigbeeService.handleDeviceStateUpdate).toHaveBeenCalledWith('living_room_bulb', state);
-            expect(trackDeviceMessageSpy).toHaveBeenCalled();
         });
 
         it('should ignore the bridge status topic', async () => {
@@ -161,7 +143,6 @@ describe('ZigbeeController', () => {
             await controller.onDeviceStateChange(makeContext('zigbee2mqtt/bridge'), { state: 'online' });
 
             expect(mockZigbeeService.handleDeviceStateUpdate).not.toHaveBeenCalled();
-            expect(trackDeviceMessageSpy).not.toHaveBeenCalled();
         });
 
         it('should ignore nested bridge topics', async () => {

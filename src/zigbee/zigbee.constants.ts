@@ -12,6 +12,5 @@ export const ZIGBEE_BRIDGE_DEVICE_REMOVE_TOPIC = 'zigbee2mqtt/bridge/request/dev
 export const ZIGBEE_MONITOR_JOB_NAME = 'zigbee-health-monitor';
 export const ZIGBEE_MONITOR_INTERVAL_MS = 60_000;
 
-// Defaults are derived from the zigbee2mqtt health report interval, which is 10 minutes out of the box
-export const DEFAULT_ZIGBEE_HEALTH_TIMEOUT_SEC = 1800;
-export const DEFAULT_ZIGBEE_SILENCE_TIMEOUT_SEC = 3600;
+// Prints an error if the health reports are not received within this timeout
+export const ZIGBEE_HEALTH_TIMEOUT_MS = 30 * 60_000;
