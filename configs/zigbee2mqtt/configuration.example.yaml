@@ -17,7 +17,7 @@ health:
 
 serial:
   adapter: ember
-  port: /dev/ttyACM0
+  port: __Z2M_COORDINATOR_URL__
 
 advanced:
   # debug | info | warning | error

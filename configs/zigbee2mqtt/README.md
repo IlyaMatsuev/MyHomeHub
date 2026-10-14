@@ -15,14 +15,8 @@ This directory contains the Zigbee2MQTT configuration files.
 
 ## Hardware
 
-This configuration is designed for the SONOFF Zigbee 3.0 & Thread Dongle Lite (EFR32MG21) or similar.
+This configuration is designed to use a network Zigbee coordinator, such as SONOFF Dongle Max.
 
-### Device Path
+### Coordinator Address
 
-Set the `ZIGBEE_DONGLE_PATH` environment variable to the device path of your Zigbee dongle. It can be checked with: `ls -l /dev/serial/by-id/`.
-
-Prefer using the stable `/dev/serial/by-id/` path:
-
-```bash
-ZIGBEE_DONGLE_PATH=/dev/serial/by-id/usb-Silicon_Labs_<your_dongle_id>-if00-port0
-```
+Set `Z2M_COORDINATOR_URL` to the coordinator's TCP address (for the dongle above you can reach it in the network via `tcp://Dongle-M.local:6638`), and reserve its IP in the router's DHCP settings so it never changes.
