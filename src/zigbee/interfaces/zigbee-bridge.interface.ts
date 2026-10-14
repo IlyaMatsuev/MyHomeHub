@@ -42,7 +42,5 @@ export enum ZigbeeBridgeState {
     Offline = 'offline',
 }
 
-/**
- * Published (retained) on "zigbee2mqtt/bridge/state". When the bridge dies, it sends "offline" state
- */
+// Published (retained) on "zigbee2mqtt/bridge/state". When the bridge dies, it sends "offline" state
 export type ZigbeeBridgeStatePayload = { state: ZigbeeBridgeState };

@@ -15,7 +15,7 @@ This directory contains the Zigbee2MQTT configuration files.
 
 ## Hardware
 
-This configuration is designed to use a network Zigbee coordinator, such as SONOFF Dongle Max.
+This configuration is designed to use a network Zigbee coordinator, such as `SONOFF Dongle Max`.
 
 ### Coordinator Address
 
