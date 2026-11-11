@@ -25,22 +25,29 @@ fans:
 
 lock:
   mqtt:
+    commands:
+      - label: "Unlock"
+        name: "unlock"
+        type: boolean
+        description: "Unlock the door for the specified amount of time defined in the 'Unlock Timeout' control. After the timeout, the door locks back."
     controls:
       - label: "On"
         name: "on"
         type: boolean
         description: "Switch on/off state"
         default: true
-      - label: "Is unlocked?"
-        name: "unlocked"
-        type: boolean
-        description: "When set to true, the lock becomes unlocked for the time specified in the unlock timeout"
-        default: false
-      - label: "Unlock timeout (ms)"
-        name: "unlockTimeoutMs"
+      - label: "Unlock Timeout (ms)"
+        name: "unlockTimeout"
         type: number
-        description: "Determines the amount of time (in milliseconds) the lock remains unlocked"
+        description: "Holds the time (in milliseconds) for the door to remain unlocked, when it's open."
         default: 5000
         constraints:
           min: 1000
-          max: 60000
+          max: 30000
+          integer: true
+    measurements:
+      - label: "Is unlocked?"
+        name: "unlocked"
+        type: boolean
+        description: "Signals if the lock is currently unlocked"
+        default: false
